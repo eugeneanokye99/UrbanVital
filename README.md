@@ -1,4 +1,3 @@
-````markdown
 # 🏥 UrbanVital Health Consult Web App
 
 **UrbanVital** is a clinical operations platform that unifies **Consulting**, **Laboratory**, **Ultrasound**, **Pharmacy**, and **Billing** workflows in a single system.  
@@ -148,4 +147,3 @@ Your frontend should now run on **[http://localhost:5173](http://localhost:5173)
 
 MIT License © 2025 UrbanVital Development Team
 
-```
