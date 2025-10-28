@@ -137,9 +137,9 @@ Your frontend should now run on **[http://localhost:5173](http://localhost:5173)
 
 | Name                 | Role           | Responsibility                     |
 | -------------------- | -------------- | ---------------------------------- |
-| Eugene Anokye        | Lead Developer | Backend, API Integration         |
+| Eugene Anokye        | Lead Developer | Backend, API Integration           |
 | Felix Adu Korankye   | Frontend Dev   | Frontend                           |
-| Felix Adu Korankye   | Designer       | UI/UX Designer                     |
+| William              | Designer       | UI/UX Designer                     |
 
 ---
 
