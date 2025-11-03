@@ -27,6 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 # Application definition
 
@@ -39,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'users'
+    'users',
+    'staff',
 ]
 
 MIDDLEWARE = [
@@ -84,10 +87,10 @@ DATABASES = {
         'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'urbanvital',
-        'USER': 'urbanvitaluser',
-        'PASSWORD': 'urbanvitalpass',
+        'USER': 'postgres',
+        'PASSWORD': 'Final@2025',
         'HOST': 'localhost',
-        'PORT': '5050',
+        'PORT': '5432',
     }
 }
 
@@ -132,3 +135,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
