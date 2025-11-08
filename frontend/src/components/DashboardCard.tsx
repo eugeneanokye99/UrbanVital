@@ -1,26 +1,45 @@
+import React from "react";
+import "./DashboardCard.css";
+
 interface DashboardCardProps {
-    title: string;
-    value: string | number;
-    icon: React.ReactNode;
-    color: string;
-  }
-  
-  export default function DashboardCard({
-    title,
-    value,
-    icon,
-    color,
-  }: DashboardCardProps) {
-    return (
-      <div className={`p-5 bg-white rounded-xl shadow-sm border-l-4 ${color}`}>
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm text-gray-500">{title}</p>
-            <h3 className="text-2xl font-semibold">{value}</h3>
-          </div>
-          <div className="text-gray-400">{icon}</div>
-        </div>
+  title: string;
+  value: string;
+  subtitle?: string;
+  subtitleColor?: string;
+  icon: React.ReactNode;
+  color?: string;
+  onClick?: () => void;
+}
+
+const DashboardCard: React.FC<DashboardCardProps> = ({
+  title,
+  value,
+  subtitle,
+  subtitleColor = "text-gray-500",
+  icon,
+  color = "bg-gray-100",
+  onClick,
+}) => {
+  return (
+    <div
+      className={`dashboard-card ${onClick ? "dashboard-card-clickable" : ""}`}
+      onClick={onClick}
+    >
+      <div className="dashboard-card-icon">
+        {icon}
       </div>
-    );
-  }
-  
+      
+      <div className="dashboard-card-content">
+        <h3 className="dashboard-card-title">{title}</h3>
+        <div className="dashboard-card-value">{value}</div>
+        {subtitle && (
+          <span className={`dashboard-card-subtitle ${subtitleColor}`}>
+            {subtitle}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default DashboardCard;

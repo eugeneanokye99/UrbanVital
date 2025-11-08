@@ -33,10 +33,16 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        </Routes>
-    </Router>
-  );
+        <Route
+        path="/admin/dashboard"
+        element={
+            <AdminDashboard />
+          
+        }
+      />
+    </Routes>
+  </Router>
+);
 }
 
 export default App;

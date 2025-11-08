@@ -1,34 +1,50 @@
 import { useEffect, useState } from "react";
 import { fetchUserProfile } from "../../services/api";
-import AdminNavbar from "../../components/Navbar";
-import AdminSidebar from "../../components/Sidebar";
-import DashboardCard from "../../components/DashboardCard";
+import AdminNavbar from "../../components/AdminNavbar";
+import AdminSidebar from "../../components/AdminSidebar";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Users,
-  FlaskConical,
-  Pill,
-  DollarSign,
-  Download,
-  TrendingUp,
-  Activity,
-  ClipboardList,
-  PlusCircle,
-  FileSpreadsheet,
-} from "lucide-react";
+  Analytics03Icon,
+  InvoiceIcon,
+  UserMultipleIcon,
+  MedicineBottle02Icon,
+  Alert01FreeIcons, PrinterIcon, FilterHorizontalIcon, CheckListIcon
+} from "@hugeicons/core-free-icons";
+import "./AdminDashboard.css";
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [analytics, setAnalytics] = useState({
-    revenue: 8900,
-    outstanding: 2500,
-    lowStock: 8,
+    revenue: 8420,
+    revenueChange: "+12%",
+    patients: 48,
+    patientsChange: "-10%",
+    drugs: 48,
   });
 
   const [recentActivity] = useState([
-    { id: 1, action: "Registered new Clinician", time: "2 mins ago" },
-    { id: 2, action: "Processed 4 lab results", time: "1 hour ago" },
-    { id: 3, action: "Updated patient billing info", time: "3 hours ago" },
+    { id: 1, action: "3 drugs expire in <7 days [View]", status: "unread" },
+    { id: 2, action: "Paracetamol stockout risk [Reorder]", status: "unread" },
   ]);
+
+  const weeklyData = [
+    { day: "Mon", value: 825 },
+    { day: "Tue", value: 2514 },
+    { day: "Wed", value: 1200 },
+    { day: "Thu", value: 800 },
+    { day: "Fri", value: 789 },
+    { day: "Sat", value: 2854 },
+    { day: "Sun", value: 2200 },
+  ];
+
+  const monthlyData = [
+    { month: "Jan", values: [12, 18, 15, 20] },
+    { month: "Feb", values: [15, 22, 18, 24] },
+    { month: "Mar", values: [18, 14, 20, 16] },
+    { month: "Apr", values: [16, 20, 18, 22] },
+    { month: "May", values: [20, 25, 22, 26] },
+    { month: "Jun", values: [22, 18, 20, 16] },
+  ];
 
   useEffect(() => {
     fetchUserProfile()
@@ -36,7 +52,6 @@ export default function AdminDashboard() {
       .catch(() => console.error("Failed to fetch user"));
   }, []);
 
-  // --- Export Dashboard Data ---
   const exportDashboardData = () => {
     const data = {
       analytics,
@@ -54,155 +69,199 @@ export default function AdminDashboard() {
     link.click();
   };
 
+  const maxWeekly = Math.max(...weeklyData.map((d) => d.value));
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="dashboard-container">
       <AdminSidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="dashboard-main">
         <AdminNavbar />
 
-        <main className="p-6 space-y-6">
+        <main className="dashboard-content">
           {/* Header */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-2xl font-semibold text-gray-800">Dashboard</h2>
-              {user && (
-                <p className="text-gray-500 text-sm mt-1">
-                  Welcome, {user.username} 👋
-                </p>
-              )}
+          <div className="dashboard-header">
+            <div className="header-left">
+              <h2 className="dashboard-date">
+                Mon,{" "}
+                {new Date().toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </h2>
+              {user && <p className="welcome-text">Welcome back, {user.username} 👋</p>}
             </div>
-
-            {/* Export Button */}
-            <button
-              onClick={exportDashboardData}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              <Download size={18} />
-              Export Data
+            <div className="header-right">
+              <span className="today-label">Today</span>
+            <button className="date-btn">
+              <HugeiconsIcon icon={FilterHorizontalIcon} size={20} />
+              Filter
             </button>
+            </div>
           </div>
 
-          {/* --- Summary Cards --- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <DashboardCard
-              title="Registered Users"
-              value="24"
-              icon={<Users size={28} />}
-              color="border-blue-500"
+          {/* Key Metrics */}
+          <div className="metrics-grid">
+            <MetricCard
+              icon={<HugeiconsIcon icon={InvoiceIcon} size={35} />}
+              title="Revenue"
+              value={`GH₵ ${analytics.revenue.toLocaleString()}`}
+              change={analytics.revenueChange}
+              positive
             />
-            <DashboardCard
-              title="Lab Requests"
-              value="12"
-              icon={<FlaskConical size={28} />}
-              color="border-purple-500"
+            <MetricCard
+              icon={<HugeiconsIcon icon={UserMultipleIcon} size={35} />}
+              title="Visits"
+              value={`${analytics.patients} Patients`}
+              change={analytics.patientsChange}
+              positive={false}
             />
-            <DashboardCard
-              title="Prescriptions"
-              value="45"
-              icon={<Pill size={28} />}
-              color="border-green-500"
-            />
-            <DashboardCard
-              title="Revenue (₵)"
-              value={analytics.revenue}
-              icon={<DollarSign size={28} />}
-              color="border-yellow-500"
+            <MetricCard
+              icon={<HugeiconsIcon icon={CheckListIcon} size={35} />}
+              title="Inventory"
+              value={`${analytics.drugs} different drugs available`}
             />
           </div>
 
-          {/* --- Analytics Section --- */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold mb-3 text-gray-700 flex items-center gap-2">
-                <TrendingUp size={18} /> Billing & Payments
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex justify-between">
-                  <span>Total Revenue</span>
-                  <span className="font-medium text-green-600">
-                    ₵{analytics.revenue.toLocaleString()}
-                  </span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Outstanding Balances</span>
-                  <span className="font-medium text-red-500">
-                    ₵{analytics.outstanding.toLocaleString()}
-                  </span>
-                </li>
-              </ul>
+          {/* Charts Section */}
+          <div className="charts-grid">
+            {/* Weekly Revenue Chart */}
+            <div className="chart-card">
+              <h3 className="chart-title">Weekly Revenue</h3>
+              <svg width="100%" height="200" viewBox="0 0 600 200">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <line
+                    key={i}
+                    x1="50"
+                    y1={40 + i * 40}
+                    x2="580"
+                    y2={40 + i * 40}
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                  />
+                ))}
+                {weeklyData.map((d, i) => {
+                  const x = 80 + i * 80;
+                  const y = 180 - (d.value / maxWeekly) * 140;
+                  return (
+                    <g key={i}>
+                      <circle cx={x} cy={y} r="5" fill="#7c3aed" />
+                      <text x={x} y={y - 15} fontSize="12" fill="#6b7280" textAnchor="middle">
+                        {d.value}
+                      </text>
+                    </g>
+                  );
+                })}
+                <path
+                  d={weeklyData
+                    .map((d, i) => {
+                      const x = 80 + i * 80;
+                      const y = 180 - (d.value / maxWeekly) * 140;
+                      return `${i === 0 ? "M" : "L"} ${x} ${y}`;
+                    })
+                    .join(" ")}
+                  fill="none"
+                  stroke="#7c3aed"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                />
+                {weeklyData.map((d, i) => (
+                  <text
+                    key={i}
+                    x={80 + i * 80}
+                    y="195"
+                    fontSize="12"
+                    fill="#9ca3af"
+                    textAnchor="middle"
+                  >
+                    {d.day}
+                  </text>
+                ))}
+              </svg>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold mb-3 text-gray-700 flex items-center gap-2">
-                <ClipboardList size={18} /> Financial Overview
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li className="flex justify-between">
-                  <span>Total Revenue</span>
-                  <span>₵{analytics.revenue}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Outstanding Balances</span>
-                  <span>₵{analytics.outstanding}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>Low Stock Items</span>
-                  <span>{analytics.lowStock}</span>
-                </li>
-              </ul>
+            {/* Monthly Visits Chart */}
+            <div className="chart-card">
+              <h3 className="chart-title">Monthly Visits</h3>
+              <svg width="100%" height="200" viewBox="0 0 600 200">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <line
+                    key={i}
+                    x1="50"
+                    y1={40 + i * 40}
+                    x2="580"
+                    y2={40 + i * 40}
+                    stroke="#e5e7eb"
+                    strokeWidth="1"
+                  />
+                ))}
+                {monthlyData.map((month, i) =>
+                  month.values.map((val, j) => {
+                    const x = 80 + i * 85 + j * 15;
+                    const height = (val / 30) * 140;
+                    const y = 180 - height;
+                    const colors = ["#f59e0b", "#7c3aed", "#ec4899", "#8b5cf6"];
+                    return <rect key={`${i}-${j}`} x={x} y={y} width="12" height={height} fill={colors[j]} rx="2" />;
+                  })
+                )}
+                {monthlyData.map((month, i) => (
+                  <text
+                    key={i}
+                    x={80 + i * 85 + 30}
+                    y="195"
+                    fontSize="12"
+                    fill="#9ca3af"
+                    textAnchor="middle"
+                  >
+                    {month.month}
+                  </text>
+                ))}
+              </svg>
             </div>
-          </section>
+          </div>
 
-          {/* --- Mini Charts Area (Placeholder for Recharts later) --- */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-xl shadow-sm p-5 h-60 flex flex-col justify-center items-center text-gray-400 border border-dashed">
-              <FileSpreadsheet size={32} />
-              <p className="mt-2 text-sm">Revenue Trend Chart (Coming soon)</p>
-            </div>
+          {/* Alerts Section */}
+          <div className="metrics-grid alerts-metrics">
+            {recentActivity.map((alert) => (
+              <div key={alert.id} className="metric-card alert-card">
+                <div className="metric-icon alert-icon">
+                  <HugeiconsIcon icon={Alert01FreeIcons} size={24} />
+                </div>
+                <h3 className="metric-title">Alert</h3>
+                <div className="metric-value">{alert.action}</div>
+                <span className={`metric-change ${alert.status === "unread" ? "positive" : ""}`}>
+                  {alert.status}
+                </span>
+              </div>
+            ))}
+          </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-5 h-60 flex flex-col justify-center items-center text-gray-400 border border-dashed">
-              <Activity size={32} />
-              <p className="mt-2 text-sm">Service Distribution Chart (Coming soon)</p>
-            </div>
-          </section>
-
-          {/* --- Recent Activity --- */}
-          <section className="bg-white rounded-xl shadow-sm p-5">
-            <h3 className="font-semibold mb-3 text-gray-700 flex items-center gap-2">
-              <Activity size={18} /> Recent Activity
-            </h3>
-            <ul className="divide-y text-sm">
-              {recentActivity.map((act) => (
-                <li key={act.id} className="py-2 flex justify-between">
-                  <span>{act.action}</span>
-                  <span className="text-gray-500 text-xs">{act.time}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* --- Quick Actions --- */}
-          <section className="bg-white rounded-xl shadow-sm p-5">
-            <h3 className="font-semibold mb-3 text-gray-700 flex items-center gap-2">
-              <PlusCircle size={18} /> Quick Actions
-            </h3>
-            <div className="flex flex-wrap gap-4">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">
-                Register Staff
-              </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700">
-                View Billing
-              </button>
-              <button className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                View Lab Reports
-              </button>
-              <button className="px-4 py-2 bg-yellow-500 text-white rounded-md text-sm hover:bg-yellow-600">
-                View Prescriptions
-              </button>
-            </div>
-          </section>
+          {/* Export Button */}
+          <button onClick={exportDashboardData} className="print-button">
+            <HugeiconsIcon icon={PrinterIcon} size={20} />
+            Export Dashboard
+          </button>
         </main>
       </div>
+    </div>
+  );
+}
+
+interface MetricCardProps {
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+  change?: string;
+  positive?: boolean;
+}
+
+function MetricCard({ icon, title, value, change, positive }: MetricCardProps) {
+  return (
+    <div className="metric-card">
+      <div className="metric-icon">{icon}</div>
+      <h3 className="metric-title">{title}</h3>
+      <div className="metric-value">{value}</div>
+      {change && <span className={`metric-change ${positive ? "positive" : "negative"}`}>{change}</span>}
     </div>
   );
 }
