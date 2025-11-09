@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/admin/Dashboard'
 import RegisterStaff from './pages/admin/RegisterStaff'
 import ProtectedRoute from './components/ProtectedRoutes';
+import PatientList from './pages/admin/PatientsList';
 
 
 
@@ -25,19 +26,34 @@ function App() {
             </ProtectedRoute>
           }
         />
-          <Route
+          {/* <Route
           path="/admin/register"
           element={
             <ProtectedRoute>
               <RegisterStaff />
             </ProtectedRoute>
           }
-        />
+        /> */}
+
+        {/* Routes not protected and using for testing purposes only */}
+
         <Route
         path="/admin/dashboard"
         element={
             <AdminDashboard />
           
+        }
+      />
+        <Route
+        path="/admin/register"
+        element={
+            <RegisterStaff />
+        }
+      />
+      <Route
+        path="/admin/patients"
+        element={
+            <PatientList />
         }
       />
     </Routes>

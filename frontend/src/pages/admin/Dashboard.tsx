@@ -221,19 +221,24 @@ export default function AdminDashboard() {
           </div>
 
           {/* Alerts Section */}
-          <div className="metrics-grid alerts-metrics">
-            {recentActivity.map((alert) => (
-              <div key={alert.id} className="metric-card alert-card">
-                <div className="metric-icon alert-icon">
-                  <HugeiconsIcon icon={Alert01FreeIcons} size={24} />
-                </div>
-                <h3 className="metric-title">Alert</h3>
-                <div className="metric-value">{alert.action}</div>
-                <span className={`metric-change ${alert.status === "unread" ? "positive" : ""}`}>
-                  {alert.status}
-                </span>
+          <div className="alerts-section">
+            <div className="alert-card">
+              <div className="alert-header">
+                <HugeiconsIcon icon={Alert01FreeIcons} size={22} />
+                <h3>Alerts</h3>
               </div>
-            ))}
+              <div className="alert-list">
+                {recentActivity.map((alert) => (
+                  <div key={alert.id} className="alert-item">
+                    <div className="alert-pill">{alert.action}</div>
+                    <span className="alert-status">{alert.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Empty Placeholder Card */}
+            <div className="alert-card empty-card"></div>
           </div>
 
           {/* Export Button */}

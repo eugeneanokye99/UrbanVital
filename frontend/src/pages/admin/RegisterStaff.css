@@ -1,0 +1,123 @@
+.register-container {
+  padding: 40px 60px;
+  display: flex;
+  flex-direction: column;
+}
+
+.register-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #073159;
+  margin-bottom: 24px;
+}
+
+.register-card {
+  background-color: #e5e7eb;
+  border-radius: 40px;
+  padding: 40px 60px;
+  width: 550px;
+  max-width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Generic input wrapper */
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 2px solid #073159;
+  border-radius: 40px;
+  padding: 10px 16px;
+  height: 50px;
+}
+
+.input-icon {
+  color: #000000;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.flag-icon {
+  width: 25px;
+  height: 18px;
+  border-radius: 3px;
+  margin-right: 8px;
+}
+
+.input-group input {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 15px;
+  color: #073159;
+  background: transparent;
+}
+
+/* FIXED SELECT STYLE */
+.select-group {
+  position: relative;
+}
+
+.absolute-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.select-group select {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #073159;
+  background: transparent;
+  border-radius: 40px;
+  padding: 10px 16px 10px 46px; /* extra left padding to clear the icon */
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='10'><path fill='%230b214a' d='M7 10L0 0h14z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 20px center;
+  background-size: 10px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 18px;
+  color: #073159;
+  cursor: pointer;
+}
+
+.submit-btn {
+  margin-top: 10px;
+  background-color: #073159;
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  padding: 12px 0;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+.submit-btn:hover {
+  background-color: #157d42;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 20px;
+  }
+
+  .register-card {
+    padding: 30px 20px;
+    border-radius: 25px;
+  }
+}

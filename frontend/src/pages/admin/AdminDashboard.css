@@ -172,45 +172,70 @@
   overflow-x: auto;
 }
 
-/* Alerts Section - card styling for icons */
-.alert-card {
-  background: #D9D9D9; /* same as metric cards */
-  border-radius: 8px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+  /* Alerts Section */
+  .alerts-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
 
-.alert-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-  background-color: #cc0d0d; /* red accent for alerts */
-  color: white;
-}
+  .alert-card {
+    background: #d9d9d9;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-.alert-card .metric-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1f2937;
-}
+  .alert-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #a90000;
+  }
 
-.alert-card .metric-value {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-}
+  .alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 
-.alert-card .metric-change {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #0ea5e9;
-}
+  .alert-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .alert-pill {
+    background-color: #a90000;
+    color: white;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    width: fit-content;
+  }
+
+  .alert-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #04063e;
+    margin-left: 0.25rem;
+  }
+
+  .empty-card {
+    background-color: #d9d9d9;
+    border-radius: 8px;
+    min-height: 120px;
+    opacity: 0.5;
+  }
+
+
 
 /* Print Button */
 .print-button {

@@ -1,15 +1,24 @@
 import { useState } from "react";
-import { UserPlus } from "lucide-react";
 import { toast } from "react-hot-toast";
 import API from "../../services/api";
+import ghFlag from "../../assets/ghana-flag.png";
+import AdminNavbar from "../../components/AdminNavbar";
+import AdminSidebar from "../../components/AdminSidebar";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {AccountSetting01Icon, AccountSetting02FreeIcons, AccountSetting03Icon, AccountSettingIcon, Doctor01Icon, LockPasswordIcon, Mail01FreeIcons, MailAccount02Icon, UserCircle02FreeIcons, ViewOffFreeIcons, ViewOffIcon, ViewOffSlashIcon, } from "@hugeicons/core-free-icons";
+import "./RegisterStaff.css";
+import { EyeClosedIcon } from "lucide-react";
 
 export default function RegisterUser() {
   const [form, setForm] = useState({
     username: "",
     email: "",
+    phone: "",
     password: "",
-    role: "Clinician",
+    role: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -20,66 +29,112 @@ export default function RegisterUser() {
     try {
       await API.post("/auth/register/", form);
       toast.success(`${form.role} registered successfully`);
-      setForm({ username: "", email: "", password: "", role: "Clinician" });
+      setForm({ username: "", email: "", phone: "", password: "", role: "" });
     } catch {
       toast.error("Failed to register user");
     }
   };
 
   return (
-    <div className="p-6 bg-white rounded-xl shadow-sm max-w-lg mx-auto mt-10">
-      <h2 className="flex items-center gap-2 text-lg font-semibold mb-4">
-        <UserPlus size={20} /> Register New Staff
-      </h2>
+    <div className="dashboard-container">
+      <AdminSidebar />
+      <div className="dashboard-main">
+        <AdminNavbar />
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="username"
-          value={form.username}
-          onChange={handleChange}
-          placeholder="Username"
-          className="w-full p-2 border rounded-md"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Email"
-          className="w-full p-2 border rounded-md"
-        />
-        <input
-          type="password"
-          name="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Password"
-          className="w-full p-2 border rounded-md"
-          required
-        />
+        <div className="register-container">
+          <h2 className="register-title">
+            Fill the forms below to register staff and submit to save.
+          </h2>
 
-        <select
-          name="role"
-          value={form.role}
-          onChange={handleChange}
-          className="w-full p-2 border rounded-md"
-        >
-          <option>Clinician</option>
-          <option>Lab</option>
-          <option>Pharmacy</option>
-          <option>Cashier</option>
-          <option>Ultrasound</option>
-        </select>
+          <form className="register-card" onSubmit={handleSubmit}>
+            {/* Username */}
+            <div className="input-group">
+              <HugeiconsIcon icon={UserCircle02FreeIcons} className="input-icon" size={25} />
+              <input
+                type="text"
+                name="username"
+                placeholder="Enter your name"
+                value={form.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700"
-        >
-          Register
-        </button>
-      </form>
+            {/* Email */}
+            <div className="input-group">
+              <HugeiconsIcon icon={MailAccount02Icon} className="input-icon" size={25} />
+              <input
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            {/* Phone */}
+            <div className="input-group">
+              <img src={ghFlag} alt="Ghana Flag" className="flag-icon" />
+              {/* <HugeiconsIcon icon={PhoneIcon} className="input-icon" size={25} /> */}
+              <input
+                type="tel"
+                name="phone"
+                placeholder="Phone"
+                value={form.phone}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            {/* Role */}
+            <div className="input-group select-group">
+              <HugeiconsIcon icon={Doctor01Icon} className="input-icon absolute-icon" size={25} />
+              <select name="role" value={form.role} onChange={handleChange} required>
+                <option value="">Select your role</option>
+                <option value="Clinician">Clinician</option>
+                <option value="Lab">Lab</option>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="Cashier">Cashier</option>
+                <option value="Ultrasound">Ultrasound</option>
+              </select>
+            </div>
+
+
+            {/* Password */}
+            <div className="input-group">
+              <HugeiconsIcon icon={LockPasswordIcon} className="input-icon" size={25} />
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Temporary Password"
+                value={form.password}
+                onChange={handleChange}
+                required
+              />
+              {showPassword ? (
+                <HugeiconsIcon
+                  icon={ViewOffSlashIcon}
+                  className="toggle-password"
+                  size={25}
+                  onClick={() => setShowPassword(false)}
+                />
+              ) : (
+                <HugeiconsIcon
+                  icon={ViewOffIcon}
+                  className="toggle-password"
+                  size={25}
+                  onClick={() => setShowPassword(true)}
+                />
+              )}
+            </div>
+
+            <button type="submit" className="submit-btn">
+              SUBMIT
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
