@@ -39,12 +39,6 @@ export default function AdminSidebar() {
             onClick={() => navigate("/Staff/staffdashboard")}
             isActive={isActive("/Staff/staffdashboard")}
           />
-            <SidebarItem
-            icon={<HugeiconsIcon icon={AddToListFreeIcons} size={25} />}
-            label="Register Patient"
-            onClick={() => navigate("/Staff/registerpatient")}
-            isActive={isActive("/Staff/registerpatient")}
-          />
 
           <SidebarItem
             icon={<HugeiconsIcon icon={PatientFreeIcons} size={25} />}
@@ -60,6 +54,14 @@ export default function AdminSidebar() {
             onClick={() => navigate("/admin/billing")}
             isActive={isActive("/admin/billing")}
           />
+
+           <SidebarItem
+            icon={<HugeiconsIcon icon={AddToListFreeIcons} size={25} />}
+            label="Register Patient"
+            onClick={() => navigate("/Staff/registerpatient")}
+            isActive={isActive("/Staff/registerpatient")}
+          />
+
 
           <SidebarItem
             icon={<HugeiconsIcon icon={Settings02Icon} size={25} />}

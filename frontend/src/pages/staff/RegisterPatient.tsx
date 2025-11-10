@@ -5,20 +5,21 @@ import ghFlag from "../../assets/ghana-flag.png";
 import StaffNavbar from "../../components/StaffNavbar";
 import StaffSidebar from "../../components/StaffSidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {AccountSetting01Icon, AccountSetting02FreeIcons, AccountSetting03Icon, AccountSettingIcon, Doctor01Icon, LockPasswordIcon, Mail01FreeIcons, MailAccount02Icon, UserCircle02FreeIcons, ViewOffFreeIcons, ViewOffIcon, ViewOffSlashIcon, } from "@hugeicons/core-free-icons";
+import {AccountSetting01Icon, AccountSetting02FreeIcons, AccountSetting03Icon, AccountSettingIcon, Contact01FreeIcons, Doctor01Icon, Flag01FreeIcons, LockPasswordIcon, Mail01FreeIcons, MailAccount02Icon, MapPinFreeIcons, MapsCircle01FreeIcons, MapsLocation01FreeIcons, ThreeDMoveFreeIcons, UserCircle02FreeIcons, ViewOffFreeIcons, ViewOffIcon, ViewOffSlashIcon, } from "@hugeicons/core-free-icons";
 import "./RegisterPatient.css";
 import { EyeClosedIcon } from "lucide-react";
 
 export default function RegisterUser() {
   const [form, setForm] = useState({
-    username: "",
-    email: "",
+    name: "",
     phone: "",
-    password: "",
-    role: "",
+    address: "",
+    gender: "",
+    contactperson: "",
+    flags: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false);
+ 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -31,8 +32,8 @@ export default function RegisterUser() {
     e.preventDefault();
     try {
       await API.post("/auth/register/", form);
-      toast.success(`${form.role} registered successfully`);
-      setForm({ username: "", email: "", phone: "", password: "", role: "" });
+      toast.success(`${form.name} registered successfully`);
+      setForm({ name: "", phone: "", address: "", gender: "", contactperson: "", flags: "" });
     } catch {
       toast.error("Failed to register user");
     }
@@ -57,7 +58,7 @@ export default function RegisterUser() {
                 type="text"
                 name="username"
                 placeholder="Patient Name"
-                value={form.username}
+                value={form.name}
                 onChange={handleChange}
                 required
               />
@@ -76,65 +77,60 @@ export default function RegisterUser() {
               />
             </div>
 
-            {/* Email */}
+            {/* Address */}
             <div className="input-group">
-              <HugeiconsIcon icon={MailAccount02Icon} className="input-icon" size={25} />
+              <HugeiconsIcon icon={MapsLocation01FreeIcons} className="input-icon" size={25} />
               <input
-                type="email"
-                name="email"
-                placeholder="Enter your email"
-                value={form.email}
+                type="address"
+                name="address"
+                placeholder="Address"
+                value={form.address}
                 onChange={handleChange}
                 required
               />
             </div>
 
-
-
-            {/* Role */}
+             {/*Gender*/}
             <div className="input-group select-group">
-              <HugeiconsIcon icon={Doctor01Icon} className="input-icon absolute-icon" size={25} />
-              <select name="role" value={form.role} onChange={handleChange} required>
-                <option value="">Select your role</option>
-                <option value="Clinician">Clinician</option>
-                <option value="Lab">Lab</option>
-                <option value="Pharmacy">Pharmacy</option>
-                <option value="Cashier">Cashier</option>
-                <option value="Ultrasound">Ultrasound</option>
+              <HugeiconsIcon icon={ThreeDMoveFreeIcons} className="input-icon absolute-icon" size={25} />
+              <select name="role" value={form.gender} onChange={handleChange} required>
+                <option value="">Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
               </select>
             </div>
 
 
-            {/* Password */}
+            {/* Contact Person */}
             <div className="input-group">
-              <HugeiconsIcon icon={LockPasswordIcon} className="input-icon" size={25} />
+              <HugeiconsIcon icon={Contact01FreeIcons} className="input-icon" size={25} />
               <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Temporary Password"
-                value={form.password}
+                type="text"
+                name="contact_person"
+                placeholder="Contact Person"
+                value={form.contactperson}
                 onChange={handleChange}
                 required
               />
-              {showPassword ? (
-                <HugeiconsIcon
-                  icon={ViewOffSlashIcon}
-                  className="toggle-password"
-                  size={25}
-                  onClick={() => setShowPassword(false)}
-                />
-              ) : (
-                <HugeiconsIcon
-                  icon={ViewOffIcon}
-                  className="toggle-password"
-                  size={25}
-                  onClick={() => setShowPassword(true)}
-                />
-              )}
             </div>
 
+            {/* Flags */}
+            <div className="input-group">
+              <HugeiconsIcon icon={Flag01FreeIcons} className="input-icon" size={25} />
+              <input
+                type="text"
+                name="flags"
+                placeholder="Flags (e.g., Allergies, Chronic Conditions)"
+                value={form.flags}
+                onChange={handleChange}
+              />
+            </div> 
+
+
+
+
             <button type="submit" className="submit-btn">
-              SUBMIT
+              SAVE & CONTINUE
             </button>
           </form>
         </div>
