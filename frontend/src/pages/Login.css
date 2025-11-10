@@ -117,6 +117,7 @@
 .toggle-pass {
   position: absolute;
   top: 50%;
+  right: 1px;
   transform: translateX(-150%) translateY(-50%);
   color: #000000;
   cursor: pointer;

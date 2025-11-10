@@ -5,8 +5,9 @@ import AdminDashboard from './pages/admin/Dashboard'
 import RegisterStaff from './pages/admin/RegisterStaff'
 import ProtectedRoute from './components/ProtectedRoutes';
 import PatientList from './pages/admin/PatientsList';
-
-
+import StaffDashboard from './pages/staff/StaffDashboard';
+import PatientsList from './pages/staff/PatientsList';
+import RegisterPatient from './pages/staff/RegisterPatient';
 
 
 function App() {
@@ -54,6 +55,32 @@ function App() {
         path="/admin/patients"
         element={
             <PatientList />
+        }
+      />
+
+
+
+{/* Staff Routes */}
+
+
+      <Route
+        path="/staff/staffdashboard"
+        element={
+            <StaffDashboard />
+        }
+      />
+
+      <Route
+        path="/staff/registerpatient"
+        element={
+            <RegisterPatient />
+        }
+      />
+
+      <Route
+        path="/staff/patients"
+        element={
+            <PatientsList />
         }
       />
     </Routes>
