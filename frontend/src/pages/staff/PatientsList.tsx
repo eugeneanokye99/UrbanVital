@@ -1,11 +1,16 @@
-import React from "react";
+import React, { useState} from "react";
 import StaffSidebar from "../../components/StaffSidebar";
 import StaffNavbar from "../../components/StaffNavbar";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { TouchInteraction01FreeIcons } from "@hugeicons/core-free-icons";
+import { FilterAddFreeIcons, Search01FreeIcons, TouchInteraction01FreeIcons } from "@hugeicons/core-free-icons";
 import "./PatientsList.css";
 
 export default function PatientsList() {
+
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("All");
+
+  
   const patients = Array.from({ length: 16 }, (_, i) => ({
     no: i + 1,
     mrn: `UV-2025-04${20 + i}`,
@@ -13,6 +18,14 @@ export default function PatientsList() {
     phone: "0546732719",
     flag: "Allergy",
   }));
+
+
+    const filteredPatients = patients.filter(
+    (p) =>
+      (filter === "All" || p.flag === filter) &&
+      (p.name.toLowerCase().includes(search.toLowerCase()) ||
+        p.mrn.toLowerCase().includes(search.toLowerCase()))
+  );
 
   return (
     <div className="dashboard-container">
@@ -23,6 +36,37 @@ export default function PatientsList() {
 
         <div className="patients-container">
           <h2 className="patients-title">Patients List</h2>
+
+
+                    {/* Search and Filter */}
+          <div className="patients-controls">
+            <div className="search-bar">
+              <HugeiconsIcon icon={Search01FreeIcons} size={18} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search patient by name or MRN..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="filter-dropdown">
+              <HugeiconsIcon
+                icon={FilterAddFreeIcons}
+                size={18}
+                className="filter-icon"
+              />
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              >
+                <option value="All">All</option>
+                <option value="Allergy">Allergy</option>
+                <option value="Diabetes">Diabetes</option>
+                <option value="Hypertension">Hypertension</option>
+              </select>
+            </div>
+          </div>
 
           <div className="table-wrapper">
             <table className="patients-table">
@@ -37,7 +81,8 @@ export default function PatientsList() {
                 </tr>
               </thead>
               <tbody>
-                {patients.map((patient) => (
+
+                {filteredPatients.map((patient) => (
                   <tr key={patient.no}>
                     <td>{patient.no}</td>
                     <td>{patient.mrn}</td>

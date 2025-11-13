@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {AccountSetting01Icon, AccountSetting02FreeIcons, AccountSetting03Icon, AccountSettingIcon, Contact01FreeIcons, Doctor01Icon, Flag01FreeIcons, LockPasswordIcon, Mail01FreeIcons, MailAccount02Icon, MapPinFreeIcons, MapsCircle01FreeIcons, MapsLocation01FreeIcons, ThreeDMoveFreeIcons, UserCircle02FreeIcons, ViewOffFreeIcons, ViewOffIcon, ViewOffSlashIcon, } from "@hugeicons/core-free-icons";
 import "./RegisterPatient.css";
 import { EyeClosedIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function RegisterUser() {
   const [form, setForm] = useState({
@@ -18,6 +19,9 @@ export default function RegisterUser() {
     contactperson: "",
     flags: "",
   });
+
+  const navigate = useNavigate();
+
 
  
 
@@ -129,9 +133,13 @@ export default function RegisterUser() {
 
 
 
-            <button type="submit" className="submit-btn">
-              SAVE & CONTINUE
-            </button>
+          <button
+            type="button"
+            className="submit-btn"
+            onClick={() => navigate("/staff/registerpatientform")}
+          >
+            SAVE & CONTINUE
+          </button>
           </form>
         </div>
       </div>

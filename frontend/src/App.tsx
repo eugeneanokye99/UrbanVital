@@ -8,6 +8,7 @@ import PatientList from './pages/admin/PatientsList';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import PatientsList from './pages/staff/PatientsList';
 import RegisterPatient from './pages/staff/RegisterPatient';
+import RegisterPatientForm from './pages/staff/RegisterPatientForm';
 
 
 function App() {
@@ -83,8 +84,18 @@ function App() {
             <PatientsList />
         }
       />
+
+      <Route
+      path="/staff/registerpatientform"
+      element={
+      <RegisterPatientForm />
+    }
+    />
+    
     </Routes>
   </Router>
+
+
 );
 }
 

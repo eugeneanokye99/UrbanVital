@@ -9,6 +9,62 @@
   color: #073159;
   margin-bottom: 20px;
 }
+/* Controls (Search + Filter) */
+.patients-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Search Bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  width: 320px;
+}
+
+.search-bar .search-icon {
+  color: #64748b;
+  margin-right: 8px;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  width: 100%;
+  color: #0b214a;
+}
+
+/* Filter Dropdown */
+.filter-dropdown {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.filter-dropdown .filter-icon {
+  color: #64748b;
+  margin-right: 8px;
+}
+
+.filter-dropdown select {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #0b214a;
+}
 
 .table-wrapper {
   background: white;
