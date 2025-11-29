@@ -49,6 +49,35 @@ export const loginUser = async (credentials: {
 
   return data;
 };
+export const registerStaff = async (staffData: {
+  username: string;
+  email?: string;
+  phone?: string;
+  password: string;
+  role: string;
+}) => {
+  try {
+    const response = await API.post("/staff/register/", staffData);
+    toast.success(`${staffData.role} registered`);
+    return response.data;
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.detail ||
+      error?.response?.data?.message ||
+      "Failed to register staff";
+    toast.error(message);
+    throw error;
+  }
+};
+
+// Fetch staff profile by email
+export const getStaffRole = async (email: string) => {
+  const response = await API.get(`/staff/by-email/`, {
+    params: { email },
+  });
+  return response.data;
+};
+
 
 // Refresh token (auto-called when access expires)
 export const refreshToken = async () => {

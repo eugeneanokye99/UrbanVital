@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../services/api";
+import { loginUser, getStaffRole } from "../services/api";
 import toast from "react-hot-toast";
 import { FiMail, FiLock } from "react-icons/fi";
 import { FaEyeSlash, FaEye } from "react-icons/fa";
@@ -21,8 +21,17 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await loginUser(form);
-      navigate("/admin");
+      const data = await loginUser(form);
+
+      if(data.is_superuser){
+        navigate("/admin");
+      } else {
+        const result = await getStaffRole(data.email);
+
+        if (result.role === "Clinician") {
+          navigate("/staff/staffdashboard");
+        }
+      }
     } catch (error) {
       toast.error("Invalid username or password");
     } finally {

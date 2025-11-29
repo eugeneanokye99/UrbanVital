@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {AccountSetting01Icon, AccountSetting02FreeIcons, AccountSetting03Icon, AccountSettingIcon, Doctor01Icon, LockPasswordIcon, Mail01FreeIcons, MailAccount02Icon, UserCircle02FreeIcons, ViewOffFreeIcons, ViewOffIcon, ViewOffSlashIcon, } from "@hugeicons/core-free-icons";
 import "./RegisterStaff.css";
 import { EyeClosedIcon } from "lucide-react";
+import { registerStaff } from "../../services/api";
 
 export default function RegisterUser() {
   const [form, setForm] = useState({
@@ -27,7 +28,7 @@ export default function RegisterUser() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await API.post("/auth/register/", form);
+      const data = await registerStaff(form);
       toast.success(`${form.role} registered successfully`);
       setForm({ username: "", email: "", phone: "", password: "", role: "" });
     } catch {
