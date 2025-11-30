@@ -103,4 +103,18 @@ export const logoutUser = () => {
   toast.success("Logged out");
 };
 
+// Register a new patient
+export const registerPatient = async (patientData: {
+  name: string;
+  phone: string;
+  address?: string;
+  gender?: string;
+  contact_person?: string;
+  flags?: string;
+}) => {
+  const response = await API.post("/patients/", patientData);
+  return response.data;
+};
+
+
 export default API;
