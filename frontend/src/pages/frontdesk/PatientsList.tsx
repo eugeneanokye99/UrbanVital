@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // 1. Import useNavigate
 import { 
   Search, 
   Filter, 
@@ -11,11 +12,11 @@ import StaffNavbar from "../../components/StaffNavbar";
 import StaffSidebar from "../../components/StaffSidebar";
 
 export default function PatientsList() {
+  const navigate = useNavigate(); // 2. Initialize the hook
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
   // Mock Data Generation
-  // Added a few different flags to show off the badge logic
   const patients = Array.from({ length: 16 }, (_, i) => {
     const flags = ["Allergy", "Diabetes", "Hypertension", "None"];
     const randomFlag = flags[i % 4];
@@ -23,9 +24,13 @@ export default function PatientsList() {
     return {
       no: i + 1,
       mrn: `UV-2025-04${20 + i}`,
-      name: i % 2 === 0 ? "Williams Boampong" : "Sarah Mensah", // Varied names
+      name: i % 2 === 0 ? "Williams Boampong" : "Sarah Mensah",
       phone: "054 673 2719",
       flag: randomFlag,
+      // Add extra mock data so the details page isn't empty
+      gender: i % 2 === 0 ? "Male" : "Female",
+      dob: "1990-01-01",
+      email: "patient@urbanvital.com"
     };
   });
 
@@ -36,7 +41,11 @@ export default function PatientsList() {
         p.mrn.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // Helper to color-code flags
+  // 3. Helper function to handle navigation
+  const handleViewPatient = (patient: any) => {
+    navigate("/frontdesk/patientdetail", { state: { patient } });
+  };
+
   const getFlagStyle = (flag: string) => {
     switch (flag) {
       case "Allergy": return "bg-red-100 text-red-700 border-red-200";
@@ -48,12 +57,10 @@ export default function PatientsList() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
-      {/* Sidebar */}
       <div className="hidden md:block">
         <StaffSidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <StaffNavbar />
 
@@ -79,7 +86,7 @@ export default function PatientsList() {
               </div>
             </div>
 
-            {/* Controls Section (Search & Filter) */}
+            {/* Controls Section */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
               
               {/* Search Bar */}
@@ -111,7 +118,6 @@ export default function PatientsList() {
                   <option value="Diabetes">Diabetes</option>
                   <option value="Hypertension">Hypertension</option>
                 </select>
-                {/* Custom chevron for select */}
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -126,31 +132,21 @@ export default function PatientsList() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        MRN / ID
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Patient Name
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Phone
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Flags
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">MRN / ID</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Patient Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Flags</th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredPatients.length > 0 ? (
-                      filteredPatients.map((patient, index) => (
+                      filteredPatients.map((patient) => (
                         <tr 
                           key={patient.mrn} 
+                          // 4. Added onClick here to make the whole row clickable
+                          onClick={() => handleViewPatient(patient)}
                           className="hover:bg-blue-50/30 transition-colors group cursor-pointer"
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -163,11 +159,11 @@ export default function PatientsList() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              {/* Avatar Initials */}
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-[#073159] font-bold text-xs mr-3 border border-blue-200">
                                 {patient.name.charAt(0)}
                               </div>
-                              <div className="text-sm font-semibold text-gray-900">
+                              {/* 5. Specific styling for the name to show interactivity */}
+                              <div className="text-sm font-bold text-[#073159] hover:underline hover:text-blue-600 transition-colors">
                                 {patient.name}
                               </div>
                             </div>
@@ -187,6 +183,10 @@ export default function PatientsList() {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button 
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent double triggering
+                                    handleViewPatient(patient);
+                                }}
                                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="View Details"
                               >
@@ -195,6 +195,7 @@ export default function PatientsList() {
                               <button 
                                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                                 title="More Options"
+                                onClick={(e) => e.stopPropagation()} // Prevent row click
                               >
                                 <MoreVertical size={18} />
                               </button>
@@ -217,7 +218,7 @@ export default function PatientsList() {
                 </table>
               </div>
               
-              {/* Pagination Footer (Static for now) */}
+              {/* Pagination */}
               <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <span className="text-sm text-gray-500">
                   Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredPatients.length}</span> of <span className="font-medium">{patients.length}</span> results
