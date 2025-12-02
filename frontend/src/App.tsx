@@ -28,34 +28,36 @@ function App() {
             </ProtectedRoute>
           }
         />
-          {/* <Route
+          <Route
           path="/admin/register"
           element={
             <ProtectedRoute>
               <RegisterStaff />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
         {/* Routes not protected and using for testing purposes only */}
 
         <Route
         path="/admin/dashboard"
         element={
+          <ProtectedRoute>
             <AdminDashboard />
-          
+          </ProtectedRoute>
         }
       />
         <Route
         path="/admin/register"
         element={
-            <RegisterStaff />
+          <ProtectedRoute><RegisterStaff /></ProtectedRoute>
+            
         }
       />
       <Route
         path="/admin/patients"
         element={
-            <PatientList />
+          <ProtectedRoute><PatientList /></ProtectedRoute>
         }
       />
 
@@ -67,28 +69,28 @@ function App() {
       <Route
         path="/staff/staffdashboard"
         element={
-            <StaffDashboard />
+          <ProtectedRoute><StaffDashboard /></ProtectedRoute>
         }
       />
 
       <Route
         path="/staff/registerpatient"
         element={
-            <RegisterPatient />
+          <ProtectedRoute><RegisterPatient /></ProtectedRoute>
         }
       />
 
       <Route
         path="/staff/patients"
         element={
-            <PatientsList />
+          <ProtectedRoute><PatientsList /></ProtectedRoute>
         }
       />
 
       <Route
       path="/staff/registerpatientform"
       element={
-      <RegisterPatientForm />
+        <ProtectedRoute><RegisterPatientForm /></ProtectedRoute>
     }
     />
     

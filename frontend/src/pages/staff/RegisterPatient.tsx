@@ -11,7 +11,7 @@ import {
   ArrowRight,
   UserPlus
 } from "lucide-react";
-import API from "../../services/api";
+import API, { registerPatient } from "../../services/api";
 import ghFlag from "../../assets/ghana-flag.png";
 import StaffNavbar from "../../components/StaffNavbar";
 import StaffSidebar from "../../components/StaffSidebar";
@@ -39,16 +39,14 @@ export default function RegisterUser() {
     setLoading(true);
 
     try {
-      // Mock API call - Replace with actual API.post when ready
-      // await API.post("/auth/register/", form);
+      const data = await registerPatient(form);
+      console.log(data);
       
       // Simulate network delay for effect
       await new Promise(resolve => setTimeout(resolve, 800));
 
       toast.success(`${form.name} registered successfully`);
       
-      // Navigate only AFTER success
-      navigate("/staff/registerpatientform"); 
       
       setForm({
         name: "",
@@ -236,7 +234,7 @@ export default function RegisterUser() {
                     disabled={loading}
                     className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#073159] hover:bg-[#062a4d] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-900/20 transform transition-all hover:-translate-y-1 hover:shadow-xl disabled:opacity-70 disabled:transform-none"
                   >
-                    {loading ? "Saving..." : "Save & Continue"}
+                    {loading ? "Saving..." : "Save"}
                     {!loading && <ArrowRight className="w-5 h-5" />}
                   </button>
                 </div>
