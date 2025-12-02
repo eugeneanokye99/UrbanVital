@@ -5,10 +5,23 @@ import AdminDashboard from './pages/admin/Dashboard'
 import RegisterStaff from './pages/admin/RegisterStaff'
 import ProtectedRoute from './components/ProtectedRoutes';
 import PatientList from './pages/admin/PatientsList';
-import StaffDashboard from './pages/staff/StaffDashboard';
-import PatientsList from './pages/staff/PatientsList';
-import RegisterPatient from './pages/staff/RegisterPatient';
-import RegisterPatientForm from './pages/staff/RegisterPatientForm';
+import StaffDashboard from './pages/frontdesk/StaffDashboard';
+import CheckIn from './pages/frontdesk/CheckIn';
+import PatientDetail from './pages/frontdesk/PatientDetail'
+import PatientsList from './pages/frontdesk/PatientsList';
+import RegisterPatient from './pages/frontdesk/RegisterPatient';
+import Billings from './pages/frontdesk/Billings'
+import PatientDetails from './pages/clinician/PatientDetails';
+import Dashboard from './pages/clinician/Dashboard';
+import Patients from './pages/clinician/Patients';
+import Consulting from './pages/clinician/Consulting';
+import FollowUp from './pages/clinician/FollowUp';
+import Billing from './pages/clinician/Billing';
+import Documents from './pages/clinician/Documents';
+import LabResults from './pages/clinician/LabResults';
+
+
+
 
 
 function App() {
@@ -63,38 +76,109 @@ function App() {
 
 
 
-{/* Staff Routes */}
+{/* FrontDesk routes */}
 
 
       <Route
-        path="/staff/staffdashboard"
+        path="/frontdesk/staffdashboard"
         element={
-          <ProtectedRoute><StaffDashboard /></ProtectedRoute>
+            <StaffDashboard />
+        }
+      />
+      <Route
+        path="/frontdesk/checkin"
+        element={
+            <CheckIn />
+        }
+      />
+      <Route
+        path="/frontdesk/patientdetail"
+        element={
+            <PatientDetail />
         }
       />
 
       <Route
-        path="/staff/registerpatient"
+        path="/frontdesk/registerpatient"
         element={
           <ProtectedRoute><RegisterPatient /></ProtectedRoute>
         }
       />
 
       <Route
-        path="/staff/patients"
+        path="/frontdesk/patients"
         element={
-          <ProtectedRoute><PatientsList /></ProtectedRoute>
+            <PatientsList />
+        }
+      />
+      <Route
+        path="/frontdesk/billings"
+        element={
+            <Billings />
         }
       />
 
+
+      {/* Clinician Routes */}
+          <Route 
+          path="/clinician/patient-details" 
+          element={
+          <PatientDetails />
+          }
+          />
+          <Route 
+          path="/clinician/dashboard" 
+          element={
+          <Dashboard />
+          }
+          />
+
+          <Route
+        path="/clinician/patients"
+        element={
+            <Patients />
+        }
+      />  
       <Route
-      path="/staff/registerpatientform"
-      element={
-        <ProtectedRoute><RegisterPatientForm /></ProtectedRoute>
-    }
-    />
-    
-    </Routes>
+        path="/clinician/consulting"
+        element={
+            <Consulting />
+        }
+      />  
+      <Route
+        path="/clinician/followup"
+        element={
+            <FollowUp />
+        }
+      />
+      <Route
+        path="/clinician/billing"
+        element={
+            <Billing />
+        }
+      /> 
+      <Route
+        path="/clinician/documents"
+        element={
+            <Documents />
+        }
+      /> 
+      <Route
+        path="/clinician/labresults"
+        element={
+            <LabResults />
+        }
+      /> 
+
+
+
+
+
+
+
+
+
+      </Routes>
   </Router>
 
 
