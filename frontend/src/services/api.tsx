@@ -116,5 +116,11 @@ export const registerPatient = async (patientData: {
   return response.data;
 };
 
+// Fetch all patients
+export const fetchPatients = async () => {
+  const response = await API.get("/patients/");
+  return response.data;
+};
+
 
 export default API;
