@@ -5,7 +5,6 @@ import {
   Package, 
   TrendingUp, 
   TrendingDown, 
-  Filter, 
   Download, 
   AlertTriangle, 
   Calendar,
@@ -69,7 +68,6 @@ export default function AdminDashboard() {
   }, []);
 
   const exportDashboardData = () => {
-    // Export logic here
     console.log("Exporting...");
   };
 
@@ -84,16 +82,17 @@ export default function AdminDashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminNavbar />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
             
             {/* --- Header & Quick Actions --- */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            {/* Stack on mobile, Row on desktop */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
               <div>
-                <h2 className="text-2xl font-bold text-[#073159]">
+                <h2 className="text-xl md:text-2xl font-bold text-[#073159]">
                   Admin Dashboard
                 </h2>
-                <div className="flex items-center gap-2 text-gray-500 mt-1 text-sm">
+                <div className="flex flex-wrap items-center gap-2 text-gray-500 mt-1 text-sm">
                   <Calendar className="w-4 h-4" />
                   <span>
                     {new Date().toLocaleDateString("en-GB", {
@@ -103,8 +102,8 @@ export default function AdminDashboard() {
                       year: "numeric",
                     })}
                   </span>
-                  <span className="w-1 h-1 bg-gray-300 rounded-full mx-1"></span>
-                  <span className="text-green-600 font-medium flex items-center gap-1">
+                  <span className="hidden sm:inline w-1 h-1 bg-gray-300 rounded-full mx-1"></span>
+                  <span className="text-green-600 font-medium flex items-center gap-1 w-full sm:w-auto mt-1 sm:mt-0">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -114,24 +113,25 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-medium text-sm">
+              <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+                <button className="flex-1 lg:flex-none flex justify-center items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-medium text-sm">
                   <UserPlus size={18} />
-                  Add Staff
+                  <span className="whitespace-nowrap">Add Staff</span>
                 </button>
                 <button 
                   onClick={exportDashboardData}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-lg shadow-blue-900/20 font-medium text-sm"
+                  className="flex-1 lg:flex-none flex justify-center items-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-lg shadow-blue-900/20 font-medium text-sm"
                 >
                   <Download size={18} />
-                  Export Report
+                  <span className="whitespace-nowrap">Export Report</span>
                 </button>
               </div>
             </div>
 
             {/* --- Clinic Pulse (Live Status) --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden">
+            {/* 1 col mobile -> 3 cols desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden min-h-[160px]">
                 <div className="relative z-10">
                    <p className="text-blue-100 text-sm font-medium mb-1">Patients Waiting</p>
                    <h3 className="text-3xl font-bold">{liveStats.waitingRoom}</h3>
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
                 <Users className="absolute -bottom-4 -right-4 w-32 h-32 text-white/10" />
               </div>
 
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px]">
                  <div className="flex justify-between items-start">
                     <div>
                       <p className="text-gray-500 text-sm font-medium">Active Doctors</p>
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
                  </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px] sm:col-span-2 lg:col-span-1">
                  <div className="flex justify-between items-start">
                     <div>
                       <p className="text-gray-500 text-sm font-medium">Triage Queue</p>
@@ -167,12 +167,12 @@ export default function AdminDashboard() {
                       <Activity className="text-orange-600 w-5 h-5" />
                     </div>
                  </div>
-                 <p className="text-xs text-orange-600 mt-2 font-medium">Requires attention</p>
+                 <p className="text-xs text-orange-600 mt-2 font-medium bg-orange-50 w-fit px-2 py-1 rounded">Requires attention</p>
               </div>
             </div>
 
             {/* --- Key Financial Metrics --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <MetricCard 
                 title="Total Revenue" 
                 value={`GH₵ ${analytics.revenue.toLocaleString()}`}
@@ -195,31 +195,33 @@ export default function AdminDashboard() {
                 subtext="Stock Items"
                 icon={<Package className="w-6 h-6 text-purple-600" />}
                 color="bg-purple-50"
+                // Make this full width on tablet if 3rd item
+                className="sm:col-span-2 lg:col-span-1"
               />
             </div>
 
             {/* --- Main Content Grid --- */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
               
               {/* Left Column: Charts (Span 2) */}
-              <div className="xl:col-span-2 space-y-8">
+              <div className="xl:col-span-2 space-y-6 md:space-y-8">
                 
                 {/* Revenue Chart */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center mb-6">
                     <div>
-                      <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                      <h3 className="font-bold text-base md:text-lg text-gray-800 flex items-center gap-2">
                         Weekly Income
                       </h3>
-                      <p className="text-sm text-gray-400">Cash vs Insurance</p>
+                      <p className="text-xs md:text-sm text-gray-400">Cash vs Insurance</p>
                     </div>
-                    <button className="text-gray-400 hover:text-[#073159]">
+                    <button className="text-gray-400 hover:text-[#073159] p-2 rounded-full hover:bg-gray-50">
                       <MoreHorizontal size={20} />
                     </button>
                   </div>
                   
-                  <div className="w-full h-64 overflow-hidden relative">
-                    <svg viewBox="0 0 600 220" className="w-full h-full">
+                  <div className="w-full h-48 md:h-64 overflow-hidden relative">
+                    <svg viewBox="0 0 600 220" className="w-full h-full" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id="gradientRevenue" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#073159" stopOpacity="0.2"/>
@@ -255,41 +257,22 @@ export default function AdminDashboard() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
-
-                      {/* Interactive Dots */}
-                      {weeklyData.map((d, i) => {
-                        const x = (i / (weeklyData.length - 1)) * 600;
-                        const y = 200 - (d.value / maxWeekly) * 140;
-                        return (
-                          <g key={i} className="group cursor-pointer">
-                            <circle cx={x} cy={y} r="6" className="fill-white stroke-[#073159] stroke-2 group-hover:scale-125 transition-transform" />
-                            
-                            {/* Tooltip */}
-                            <g className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                <rect x={x - 25} y={y - 40} width="50" height="25" rx="6" fill="#073159" />
-                                <text x={x} y={y - 23} fontSize="11" fill="white" textAnchor="middle" fontWeight="bold">{d.value}</text>
-                            </g>
-                            
-                            {/* X Labels */}
-                            <text x={x} y="215" fontSize="12" fill="#9ca3af" textAnchor="middle">{d.day}</text>
-                          </g>
-                        );
-                      })}
                     </svg>
                   </div>
                 </div>
 
                 {/* Recent Transactions Table */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                    <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+                  <div className="p-5 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+                    <h3 className="font-bold text-base md:text-lg text-gray-800 flex items-center gap-2">
                       <CreditCard className="w-5 h-5 text-[#073159]" />
                       Recent Transactions
                     </h3>
-                    <button className="text-sm text-blue-600 hover:underline">View All</button>
+                    <button className="text-xs md:text-sm font-medium text-blue-600 hover:underline">View All</button>
                   </div>
+                  {/* Horizontal Scroll */}
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left min-w-[600px]">
                       <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                         <tr>
                           <th className="px-6 py-3 font-semibold">Patient</th>
@@ -300,7 +283,7 @@ export default function AdminDashboard() {
                       </thead>
                       <tbody className="divide-y divide-gray-100 text-sm">
                         {recentTransactions.map((tx) => (
-                          <tr key={tx.id} className="hover:bg-gray-50">
+                          <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-6 py-4 font-medium text-gray-900">{tx.patient}</td>
                             <td className="px-6 py-4 text-gray-600">{tx.service}</td>
                             <td className="px-6 py-4 font-bold text-gray-900">GH₵ {tx.amount}</td>
@@ -320,13 +303,13 @@ export default function AdminDashboard() {
               </div>
 
               {/* Right Column: Alerts & Side Widgets (Span 1) */}
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 
                 {/* Alerts Widget */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 text-orange-500" />
+                    <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm md:text-base">
+                      <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
                       Action Center
                     </h3>
                     <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-full">
@@ -354,8 +337,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Quick Staff List */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                   <h3 className="font-bold text-gray-800 mb-4">On Duty Now</h3>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
+                   <h3 className="font-bold text-gray-800 mb-4 text-sm md:text-base">On Duty Now</h3>
                    <div className="space-y-4">
                       {['Dr. Mensah', 'Nurse Sarah', 'Pharm. John'].map((name, i) => (
                         <div key={i} className="flex items-center gap-3">
@@ -366,7 +349,7 @@ export default function AdminDashboard() {
                             <p className="text-sm font-medium text-gray-900">{name}</p>
                             <p className="text-xs text-gray-500">{i === 0 ? 'Consultation 1' : i === 1 ? 'Triage' : 'Pharmacy'}</p>
                           </div>
-                          <div className="ml-auto w-2 h-2 rounded-full bg-green-500"></div>
+                          <div className="ml-auto w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                         </div>
                       ))}
                    </div>
@@ -391,23 +374,24 @@ interface MetricCardProps {
   positive?: boolean;
   color: string;
   subtext?: string;
+  className?: string;
 }
 
-function MetricCard({ icon, title, value, change, positive, color, subtext }: MetricCardProps) {
+function MetricCard({ icon, title, value, change, positive, color, subtext, className }: MetricCardProps) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md">
+    <div className={`bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md ${className}`}>
       <div>
-        <p className="text-sm font-medium text-gray-500 mb-2">{title}</p>
-        <h3 className="text-3xl font-bold text-[#073159]">{value}</h3>
+        <p className="text-xs md:text-sm font-medium text-gray-500 mb-2">{title}</p>
+        <h3 className="text-2xl md:text-3xl font-bold text-[#073159]">{value}</h3>
         
         <div className="flex items-center mt-3 gap-2">
            {change ? (
              <>
-               <span className={`flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${positive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+               <span className={`flex items-center gap-1 text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full ${positive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                  {positive ? <TrendingUp size={12}/> : <TrendingDown size={12} />}
                  {change}
                </span>
-               <span className="text-xs text-gray-400">vs last month</span>
+               <span className="text-[10px] md:text-xs text-gray-400">vs last month</span>
              </>
            ) : (
              <span className="text-xs text-gray-400">{subtext}</span>

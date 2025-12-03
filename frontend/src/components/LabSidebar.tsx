@@ -1,19 +1,17 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  Users, 
-  UserPlus, 
-  Package, 
-  CreditCard, 
-  Settings, 
+  TestTube, 
+  Microscope, 
+  ClipboardList, 
+  Users,
   LogOut, 
-  ShieldCheck, 
-  UserCog
+  BookOpenText 
 } from "lucide-react";
 import { logoutUser } from "../services/api";
 import logo from "../assets/urbanvital-logo.png";
 
-export default function AdminSidebar() {
+export default function LabSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,47 +21,42 @@ export default function AdminSidebar() {
   };
 
   const menuItems = [
-    { path: "/admin/dashboard", label: "Analytics", icon: <LayoutDashboard size={20} /> },
-    { path: "/admin/patients", label: "Patients", icon: <Users size={20} /> },
-    { path: "/admin/staff", label: "Staff Management", icon: <UserCog size={20} /> },
-    { path: "/admin/inventory", label: "Inventory", icon: <Package size={20} /> },
-    { path: "/admin/finance", label: "Finance & Revenue", icon: <CreditCard size={20} /> },
-    { path: "/admin/register", label: "Register Staff", icon: <UserPlus size={20} /> },
-    { path: "/admin/settings", label: "Settings", icon: <Settings size={20} /> },
+    { path: "/lab/labdashboard", label: "Overview", icon: <LayoutDashboard size={20} /> },
+    { path: "/lab/labpatients", label: "Patient Database", icon: <Users size={20} /> },
+    { path: "/lab/labqueue", label: "Test Queue", icon: <TestTube size={20} /> },
+    { path: "/lab/labresults", label: "Completed Results", icon: <ClipboardList size={20} /> },
+    { path: "/lab/labentry", label: "Result Entry", icon: <Microscope size={20} /> },
+    { path: "/lab/labinventory", label: "Inventory", icon: <BookOpenText size={20} /> },
   ];
 
   return (
-    <aside className="w-64 bg-[#073159] h-full flex flex-col shadow-2xl transition-all duration-300 font-sans">
+    <aside className="w-64 bg-[#073159] h-full flex flex-col shadow-2xl transition-all duration-300 font-sans hidden md:flex">
       
-      {/* --- Logo Section --- */}
+      {/* Logo */}
       <div className="h-24 flex items-center justify-center border-b border-white/10 p-4">
         <div className="bg-white/95 p-2 rounded-xl w-full h-full flex items-center justify-center shadow-lg">
-            <img
-            src={logo}
-            alt="UrbanVital"
-            className="h-full w-auto object-contain"
-            />
+            <img src={logo} alt="UrbanVital" className="h-full w-auto object-contain" />
         </div>
       </div>
 
-      {/* --- Admin Badge --- */}
+      {/* Role Badge */}
       <div className="px-6 py-4">
         <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3 border border-white/5 backdrop-blur-sm">
-            <div className="p-2 bg-blue-500/20 rounded-full text-blue-200">
-                <ShieldCheck size={18} />
+            <div className="p-2 bg-purple-500/20 rounded-full text-purple-300">
+                <Microscope size={18} />
             </div>
             <div>
-                <p className="text-white text-xs font-bold uppercase tracking-wider">Admin Panel</p>
-                <p className="text-blue-200 text-[10px]">Superuser Access</p>
+                <p className="text-white text-xs font-bold uppercase tracking-wider">Laboratory</p>
+                <p className="text-blue-200 text-[10px]">Technician Panel</p>
             </div>
         </div>
       </div>
 
-      {/* --- Navigation --- */}
+      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2">
         <ul className="space-y-1">
           {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.includes(item.path);
             return (
               <li key={item.path}>
                 <button
@@ -74,17 +67,12 @@ export default function AdminSidebar() {
                       : "text-blue-100/70 hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  {/* Active Indicator Line */}
                   {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.5)]"></div>
                   )}
-                  
-                  {/* Icon */}
-                  <span className={`${isActive ? "text-green-400" : "group-hover:text-white"}`}>
+                  <span className={`${isActive ? "text-purple-400" : "group-hover:text-white"}`}>
                     {item.icon}
                   </span>
-                  
-                  {/* Label */}
                   <span>{item.label}</span>
                 </button>
               </li>
@@ -93,7 +81,7 @@ export default function AdminSidebar() {
         </ul>
       </nav>
 
-      {/* --- Bottom Section (Logout) --- */}
+      {/* Logout */}
       <div className="p-4 border-t border-white/10">
         <button
           onClick={handleLogout}
@@ -102,9 +90,6 @@ export default function AdminSidebar() {
           <LogOut size={20} />
           <span>Logout System</span>
         </button>
-        <p className="text-center text-[10px] text-blue-300/40 mt-4">
-          v1.0.4 • UrbanVital Health
-        </p>
       </div>
     </aside>
   );

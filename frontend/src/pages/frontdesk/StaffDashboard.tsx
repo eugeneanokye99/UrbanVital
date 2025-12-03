@@ -8,7 +8,8 @@ import {
   Calendar,
   DollarSign,
   UserPlus,
-  Clock} from "lucide-react";
+  Clock
+} from "lucide-react";
 import { fetchUserProfile } from "../../services/api";
 import StaffNavbar from "../../components/StaffNavbar";
 import StaffSidebar from "../../components/StaffSidebar";
@@ -53,7 +54,7 @@ export default function StaffDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">
-      {/* Sidebar */}
+      {/* Sidebar - Hidden on mobile */}
       <div className="hidden md:block">
         <StaffSidebar />
       </div>
@@ -62,16 +63,17 @@ export default function StaffDashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <StaffNavbar />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
             
             {/* --- Header Section --- */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            {/* Stack on mobile, Row on Desktop */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-[#073159]">
+                <h2 className="text-xl md:text-3xl font-bold text-[#073159]">
                   Front Desk Overview
                 </h2>
-                <div className="flex items-center gap-2 text-gray-500 mt-1">
+                <div className="flex items-center gap-2 text-gray-500 mt-1 text-sm md:text-base">
                   <Calendar className="w-4 h-4" />
                   <span>
                     {new Date().toLocaleDateString("en-GB", {
@@ -84,19 +86,18 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => navigate("/frontdesk/registerpatient")}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors shadow-md hover:shadow-lg"
-                >
-                  <UserPlus size={18} />
-                  <span>Register Patient</span>
-                </button>
-              </div>
+              <button 
+                onClick={() => navigate("/frontdesk/registerpatient")}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-md hover:shadow-lg text-sm font-bold active:scale-95 transition-transform"
+              >
+                <UserPlus size={18} />
+                <span>Register Patient</span>
+              </button>
             </div>
 
             {/* --- Quick Stats Cards --- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* 1 col mobile -> 3 cols desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               <MetricCard 
                 title="Patients Today" 
                 value="124" 
@@ -127,20 +128,22 @@ export default function StaffDashboard() {
             </div>
 
             {/* --- Charts & Queue Grid --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* 1 col mobile -> Split 2:1 on Large Desktop */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
               
-              {/* Left Column (2 spans): Live Queue */}
-              <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                  <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
+              {/* Left Column (Queue): Takes 2/3 space on large screens */}
+              <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
+                <div className="p-5 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+                  <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm md:text-lg">
                     <Activity className="w-5 h-5 text-[#073159]" />
                     Recent Check-ins
                   </h3>
-                  <button className="text-sm text-blue-600 hover:underline">View Full List</button>
+                  <button className="text-xs md:text-sm text-blue-600 hover:underline font-medium">View Full List</button>
                 </div>
+                
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase">
+                  <table className="w-full text-left text-sm min-w-[600px]">
+                    <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
                       <tr>
                         <th className="px-6 py-4">Time</th>
                         <th className="px-6 py-4">Patient Name</th>
@@ -149,15 +152,15 @@ export default function StaffDashboard() {
                         <th className="px-6 py-4 text-right">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 text-sm">
+                    <tbody className="divide-y divide-gray-100">
                       {recentCheckIns.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 font-mono text-gray-500">{item.time}</td>
+                          <td className="px-6 py-4 font-mono text-gray-500 whitespace-nowrap">{item.time}</td>
                           <td className="px-6 py-4 font-bold text-[#073159]">{item.name}</td>
                           <td className="px-6 py-4 text-gray-600">{item.type}</td>
-                          <td className="px-6 py-4 text-gray-600">{item.doctor}</td>
+                          <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{item.doctor}</td>
                           <td className="px-6 py-4 text-right">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
                               item.status === "Waiting" ? "bg-orange-100 text-orange-700" :
                               item.status === "In Consult" ? "bg-blue-100 text-blue-700" :
                               item.status === "Labs" ? "bg-purple-100 text-purple-700" :
@@ -173,13 +176,13 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
-              {/* Right Column (1 span): Revenue & Alerts */}
-              <div className="space-y-8">
+              {/* Right Column (Revenue & Alerts): Takes 1/3 space on large screens */}
+              <div className="space-y-6 md:space-y-8">
                 
                 {/* Mini Revenue Chart */}
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-bold text-gray-800">Weekly Revenue</h3>
+                    <h3 className="font-bold text-gray-800 text-sm md:text-base">Weekly Revenue</h3>
                     <TrendingUp size={18} className="text-green-500" />
                   </div>
                   <div className="h-32 w-full">
@@ -205,15 +208,15 @@ export default function StaffDashboard() {
                       />
                     </svg>
                   </div>
-                  <div className="flex justify-between text-xs text-gray-400 mt-2">
+                  <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium">
                     <span>Mon</span>
                     <span>Sun</span>
                   </div>
                 </div>
 
                 {/* Alerts */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                  <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
+                  <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 text-sm md:text-base">
                     <AlertTriangle className="w-4 h-4 text-orange-500" />
                     Notice Board
                   </h3>
@@ -261,11 +264,11 @@ function MetricCard({ icon, title, value, change, positive, color, subtext, onCl
   return (
     <div 
       onClick={onClick}
-      className={`bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between transition-all hover:-translate-y-1 ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
+      className={`bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between transition-all hover:-translate-y-1 ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}
     >
       <div>
-        <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-[#073159]">{value}</h3>
+        <p className="text-xs md:text-sm font-medium text-gray-500 mb-1 uppercase tracking-wide">{title}</p>
+        <h3 className="text-xl md:text-2xl font-bold text-[#073159]">{value}</h3>
         <div className="flex items-center mt-2 gap-2">
            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${positive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
              {change}

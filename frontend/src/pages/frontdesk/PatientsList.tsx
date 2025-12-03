@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 1. Import useNavigate
+import { useNavigate } from "react-router-dom"; // 1. Import hook
 import { 
   Search, 
   Filter, 
@@ -12,7 +12,7 @@ import StaffNavbar from "../../components/StaffNavbar";
 import StaffSidebar from "../../components/StaffSidebar";
 
 export default function PatientsList() {
-  const navigate = useNavigate(); // 2. Initialize the hook
+  const navigate = useNavigate(); // 2. Initialize hook
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
 
@@ -27,10 +27,12 @@ export default function PatientsList() {
       name: i % 2 === 0 ? "Williams Boampong" : "Sarah Mensah",
       phone: "054 673 2719",
       flag: randomFlag,
-      // Add extra mock data so the details page isn't empty
+      // Extra data for the profile page
       gender: i % 2 === 0 ? "Male" : "Female",
-      dob: "1990-01-01",
-      email: "patient@urbanvital.com"
+      dob: "1995-05-12",
+      email: "patient@urbanvital.com",
+      occupation: "Teacher",
+      address: "123 High Street, Accra"
     };
   });
 
@@ -41,9 +43,10 @@ export default function PatientsList() {
         p.mrn.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // 3. Helper function to handle navigation
+  // 3. Navigation Handler
   const handleViewPatient = (patient: any) => {
-    navigate("/frontdesk/patientdetail", { state: { patient } });
+    // Navigate to the details page and pass the patient object in state
+    navigate("/staff/patient-details", { state: { patient } });
   };
 
   const getFlagStyle = (flag: string) => {
@@ -145,7 +148,7 @@ export default function PatientsList() {
                       filteredPatients.map((patient) => (
                         <tr 
                           key={patient.mrn} 
-                          // 4. Added onClick here to make the whole row clickable
+                          // 4. Click Event on Row
                           onClick={() => handleViewPatient(patient)}
                           className="hover:bg-blue-50/30 transition-colors group cursor-pointer"
                         >
@@ -162,8 +165,8 @@ export default function PatientsList() {
                               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-[#073159] font-bold text-xs mr-3 border border-blue-200">
                                 {patient.name.charAt(0)}
                               </div>
-                              {/* 5. Specific styling for the name to show interactivity */}
-                              <div className="text-sm font-bold text-[#073159] hover:underline hover:text-blue-600 transition-colors">
+                              {/* 5. Name specific styling to show it's clickable */}
+                              <div className="text-sm font-bold text-[#073159] group-hover:text-blue-600 group-hover:underline transition-all">
                                 {patient.name}
                               </div>
                             </div>
@@ -184,7 +187,7 @@ export default function PatientsList() {
                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button 
                                 onClick={(e) => {
-                                    e.stopPropagation(); // Prevent double triggering
+                                    e.stopPropagation(); // Stop row click
                                     handleViewPatient(patient);
                                 }}
                                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -193,9 +196,9 @@ export default function PatientsList() {
                                 <Eye size={18} />
                               </button>
                               <button 
+                                onClick={(e) => e.stopPropagation()} // Stop row click
                                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                                 title="More Options"
-                                onClick={(e) => e.stopPropagation()} // Prevent row click
                               >
                                 <MoreVertical size={18} />
                               </button>

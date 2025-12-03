@@ -2,13 +2,11 @@ import { useState } from "react";
 import { 
   Search, 
   Filter, 
-  MoreVertical, 
-  Eye, 
-  FileText, 
   Users,
   Plus,
   Edit,
-  Trash2
+  Trash2,
+  FileText
 } from "lucide-react";
 import AdminNavbar from "../../components/AdminNavbar";
 import AdminSidebar from "../../components/AdminSidebar";
@@ -61,30 +59,28 @@ export default function AdminPatientsList() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminNavbar />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            {/* Page Header: Stack on Mobile, Row on Desktop */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-[#073159] flex items-center gap-3">
-                  <Users className="w-8 h-8 text-[#073159]" />
+                <h1 className="text-xl md:text-2xl font-bold text-[#073159] flex items-center gap-2 md:gap-3">
+                  <Users className="w-6 h-6 md:w-8 md:h-8 text-[#073159]" />
                   Patient Directory
                 </h1>
-                <p className="text-gray-500 mt-1">
+                <p className="text-sm md:text-base text-gray-500 mt-1">
                   Manage patient records, medical history, and account status.
                 </p>
               </div>
               
-              <div className="flex items-center gap-3">
-                 <button className="flex items-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-lg shadow-blue-900/20 font-medium text-sm">
-                  <Plus size={18} />
-                  Add New Patient
-                </button>
-              </div>
+              <button className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-lg shadow-blue-900/20 font-medium text-sm active:scale-95 transform">
+                 <Plus size={18} />
+                 Add New Patient
+              </button>
             </div>
 
-            {/* Controls Section (Search & Filter) */}
+            {/* Controls Section: Stack on Mobile */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
               
               {/* Search Bar */}
@@ -97,31 +93,29 @@ export default function AdminPatientsList() {
                   placeholder="Search by Name, MRN or Phone..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition duration-150 ease-in-out sm:text-sm"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition duration-150 ease-in-out text-sm"
                 />
               </div>
 
               {/* Filter Dropdown */}
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <div className="relative w-full md:w-48">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Filter className="h-4 w-4 text-gray-500" />
-                    </div>
-                    <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="block w-full pl-10 pr-8 py-2.5 text-base border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] sm:text-sm rounded-lg cursor-pointer bg-white text-gray-700 shadow-sm appearance-none"
-                    >
-                    <option value="All">All Conditions</option>
-                    <option value="Allergy">Allergy</option>
-                    <option value="Diabetes">Diabetes</option>
-                    <option value="Hypertension">Hypertension</option>
-                    <option value="Asthma">Asthma</option>
-                    </select>
-                     {/* Chevron */}
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                    </div>
+              <div className="relative w-full md:w-48">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Filter className="h-4 w-4 text-gray-500" />
+                </div>
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="block w-full pl-10 pr-8 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] rounded-lg cursor-pointer bg-white text-gray-700 shadow-sm appearance-none"
+                >
+                  <option value="All">All Conditions</option>
+                  <option value="Allergy">Allergy</option>
+                  <option value="Diabetes">Diabetes</option>
+                  <option value="Hypertension">Hypertension</option>
+                  <option value="Asthma">Asthma</option>
+                </select>
+                {/* Chevron */}
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                   <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                 </div>
               </div>
             </div>
@@ -129,19 +123,19 @@ export default function AdminPatientsList() {
             {/* Table Section */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-[900px] w-full divide-y divide-gray-200 text-left">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         Patient Details
                       </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         MRN
                       </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         Contact Info
                       </th>
-                      <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <th scope="col" className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                         Medical Flags
                       </th>
                       <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -186,13 +180,8 @@ export default function AdminPatientsList() {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {/* Actions: Always visible on mobile, Hover-only on Desktop */}
                             <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                              <button 
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="View Details"
-                              >
-                                <Eye size={18} />
-                              </button>
                               <button 
                                 className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 rounded-lg transition-colors"
                                 title="Edit Patient"
@@ -227,7 +216,7 @@ export default function AdminPatientsList() {
               </div>
               
               {/* Pagination Footer */}
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <span className="text-sm text-gray-500">
                   Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredPatients.length}</span> of <span className="font-medium">{patients.length}</span> results
                 </span>

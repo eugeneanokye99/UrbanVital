@@ -1,7 +1,6 @@
 import {
   LayoutDashboard,
   Users,
-  UserPlus,
   Package,
   Receipt,
   Settings,

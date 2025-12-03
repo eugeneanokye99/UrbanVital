@@ -17,7 +17,7 @@ export default function ClinicianSidebar() {
     { path: "/clinician/dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
     { path: "/clinician/patients", label: "Patients", icon: <Users size={20} /> },
     { path: "/clinician/consulting", label: "Consulting", icon: <Stethoscope size={20} /> },
-    { path: "/clinician/labresults", label: "Lab Results", icon: <TestTube size={20} /> },
+    { path: "/clinician/clinicianlabresults", label: "Lab Results", icon: <TestTube size={20} /> },
     { path: "/clinician/followup", label: "Follow-Up", icon: <CalendarClock size={20} /> },
     { path: "/clinician/billing", label: "Billing", icon: <CreditCard size={20} /> },
     { path: "/clinician/documents", label: "Documents", icon: <FileText size={20} /> },

@@ -3,7 +3,6 @@ import { toast } from "react-hot-toast";
 import { 
   User, 
   Mail, 
-  Phone, 
   Briefcase, 
   Lock, 
   Eye, 
@@ -37,12 +36,8 @@ export default function RegisterStaff() {
     e.preventDefault();
     setLoading(true);
     try {
-      // API Call
       await registerStaff(form);
-      
       toast.success(`${form.role} registered successfully`);
-      
-      // Reset Form
       setForm({ username: "", email: "", phone: "", password: "", role: "" });
     } catch (error) {
       toast.error("Failed to register user");
@@ -62,32 +57,34 @@ export default function RegisterStaff() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <AdminNavbar />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-4xl mx-auto">
             
             {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-[#073159] flex items-center gap-3">
+            <div className="mb-6 md:mb-8">
+              <h1 className="text-xl md:text-3xl font-bold text-[#073159] flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <UserPlus className="w-6 h-6 text-[#073159]" />
+                  <UserPlus className="w-5 h-5 md:w-6 md:h-6 text-[#073159]" />
                 </div>
                 Add New Staff
               </h1>
-              <p className="text-gray-500 mt-2 ml-1">
+              <p className="text-sm md:text-base text-gray-500 mt-2 ml-1">
                 Create accounts for Clinicians, Lab Technicians, Pharmacists, and Cashiers.
               </p>
             </div>
 
             {/* Form Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-              <div className="h-2 bg-[#073159] w-full"></div> {/* Decorative top bar */}
+              <div className="h-1.5 md:h-2 bg-[#073159] w-full"></div> 
               
-              <form onSubmit={handleSubmit} className="p-6 md:p-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} className="p-5 md:p-8 lg:p-10">
+                
+                {/* Grid: 1 col on mobile, 2 cols on md+ */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
 
                   {/* Username / Full Name */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Full Name
                     </label>
                     <div className="relative group">
@@ -101,14 +98,14 @@ export default function RegisterStaff() {
                         value={form.username}
                         onChange={handleChange}
                         required
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 md:py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none text-sm md:text-base"
                       />
                     </div>
                   </div>
 
                   {/* Email */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Email Address
                     </label>
                     <div className="relative group">
@@ -122,14 +119,14 @@ export default function RegisterStaff() {
                         value={form.email}
                         onChange={handleChange}
                         required
-                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 md:py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none text-sm md:text-base"
                       />
                     </div>
                   </div>
 
                   {/* Phone */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Phone Number
                     </label>
                     <div className="relative group">
@@ -143,14 +140,14 @@ export default function RegisterStaff() {
                         value={form.phone}
                         onChange={handleChange}
                         required
-                        className="w-full pl-24 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none font-mono"
+                        className="w-full pl-24 pr-4 py-2.5 md:py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none font-mono text-sm md:text-base"
                       />
                     </div>
                   </div>
 
                   {/* Role Select */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Department / Role
                     </label>
                     <div className="relative group">
@@ -162,7 +159,7 @@ export default function RegisterStaff() {
                         value={form.role}
                         onChange={handleChange}
                         required
-                        className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none appearance-none cursor-pointer"
+                        className="w-full pl-10 pr-10 py-2.5 md:py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none appearance-none cursor-pointer text-sm md:text-base"
                       >
                         <option value="">Select Role</option>
                         <option value="Clinician">Clinician</option>
@@ -172,17 +169,17 @@ export default function RegisterStaff() {
                         <option value="Ultrasound">Ultrasound Specialist</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                         <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          <svg className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </div>
                     </div>
                   </div>
 
-                  {/* Password - Full Width */}
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-sm font-semibold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  {/* Password - Full Width on all screens */}
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                       Temporary Password
-                      <span className="text-xs normal-case font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <ShieldCheck size={12} /> Secure
+                      <span className="text-[10px] normal-case font-normal text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <ShieldCheck size={10} /> Secure
                       </span>
                     </label>
                     <div className="relative group">
@@ -196,7 +193,7 @@ export default function RegisterStaff() {
                         value={form.password}
                         onChange={handleChange}
                         required
-                        className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none"
+                        className="w-full pl-10 pr-12 py-2.5 md:py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none text-sm md:text-base"
                       />
                       <button
                         type="button"
@@ -210,15 +207,15 @@ export default function RegisterStaff() {
 
                 </div>
 
-                {/* Submit Actions */}
-                <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
-                  <p className="text-xs text-gray-400">
+                {/* Submit Actions: Stack on mobile, Row on desktop */}
+                <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <p className="text-xs text-gray-400 text-center md:text-left">
                     * All fields are required to create a new staff profile.
                   </p>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center gap-2 bg-[#073159] hover:bg-[#062a4d] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-900/20 transform transition-all hover:-translate-y-1 hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#073159] hover:bg-[#062a4d] text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-blue-900/20 transform transition-all hover:-translate-y-1 hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-sm md:text-base"
                   >
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
