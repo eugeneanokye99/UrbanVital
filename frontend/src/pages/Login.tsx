@@ -36,8 +36,21 @@ export default function Login() {
       if (data.is_superuser) {
         navigate("/admin");
       } else {
-        await getStaffRole(data.email);
-        navigate("/staff/staffdashboard");
+        const result = await getStaffRole(data.email);
+        console.log("Staff Role:", result.role);
+        const userRole = result.role;
+        if(userRole === "Clinician"){
+          navigate("/clinician/dashboard");
+        } else if (userRole == "Pharmacist") {
+          navigate("/pharmacy/pharmacydashboard");
+        } else if (userRole == "Lab Technician") {
+          navigate("/lab/labdashboard");
+        } else if (userRole == "Cashier") {
+          navigate("/frontdesk/staffdashboard");
+        } else if (userRole == "Ultrasound Technician") {
+          navigate("/pharmacy/staffdashboard");
+        }
+        
       }
     } catch (error) {
       toast.error("Invalid username or password");
