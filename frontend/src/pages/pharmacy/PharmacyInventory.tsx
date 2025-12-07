@@ -68,6 +68,9 @@ export default function PharmacyInventory() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    setInventory(prev =>
+      prev.map(i => (i.id === editingItem.id ? { ...i, ...editingItem } : i))
+    );
     toast.success(editingItem ? "Stock Updated Successfully" : "New Drug Added to Inventory");
     setIsModalOpen(false);
   };

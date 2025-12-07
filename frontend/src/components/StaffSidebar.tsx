@@ -4,7 +4,6 @@ import {
   Users, 
   UserPlus, 
   CreditCard, 
-  Settings, 
   LogOut, UserCheck,
   Stethoscope 
 } from "lucide-react";

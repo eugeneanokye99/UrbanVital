@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { 
   Users, 
   DollarSign, 
@@ -16,12 +16,12 @@ import {
   UserPlus,
   MoreHorizontal
 } from "lucide-react";
-import { fetchUserProfile } from "../../services/api";
+//import { fetchUserProfile } from "../../services/api";
 import AdminNavbar from "../../components/AdminNavbar";
 import AdminSidebar from "../../components/AdminSidebar";
 
 export default function AdminDashboard() {
-  const [user, setUser] = useState<any>(null);
+  //const [user, setUser] = useState<any>(null);
   
   // Mock Data
   const [analytics] = useState({
@@ -61,11 +61,11 @@ export default function AdminDashboard() {
 
   const maxWeekly = Math.max(...weeklyData.map((d) => d.value));
 
-  useEffect(() => {
-    fetchUserProfile()
-      .then((data) => setUser(data))
-      .catch(() => console.error("Failed to fetch user"));
-  }, []);
+  // useEffect(() => {
+  //   fetchUserProfile()
+  //     .then((data) => setUser(data))
+  //     .catch(() => console.error("Failed to fetch user"));
+  // }, []);
 
   const exportDashboardData = () => {
     console.log("Exporting...");

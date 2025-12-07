@@ -7,7 +7,6 @@ import {
   AlertCircle, 
   XCircle,
   ShoppingBag,
-  Filter
 } from "lucide-react";
 import PharmacyNavbar from "../../components/PharmacyNavbar"; 
 import PharmacySidebar from "../../components/PharmacySidebar";

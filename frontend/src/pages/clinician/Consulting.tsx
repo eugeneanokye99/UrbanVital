@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   Clock, 
   Save, 
@@ -10,7 +9,7 @@ import ClinicianSidebar from "../../components/ClinicianSidebar";
 import ClinicianNavbar from "../../components/ClinicianNavbar";
 
 export default function ClinicianConsulting() {
-  const [activeTab, setActiveTab] = useState("notes"); // notes, history, labs
+ //const [activeTab, setActiveTab] = useState("notes"); // notes, history, labs
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans">

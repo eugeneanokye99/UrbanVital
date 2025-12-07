@@ -36,7 +36,7 @@ export default function Login() {
       if (data.is_superuser) {
         navigate("/admin");
       } else {
-        const result = await getStaffRole(data.email);
+        await getStaffRole(data.email);
         navigate("/staff/staffdashboard");
       }
     } catch (error) {

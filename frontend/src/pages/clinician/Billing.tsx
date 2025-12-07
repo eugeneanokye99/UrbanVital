@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   CreditCard, 
   Plus, 
@@ -11,7 +10,7 @@ import ClinicianSidebar from "../../components/ClinicianSidebar";
 import ClinicianNavbar from "../../components/ClinicianNavbar";
 
 export default function ClinicianBilling() {
-  const [activeTab, setActiveTab] = useState("add"); // add or history
+  //const [activeTab, setActiveTab] = useState("add"); // add or history
 
   // Mock Data
   const recentCharges = [

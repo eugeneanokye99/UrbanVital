@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   TrendingUp, 
@@ -10,12 +10,12 @@ import {
   UserPlus,
   Clock
 } from "lucide-react";
-import { fetchUserProfile } from "../../services/api";
+//import { fetchUserProfile } from "../../services/api";
 import StaffNavbar from "../../components/StaffNavbar";
 import StaffSidebar from "../../components/StaffSidebar";
 
 export default function StaffDashboard() {
-  const [user, setUser] = useState<any>(null);
+  //const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
 
   // Mock Data: Recent Check-ins (The Queue)
@@ -45,11 +45,11 @@ export default function StaffDashboard() {
 
   const maxWeekly = Math.max(...weeklyData.map((d) => d.value));
 
-  useEffect(() => {
-    fetchUserProfile()
-      .then((data) => setUser(data))
-      .catch(() => console.error("Failed to fetch user"));
-  }, []);
+  // useEffect(() => {
+  //   fetchUserProfile()
+  //     .then((data) => setUser(data))
+  //     .catch(() => console.error("Failed to fetch user"));
+  // }, []);
 
 
   return (

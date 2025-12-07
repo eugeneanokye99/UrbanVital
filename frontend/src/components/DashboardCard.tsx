@@ -17,7 +17,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   subtitle,
   subtitleColor = "text-gray-500",
   icon,
-  color = "bg-gray-100",
+  //color = "bg-gray-100",
   onClick,
 }) => {
   return (
