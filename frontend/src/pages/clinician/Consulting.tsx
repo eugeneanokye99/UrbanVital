@@ -5,20 +5,12 @@ import {
   Thermometer, 
   Heart, 
 } from "lucide-react";
-import ClinicianSidebar from "../../components/ClinicianSidebar";
-import ClinicianNavbar from "../../components/ClinicianNavbar";
+
 
 export default function ClinicianConsulting() {
  //const [activeTab, setActiveTab] = useState("notes"); // notes, history, labs
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
-      <div className="hidden md:block">
-        <ClinicianSidebar />
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ClinicianNavbar />
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="flex flex-col lg:flex-row gap-6 h-full">
@@ -132,7 +124,6 @@ export default function ClinicianConsulting() {
 
           </div>
         </main>
-      </div>
-    </div>
+
   );
 }

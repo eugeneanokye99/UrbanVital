@@ -10,8 +10,7 @@ import {
   FileText
 } from "lucide-react";
 import { useLocation, Navigate, useNavigate } from "react-router-dom"; 
-import ClinicianSidebar from "../../components/ClinicianSidebar"; 
-import ClinicianNavbar from "../../components/ClinicianNavbar"; 
+
 
 export default function ClinicianPatientDetails() {
   const location = useLocation();
@@ -31,14 +30,7 @@ export default function ClinicianPatientDetails() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
-      {/* Sidebar hidden on mobile */}
-      <div className="hidden md:block">
-        <ClinicianSidebar />
-      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ClinicianNavbar />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-5xl mx-auto">
@@ -183,8 +175,7 @@ export default function ClinicianPatientDetails() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
+
   );
 }
 

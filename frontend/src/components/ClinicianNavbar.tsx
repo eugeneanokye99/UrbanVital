@@ -1,39 +1,36 @@
-import { Search, Bell, ChevronDown } from "lucide-react";
+import { Menu, Bell, User, Search } from "lucide-react";
 
-export default function ClinicianNavbar() {
+interface NavbarProps {
+  onMenuClick?: () => void;
+}
+
+export default function ClinicianNavbar({ onMenuClick }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-20 flex items-center justify-between px-4 md:px-8 shadow-sm">
+    <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-16 md:h-20 flex items-center justify-between px-4 md:px-8 shadow-sm">
       
-      {/* Search Bar */}
-      <div className="flex-1 max-w-xl">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search patient records..."
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] outline-none transition-all sm:text-sm"
-          />
+      <div className="flex items-center gap-4">
+        {/* Mobile Menu Button */}
+        <button 
+          onClick={onMenuClick}
+          className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden"
+        >
+          <Menu size={24} />
+        </button>
+
+        {/* Simple Search (Hidden on small mobile) */}
+        <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-xl border border-gray-100 w-64 lg:w-96">
+            <Search size={18} className="text-gray-400" />
+            <input type="text" placeholder="Search records..." className="bg-transparent outline-none text-sm w-full" />
         </div>
       </div>
 
-      {/* Profile Section */}
-      <div className="flex items-center gap-6 ml-4">
-        <button className="relative p-2 text-gray-400 hover:text-[#073159] transition-colors">
-          <Bell size={22} />
-          <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+      <div className="flex items-center gap-4">
+        <button className="p-2 text-gray-500 hover:bg-blue-50 rounded-full relative">
+            <Bell size={20} />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
-
-        <div className="flex items-center gap-3 cursor-pointer group border-l border-gray-100 pl-6">
-          <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159]">Dr. William Asante</p>
-            <p className="text-xs text-gray-500">General Practitioner</p>
-          </div>
-          <div className="h-10 w-10 rounded-full bg-[#073159] text-white flex items-center justify-center shadow-md">
-            <span className="font-bold">W</span>
-          </div>
-          <ChevronDown size={16} className="text-gray-400" />
+        <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center font-bold">
+            <User size={18} />
         </div>
       </div>
     </header>

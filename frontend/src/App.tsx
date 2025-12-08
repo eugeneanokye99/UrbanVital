@@ -1,290 +1,115 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+
+// --- Auth & Layouts ---
 import Login from './pages/Login';
-import AdminDashboard from './pages/admin/Dashboard'
-import RegisterStaff from './pages/admin/RegisterStaff'
 import ProtectedRoute from './components/ProtectedRoutes';
-import PatientList from './pages/admin/PatientsList';
-import Finance from './pages/admin/Finance';
-import Staff from './pages/admin/StaffManagement';
-import StaffDashboard from './pages/frontdesk/StaffDashboard';
-import CheckIn from './pages/frontdesk/CheckIn';
-import PatientDetail from './pages/frontdesk/PatientDetail'
-import PatientsList from './pages/frontdesk/PatientsList';
-import RegisterPatient from './pages/frontdesk/RegisterPatient';
-import Billings from './pages/frontdesk/Billings'
-import PatientDetails from './pages/clinician/PatientDetails';
-import Dashboard from './pages/clinician/Dashboard';
-import Patients from './pages/clinician/Patients';
-import Consulting from './pages/clinician/Consulting';
-import FollowUp from './pages/clinician/FollowUp';
-import Billing from './pages/clinician/Billing';
-import Documents from './pages/clinician/Documents';
-import LabInventory from './pages/lab/LabInventory';
-import LabQueue from './pages/lab/LabQueue';
-import LabResults from './pages/lab/LabResults';
-import LabDashboard from './pages/lab/LabDashboard';
-import LabPatients from './pages/lab/LabPatients';
-import PatientProfile from './pages/lab/LabPatientProfile';
-import PharmacyInventory from './pages/pharmacy/PharmacyInventory';
-import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
-import PharmacySettings from './pages/pharmacy/PharmacySettings';
-import PharmacyHistory from './pages/pharmacy/PharmacyHistory';
-import LabResultEntry from './pages/lab/LabEntry';
-import ClinicianLabResults from './pages/clinician/ClinicianLabResults';
+import AdminLayout from './layouts/AdminLayout'; // Ensure this exists from previous step
+import ClinicianLayout from './layouts/ClinicianLayout';
+
+// --- Admin Pages ---
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminPatientsList from './pages/admin/PatientsList';
+import AdminStaff from './pages/admin/StaffManagement';
+import AdminFinance from './pages/admin/Finance';
 import AdminInventory from './pages/admin/AdminInventory';
+import RegisterStaff from './pages/admin/RegisterStaff';
 import AdminSettings from './pages/admin/AdminSettings';
 
+// --- Front Desk (Staff) Pages ---
+import StaffDashboard from './pages/frontdesk/StaffDashboard';
+import StaffCheckIn from './pages/frontdesk/CheckIn';
+import StaffPatientDetail from './pages/frontdesk/PatientDetail';
+import StaffPatientsList from './pages/frontdesk/PatientsList';
+import RegisterPatient from './pages/frontdesk/RegisterPatient';
+import StaffBillings from './pages/frontdesk/Billings';
 
+// --- Clinician Pages ---
+import ClinicianDashboard from './pages/clinician/Dashboard';
+import ClinicianPatients from './pages/clinician/Patients';
+import ClinicianPatientDetails from './pages/clinician/PatientDetails';
+import ClinicianConsulting from './pages/clinician/Consulting';
+import ClinicianFollowUp from './pages/clinician/FollowUp';
+import ClinicianBilling from './pages/clinician/Billing';
+import ClinicianDocuments from './pages/clinician/Documents';
+import ClinicianLabResults from './pages/clinician/ClinicianLabResults';
 
+// --- Lab Pages ---
+import LabDashboard from './pages/lab/LabDashboard';
+import LabPatients from './pages/lab/LabPatients';
+import LabPatientProfile from './pages/lab/LabPatientProfile';
+import LabQueue from './pages/lab/LabQueue';
+import LabEntry from './pages/lab/LabEntry';
+import LabResults from './pages/lab/LabResults';
+import LabInventory from './pages/lab/LabInventory';
 
+// --- Pharmacy Pages ---
+import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
+import PharmacyInventory from './pages/pharmacy/PharmacyInventory';
+import PharmacyHistory from './pages/pharmacy/PharmacyHistory';
+import PharmacySettings from './pages/pharmacy/PharmacySettings';
 
 function App() {
   return (
     <Router>
-      <Toaster position="bottom-right" toastOptions={{duration: 8000}} />
-        <Routes>
-          {/* Main Routes */}
-          <Route path="/" element={<Login />} />
+      <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+      
+      <Routes>
+        {/* === Public Routes === */}
+        <Route path="/" element={<Login />} />
 
-          {/* Admin Routes */}
-          <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-          <Route
-          path="/admin/register"
-          element={
-            <ProtectedRoute>
-              <RegisterStaff />
-            </ProtectedRoute>
-          }
-        />
+        {/* === Admin Module (Wrapped in Layout) === */}
+        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="patients" element={<AdminPatientsList />} />
+          <Route path="staff" element={<AdminStaff />} />
+          <Route path="finance" element={<AdminFinance />} />
+          <Route path="inventory" element={<AdminInventory />} />
+          <Route path="register" element={<RegisterStaff />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
 
-        {/* Routes not protected and using for testing purposes only */}
+        {/* === Front Desk Module === */}
+        {/* TIP: Create a StaffLayout to handle sidebar/navbar responsiveness here too */}
+        <Route path="/frontdesk/staffdashboard" element={<StaffDashboard />} />
+        <Route path="/frontdesk/checkin" element={<StaffCheckIn />} />
+        <Route path="/frontdesk/patients" element={<StaffPatientsList />} />
+        <Route path="/frontdesk/patientdetail" element={<StaffPatientDetail />} />
+        <Route path="/frontdesk/registerpatient" element={<ProtectedRoute><RegisterPatient /></ProtectedRoute>} />
+        <Route path="/frontdesk/billings" element={<StaffBillings />} />
 
-        <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-        <Route
-        path="/admin/register"
-        element={
-          <ProtectedRoute><RegisterStaff /></ProtectedRoute>
-            
-        }
-      />
-      <Route
-        path="/admin/patients"
-        element={
-          <ProtectedRoute><PatientList /></ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/finance"
-        element={
-            <Finance />
-        }
-      />
-      <Route
-        path="/admin/staff"
-        element={
-            <Staff />
-        }
-      />
-      <Route
-        path="/admin/inventory"
-        element={
-            <AdminInventory />
-        }
-      />
-      <Route
-        path="/admin/settings"
-        element={
-            <AdminSettings />
-        }
-      />
+        {/* === Clinician Module (Wrapped in Layout) === */}
+       <Route path="/clinician" element={<ClinicianLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<ClinicianDashboard />} />
+          <Route path="patients" element={<ClinicianPatients />} />
+          <Route path="patient-details" element={<ClinicianPatientDetails />} />
+          <Route path="consulting" element={<ClinicianConsulting />} />
+          <Route path="followup" element={<ClinicianFollowUp />} />
+          <Route path="billing" element={<ClinicianBilling />} />
+          <Route path="documents" element={<ClinicianDocuments />} />
+          <Route path="clinicianlabresults" element={<ClinicianLabResults />} />
+       </Route>
 
+        {/* === Lab Module === */}
+        <Route path="/lab/labdashboard" element={<LabDashboard />} />
+        <Route path="/lab/labpatients" element={<LabPatients />} />
+        <Route path="/lab/labpatient-profile" element={<LabPatientProfile />} />
+        <Route path="/lab/labqueue" element={<LabQueue />} />
+        <Route path="/lab/labentry" element={<LabEntry />} />
+        <Route path="/lab/labresults" element={<LabResults />} />
+        <Route path="/lab/labinventory" element={<LabInventory />} />
 
-
-{/* FrontDesk routes */}
-
-
-      <Route
-        path="/frontdesk/staffdashboard"
-        element={
-            <StaffDashboard />
-        }
-      />
-      <Route
-        path="/frontdesk/checkin"
-        element={
-            <CheckIn />
-        }
-      />
-      <Route
-        path="/frontdesk/patientdetail"
-        element={
-            <PatientDetail />
-        }
-      />
-
-      <Route
-        path="/frontdesk/registerpatient"
-        element={
-          <ProtectedRoute><RegisterPatient /></ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/frontdesk/patients"
-        element={
-            <PatientsList />
-        }
-      />
-      <Route
-        path="/frontdesk/billings"
-        element={
-            <Billings />
-        }
-      />
-
-
-      {/* Clinician Routes */}
-          <Route 
-          path="/clinician/patient-details" 
-          element={
-          <PatientDetails />
-          }
-          />
-          <Route 
-          path="/clinician/dashboard" 
-          element={
-          <Dashboard />
-          }
-          />
-
-          <Route
-        path="/clinician/patients"
-        element={
-            <Patients />
-        }
-      />  
-      <Route
-        path="/clinician/consulting"
-        element={
-            <Consulting />
-        }
-      />  
-      <Route
-        path="/clinician/followup"
-        element={
-            <FollowUp />
-        }
-      />
-      <Route
-        path="/clinician/billing"
-        element={
-            <Billing />
-        }
-      /> 
-      <Route
-        path="/clinician/documents"
-        element={
-            <Documents />
-        }
-      /> 
-      <Route
-        path="/clinician/clinicianlabresults"
-        element={
-            <ClinicianLabResults />
-        }
-      /> 
-  {/* Lab Technician Routes */ }
-      <Route
-        path="/lab/labdashboard"
-        element={
-            <LabDashboard />
-        }
-      />
-      <Route
-        path="/lab/labpatients"
-        element={
-            <LabPatients />
-        }
-      />
-      <Route
-      path="/lab/labpatient-profile"
-      element={
-          <PatientProfile />
-      }
-    />
-    <Route
-      path="/lab/labentry"
-      element={
-          <LabResultEntry />
-      }
-    />
-      <Route
-        path="/lab/labresults"
-        element={
-            <LabResults />
-        }
-      /> 
-      <Route
-        path="/lab/labqueue"
-        element={
-            <LabQueue />
-        }
-      />
-      <Route
-        path="/lab/labinventory"
-        element={
-            <LabInventory />
-        }
-      /> 
-
-          {/* Pharmacy Routes -  */}
-         <Route
-        path="/pharmacy/pharmacydashboard"
-        element={
-            <PharmacyDashboard />
-        }
-      />
-      <Route
-        path="/pharmacy/pharmacyinventory"
-        element={
-            <PharmacyInventory />
-        }
-      /> 
-      <Route
-        path="/pharmacy/pharmacyhistory"
-        element={
-            <PharmacyHistory />
-        }
-      />
-      <Route
-        path="/pharmacy/pharmacysettings"
-        element={
-            <PharmacySettings />
-        }
-      />
-
-
+        {/* === Pharmacy Module === */}
+        <Route path="/pharmacy/pharmacydashboard" element={<PharmacyDashboard />} />
+        <Route path="/pharmacy/pharmacyinventory" element={<PharmacyInventory />} />
+        <Route path="/pharmacy/pharmacyhistory" element={<PharmacyHistory />} />
+        <Route path="/pharmacy/pharmacysettings" element={<PharmacySettings />} />
 
       </Routes>
-  </Router>
-
-
-);
+    </Router>
+  );
 }
 
 export default App;

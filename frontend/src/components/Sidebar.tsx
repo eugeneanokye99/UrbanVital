@@ -7,128 +7,162 @@ import {
   LogOut,
   Stethoscope,
   ClipboardList,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { logoutUser } from "../services/api";
 import { useState } from "react";
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  mobileOpen: boolean;
+  setMobileOpen: (open: boolean) => void;
+}
+
+export default function AdminSidebar({ mobileOpen, setMobileOpen }: AdminSidebarProps) {
   const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
+  const location = useLocation();
+  
+  // State for Desktop Collapse (w-64 vs w-20)
+  const [isDesktopExpanded, setIsDesktopExpanded] = useState(true);
 
   const handleLogout = () => {
     logoutUser();
     navigate("/");
   };
 
+  const navItems = [
+    { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/admin" },
+    { icon: <Users size={20} />, label: "Patients", path: "/admin/patients" },
+    { icon: <Stethoscope size={20} />, label: "Staff", path: "/admin/staff" },
+    { icon: <Package size={20} />, label: "Inventory", path: "/admin/inventory" },
+    { icon: <Receipt size={20} />, label: "Billing", path: "/admin/billing" },
+    { icon: <ClipboardList size={20} />, label: "Register", path: "/admin/register" },
+    { icon: <Settings size={20} />, label: "Settings", path: "/admin/settings" },
+  ];
+
   return (
-    <aside
-      className={`${
-        isOpen ? "w-64" : "w-20"
-      } bg-[#f7f7f7] h-screen flex flex-col justify-between transition-all duration-300 shadow-md`}
-    >
-      {/* Logo and toggle */}
-      <div className="flex items-center justify-between px-4 pt-4">
-        {isOpen && (
-          <div className="flex items-center gap-2">
+    <>
+      {/* --- Mobile Overlay (Backdrop) --- */}
+      {/* Only visible on mobile when sidebar is open */}
+      <div 
+        className={`fixed inset-0 z-30 bg-black/50 transition-opacity duration-300 md:hidden ${
+          mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setMobileOpen(false)}
+      />
+
+      {/* --- Sidebar Container --- */}
+      <aside
+        className={`
+          fixed md:sticky top-0 left-0 z-40 h-screen bg-[#f7f7f7] border-r border-gray-200 shadow-xl md:shadow-none flex flex-col justify-between transition-all duration-300 ease-in-out
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          ${isDesktopExpanded ? "md:w-64" : "md:w-20"}
+        `}
+      >
+        {/* Header: Logo & Toggles */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200/50">
+          
+          {/* Logo Area */}
+          <div className={`flex items-center gap-3 overflow-hidden ${!isDesktopExpanded && "md:justify-center w-full"}`}>
             <img
               src="/urbanvital-logo.png"
-              alt="UrbanVital"
-              className="w-8 h-8"
+              alt="Logo"
+              className="w-8 h-8 object-contain shrink-0"
             />
-            <h2 className="font-bold text-[#023047] text-lg leading-tight">
-              UrbanVital
-              <span className="block text-xs font-medium text-gray-500">
-                Health Consult
-              </span>
-            </h2>
+            {/* Show Text only if Mobile OR Desktop is Expanded */}
+            <div className={`transition-opacity duration-200 ${!isDesktopExpanded ? "md:hidden" : "block"}`}>
+              <h2 className="font-bold text-[#023047] text-lg leading-none">
+                UrbanVital
+              </h2>
+              <span className="text-[10px] font-medium text-gray-500">Health Consult</span>
+            </div>
           </div>
-        )}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="p-2 text-gray-500 hover:text-teal-600"
-        >
-          ☰
-        </button>
-      </div>
 
-      {/* Navigation */}
-      <nav className="mt-6 flex-1 px-4">
-        <ul className="space-y-2 text-[#023047]">
-          <SidebarItem
-            icon={<LayoutDashboard size={18} />}
-            label="Dashboard"
-            onClick={() => navigate("/admin")}
-            isOpen={isOpen}
-          />
-          <SidebarItem
-            icon={<Users size={18} />}
-            label="Patients"
-            onClick={() => navigate("/admin/patients")}
-            isOpen={isOpen}
-          />
-          <SidebarItem
-            icon={<Stethoscope size={18} />}
-            label="Staff"
-            onClick={() => navigate("/admin/staff")}
-            isOpen={isOpen}
-          />
-          <SidebarItem
-            icon={<Package size={18} />}
-            label="Inventory"
-            onClick={() => navigate("/admin/inventory")}
-            isOpen={isOpen}
-          />
-          <SidebarItem
-            icon={<Receipt size={18} />}
-            label="Billing"
-            onClick={() => navigate("/admin/billing")}
-            isOpen={isOpen}
-          />
-          <SidebarItem
-            icon={<ClipboardList size={18} />}
-            label="Register"
-            onClick={() => navigate("/admin/register")}
-            isOpen={isOpen}
-          />
-          <SidebarItem
-            icon={<Settings size={18} />}
-            label="Settings"
-            onClick={() => navigate("/admin/settings")}
-            isOpen={isOpen}
-          />
-        </ul>
-      </nav>
+          {/* Mobile Close Button */}
+          <button 
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden p-1 text-gray-500 hover:bg-gray-200 rounded-md"
+          >
+            <X size={20} />
+          </button>
 
-      {/* Logout */}
-      <div className="px-4 pb-6">
-        <button
-          onClick={handleLogout}
-          className="flex items-center w-full gap-3 p-2 rounded-md hover:bg-red-100 text-red-600 font-medium"
-        >
-          <LogOut size={18} />
-          {isOpen && <span>Logout</span>}
-        </button>
-      </div>
-    </aside>
-  );
-}
+          {/* Desktop Collapse Button */}
+          {/* Hidden on mobile */}
+          <button
+            onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
+            className="hidden md:flex p-1.5 text-gray-400 hover:text-teal-600 hover:bg-gray-200 rounded-md transition-colors"
+          >
+            {isDesktopExpanded ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+          </button>
+        </div>
 
-interface SidebarItemProps {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  isOpen: boolean;
-}
+        {/* Navigation Items */}
+        <nav className="flex-1 mt-4 px-3 overflow-y-auto custom-scrollbar">
+          <ul className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <li key={item.path}>
+                  <button
+                    onClick={() => {
+                      navigate(item.path);
+                      setMobileOpen(false); // Close sidebar on mobile after click
+                    }}
+                    className={`
+                      relative flex items-center w-full p-3 rounded-xl transition-all duration-200 group
+                      ${isActive 
+                        ? "bg-teal-50 text-teal-700 font-semibold" 
+                        : "text-gray-600 hover:bg-white hover:text-teal-600 hover:shadow-sm"
+                      }
+                      ${!isDesktopExpanded ? "md:justify-center" : ""}
+                    `}
+                  >
+                    {/* Icon */}
+                    <span className={`shrink-0 ${isActive ? "text-teal-600" : "text-gray-400 group-hover:text-teal-500"}`}>
+                      {item.icon}
+                    </span>
 
-function SidebarItem({ icon, label, onClick, isOpen }: SidebarItemProps) {
-  return (
-    <li
-      onClick={onClick}
-      className="flex items-center gap-3 p-2 rounded-md cursor-pointer hover:bg-[#e0f2f1] transition-colors"
-    >
-      {icon}
-      {isOpen && <span className="font-medium text-[15px]">{label}</span>}
-    </li>
+                    {/* Label - Hidden when collapsed on desktop */}
+                    <span className={`ml-3 whitespace-nowrap overflow-hidden transition-all duration-300 ${
+                      !isDesktopExpanded ? "md:w-0 md:opacity-0" : "md:w-auto md:opacity-100"
+                    }`}>
+                      {item.label}
+                    </span>
+
+                    {/* Active Indicator Strip (Optional Design Touch) */}
+                    {isActive && (
+                      <div className="absolute right-0 w-1 h-8 bg-teal-600 rounded-l-full hidden md:block" />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Logout Section */}
+        <div className="p-4 border-t border-gray-200/50">
+          <button
+            onClick={handleLogout}
+            className={`
+              flex items-center w-full p-2.5 rounded-xl transition-colors
+              text-red-500 hover:bg-red-50 hover:text-red-600
+              ${!isDesktopExpanded ? "md:justify-center" : ""}
+            `}
+          >
+            <LogOut size={20} className="shrink-0" />
+            
+            <span className={`ml-3 font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${
+                !isDesktopExpanded ? "md:w-0 md:opacity-0" : "md:w-auto md:opacity-100"
+            }`}>
+              Logout
+            </span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

@@ -11,8 +11,7 @@ import {
   TrendingDown, 
   Info
 } from "lucide-react";
-import ClinicianSidebar from "../../components/ClinicianSidebar";
-import ClinicianNavbar from "../../components/ClinicianNavbar";
+
 
 export default function ClinicianLabResults() {
   const [activeTab, setActiveTab] = useState("all");
@@ -104,10 +103,7 @@ export default function ClinicianLabResults() {
   const selectedResult = allLabResults.find(r => r.id === selectedResultId) || allLabResults[0];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans">
-      <ClinicianSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ClinicianNavbar />
+
         
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto h-full flex flex-col">
@@ -311,8 +307,7 @@ export default function ClinicianLabResults() {
             </div>
           </div>
         </main>
-      </div>
-    </div>
+
   );
 }
 

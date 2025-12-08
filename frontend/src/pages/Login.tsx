@@ -148,7 +148,7 @@ export default function Login() {
             
             {/* Username */}
             <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-700 ml-1">Email / Username</label>
+                <label className="text-sm font-semibold text-gray-700 ml-1">Username</label>
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-[#073159] transition-colors" />
