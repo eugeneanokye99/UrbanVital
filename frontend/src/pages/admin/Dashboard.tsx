@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Users, 
@@ -17,13 +17,13 @@ import {
   UserPlus,
   MoreHorizontal
 } from "lucide-react";
-import { fetchUserProfile } from "../../services/api";
+// import { fetchUserProfile } from "../../services/api";
 
 // NOTE: Since you are using AdminLayout in App.tsx, 
 // you do NOT need to import AdminNavbar or AdminSidebar here.
 
 export default function AdminDashboard() {
-  const [user, setUser] = useState<any>(null);
+  // const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
   
   // Mock Data
@@ -64,11 +64,11 @@ export default function AdminDashboard() {
 
   const maxWeekly = Math.max(...weeklyData.map((d) => d.value));
 
-  useEffect(() => {
-    fetchUserProfile()
-      .then((data) => setUser(data))
-      .catch(() => console.error("Failed to fetch user"));
-  }, []);
+  // useEffect(() => {
+  //   fetchUserProfile()
+  //     .then((data) => setUser(data))
+  //     .catch(() => console.error("Failed to fetch user"));
+  // }, []);
 
   const exportDashboardData = () => {
     console.log("Exporting...");

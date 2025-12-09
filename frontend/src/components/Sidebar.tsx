@@ -7,7 +7,6 @@ import {
   LogOut,
   Stethoscope,
   ClipboardList,
-  Menu,
   X,
   ChevronLeft,
   ChevronRight
