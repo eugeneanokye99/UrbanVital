@@ -6,6 +6,10 @@ import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoutes';
 import AdminLayout from './layouts/AdminLayout'; // Ensure this exists from previous step
 import ClinicianLayout from './layouts/ClinicianLayout';
+import StaffLayout from './layouts/StaffLayout';
+import LabLayout from './layouts/LabLayout';
+import PharmacyLayout from './layouts/PharmacyLayout';
+import UltrasoundLayout from './layouts/UltrasoundLayout';
 
 // --- Admin Pages ---
 import AdminDashboard from './pages/admin/Dashboard';
@@ -49,6 +53,13 @@ import PharmacyInventory from './pages/pharmacy/PharmacyInventory';
 import PharmacyHistory from './pages/pharmacy/PharmacyHistory';
 import PharmacySettings from './pages/pharmacy/PharmacySettings';
 
+// -- Ultrasound Pages --
+import UltrasoundDashboard from './pages/ultrasound/UltrasoundDashboard';
+import UltrasoundWorklist from './pages/ultrasound/UltrasoundWorklist';
+import UltrasoundReport from './pages/ultrasound/UltrasoundReport';
+import UltrasoundSettings from './pages/ultrasound/UltrasoundSettings';
+import UltrasoundHistory from './pages/ultrasound/UltrasoundHistory';
+
 function App() {
   return (
     <Router>
@@ -71,13 +82,15 @@ function App() {
         </Route>
 
         {/* === Front Desk Module === */}
-        {/* TIP: Create a StaffLayout to handle sidebar/navbar responsiveness here too */}
-        <Route path="/frontdesk/staffdashboard" element={<StaffDashboard />} />
-        <Route path="/frontdesk/checkin" element={<StaffCheckIn />} />
-        <Route path="/frontdesk/patients" element={<StaffPatientsList />} />
-        <Route path="/frontdesk/patientdetail" element={<StaffPatientDetail />} />
-        <Route path="/frontdesk/registerpatient" element={<ProtectedRoute><RegisterPatient /></ProtectedRoute>} />
-        <Route path="/frontdesk/billings" element={<StaffBillings />} />
+        <Route path="/frontdesk" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="staffdashboard" replace />} />
+          <Route path="staffdashboard" element={<StaffDashboard />} />
+          <Route path="checkin" element={<StaffCheckIn />} />
+          <Route path="patientdetail" element={<StaffPatientDetail />} />
+          <Route path="patients" element={<StaffPatientsList />} />
+          <Route path="registerpatient" element={<RegisterPatient />} />
+          <Route path="billings" element={<StaffBillings />} />
+        </Route>
 
         {/* === Clinician Module (Wrapped in Layout) === */}
        <Route path="/clinician" element={<ClinicianLayout />}>
@@ -92,20 +105,37 @@ function App() {
           <Route path="clinicianlabresults" element={<ClinicianLabResults />} />
        </Route>
 
-        {/* === Lab Module === */}
-        <Route path="/lab/labdashboard" element={<LabDashboard />} />
-        <Route path="/lab/labpatients" element={<LabPatients />} />
-        <Route path="/lab/labpatient-profile" element={<LabPatientProfile />} />
-        <Route path="/lab/labqueue" element={<LabQueue />} />
-        <Route path="/lab/labentry" element={<LabEntry />} />
-        <Route path="/lab/labresults" element={<LabResults />} />
-        <Route path="/lab/labinventory" element={<LabInventory />} />
+        {/* === Lab Module (Wrapped in Layout) === */}
+       <Route path="/lab" element={<LabLayout />}>
+          <Route index element={<Navigate to="labdashboard" replace />} />
+          <Route path="labdashboard" element={<LabDashboard />} />
+          <Route path="labpatients" element={<LabPatients />} />
+          <Route path="patient-profile" element={<LabPatientProfile />} />
+          <Route path="labqueue" element={<LabQueue />} />
+          <Route path="labentry" element={<LabEntry />} />
+          <Route path="labresults" element={<LabResults />} />
+          <Route path="labinventory" element={<LabInventory />} />
+       </Route>
 
         {/* === Pharmacy Module === */}
-        <Route path="/pharmacy/pharmacydashboard" element={<PharmacyDashboard />} />
-        <Route path="/pharmacy/pharmacyinventory" element={<PharmacyInventory />} />
-        <Route path="/pharmacy/pharmacyhistory" element={<PharmacyHistory />} />
-        <Route path="/pharmacy/pharmacysettings" element={<PharmacySettings />} />
+
+        <Route path="/pharmacy" element={<PharmacyLayout />}>
+          <Route index element={<Navigate to="pharmacydashboard" replace />} />
+          <Route path="pharmacydashboard" element={<PharmacyDashboard />} />
+          <Route path="pharmacyinventory" element={<PharmacyInventory />} />
+          <Route path="pharmacyhistory" element={<PharmacyHistory />} />
+          <Route path="pharmacysettings" element={<PharmacySettings />} />
+       </Route>
+
+       {/* === Ultrasound Module === */}
+      <Route path="/ultrasound" element={<UltrasoundLayout />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<UltrasoundDashboard />} />
+        <Route path="worklist" element={<UltrasoundWorklist />} />
+        <Route path="reports" element={<UltrasoundReport />} />
+        <Route path="settings" element={<UltrasoundSettings />} />
+        <Route path="history" element={<UltrasoundHistory />} />
+      </Route>
 
       </Routes>
     </Router>
