@@ -48,7 +48,7 @@ export default function Login() {
         } else if (userRole == "Cashier") {
           navigate("/frontdesk/staffdashboard");
         } else if (userRole == "Ultrasound") {
-          navigate("/pharmacy/staffdashboard");
+          navigate("/ultrasound/dashboard");
         }
         
       }
