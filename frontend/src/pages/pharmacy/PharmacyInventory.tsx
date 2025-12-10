@@ -71,7 +71,7 @@ export default function PharmacyInventory() {
         setInventory(prev => prev.map(i => (i.id === editingItem.id ? { ...i, ...editingItem } : i)));
     } else {
         // Mock ID generation for new item
-        const newItem = { ...editingItem, id: Date.now() }; 
+        // const newItem = { ...editingItem, id: Date.now() }; 
         // In a real app, you'd get form data properly here
     }
     toast.success(editingItem ? "Stock Updated Successfully" : "New Drug Added to Inventory");
