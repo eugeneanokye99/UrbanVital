@@ -41,13 +41,13 @@ export default function Login() {
         const userRole = result.role;
         if(userRole === "Clinician"){
           navigate("/clinician/dashboard");
-        } else if (userRole == "Pharmacist") {
+        } else if (userRole == "Pharmacy") {
           navigate("/pharmacy/pharmacydashboard");
-        } else if (userRole == "Lab Technician") {
+        } else if (userRole == "Lab") {
           navigate("/lab/labdashboard");
         } else if (userRole == "Cashier") {
           navigate("/frontdesk/staffdashboard");
-        } else if (userRole == "Ultrasound Technician") {
+        } else if (userRole == "Ultrasound") {
           navigate("/pharmacy/staffdashboard");
         }
         
