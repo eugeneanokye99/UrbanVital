@@ -4,32 +4,126 @@ import toast from "react-hot-toast";
 
 // --- Base Setup ---
 const API = axios.create({
-  // baseURL: "http://127.0.0.1:8000/api", // Django backend URL
-  baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
+  baseURL: "http://127.0.0.1:8000/api", // Django backend URL
+  // baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
 });
 
-// --- Interceptors ---
-// Attach token if available
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Store original request queue for retry
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+// Add request interceptor to include auth token
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-// Global error handling
+// Add response interceptor to handle token refresh
 API.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't tried refreshing yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If already refreshing, add to queue
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return API(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        // Try to refresh token
+        const refreshToken = localStorage.getItem("refresh");
+        
+        if (!refreshToken) {
+          throw new Error("No refresh token available");
+        }
+
+        // Call refresh endpoint
+        const response = await axios.post(
+          `${API.defaults.baseURL}/auth/token/refresh/`,
+          { refresh: refreshToken }
+        );
+
+        const { access } = response.data;
+        
+        // Update localStorage
+        localStorage.setItem("access", access);
+        
+        // Update login timestamp
+        localStorage.setItem("login_time", Date.now().toString());
+        
+        // Update the failed request with new token
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+        
+        // Process queued requests
+        processQueue(null, access);
+        isRefreshing = false;
+        
+        // Retry the original request
+        return API(originalRequest);
+        
+      } catch (refreshError) {
+        // If refresh fails, logout user
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
+        // Clear tokens and redirect to login
+        logoutUser();
+        
+        // Redirect to login page
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // Handle other errors
     const message =
       error.response?.data?.detail ||
       error.response?.data?.message ||
       "Something went wrong. Please try again.";
-    toast.error(message);
+    
+    // Don't show error toast for auth errors (they're handled above)
+    if (error.response?.status !== 401) {
+      toast.error(message);
+    }
+    
     return Promise.reject(error);
   }
 );
+
 
 //
 // --- AUTH API ---
@@ -40,16 +134,28 @@ export const loginUser = async (credentials: {
   username: string;
   password: string;
 }) => {
-  const response = await API.post("/auth/login/", credentials);
-  const data = response.data;
+  try {
+    const response = await API.post("/auth/login/", credentials);
+    const data = response.data;
 
-  // Store JWT tokens
-  localStorage.setItem("access", data.access);
-  localStorage.setItem("refresh", data.refresh);
-  toast.success("Login successful");
-
-  return data;
+    // Store JWT tokens
+    localStorage.setItem("access", data.access);
+    localStorage.setItem("refresh", data.refresh);
+    
+    // Store login timestamp to track token age
+    localStorage.setItem("login_time", Date.now().toString());
+    
+    toast.success("Login successful");
+    return data;
+  } catch (error: any) {
+    // Clear any existing tokens on login failure
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    localStorage.removeItem("login_time");
+    throw error;
+  }
 };
+
 export const registerStaff = async (staffData: {
   username: string;
   email?: string;
@@ -79,49 +185,259 @@ export const getStaffRole = async (email: string) => {
   return response.data;
 };
 
-
-// Refresh token (auto-called when access expires)
-export const refreshToken = async () => {
-  const refresh = localStorage.getItem("refresh");
-  if (!refresh) throw new Error("No refresh token found");
-  const response = await API.post("/auth/token/refresh/", { refresh });
-  const data = response.data;
-  localStorage.setItem("access", data.access);
-  return data;
-};
-
 // Get profile (if you later want user info)
 export const fetchUserProfile = async () => {
   const response = await API.get("/auth/profile/");
   return response.data;
 };
 
+// Check if token is about to expire
+export const isTokenExpired = () => {
+  const loginTime = localStorage.getItem("login_time");
+  if (!loginTime) return true;
+  
+  const loginTimestamp = parseInt(loginTime);
+  const now = Date.now();
+  const hoursSinceLogin = (now - loginTimestamp) / (1000 * 60 * 60);
+  
+  // If token is older than 55 minutes (5 minutes before 1 hour expiry)
+  return hoursSinceLogin > 0.916; // 55 minutes
+};
+
+// Manual refresh token function (for preemptive refresh)
+export const manualRefreshToken = async () => {
+  try {
+    const refresh = localStorage.getItem("refresh");
+    if (!refresh) {
+      throw new Error("No refresh token found");
+    }
+    
+    const response = await axios.post(
+      `${API.defaults.baseURL}/auth/token/refresh/`,
+      { refresh }
+    );
+    
+    const data = response.data;
+    localStorage.setItem("access", data.access);
+    
+    // Update login time
+    localStorage.setItem("login_time", Date.now().toString());
+    
+    return data;
+  } catch (error) {
+    // Clear tokens on refresh failure
+    logoutUser();
+    throw error;
+  }
+};
+
 // Logout (clear local storage)
 export const logoutUser = () => {
+  // Clear all localStorage items
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
   localStorage.removeItem("role");
+  localStorage.removeItem("login_time");
+  
   toast.success("Logged out");
+  
+  // Optional: Redirect to login page
+  // window.location.href = "/login";
 };
 
-// Register a new patient
-export const registerPatient = async (patientData: {
-  name: string;
-  phone: string;
-  address?: string;
+
+
+// --- PATIENTS API ---
+
+// GET: Fetch all patients with optional search/filter
+export const fetchPatients = async (params?: {
+  search?: string;
   gender?: string;
-  contact_person?: string;
-  flags?: string;
+  flag?: string;
 }) => {
-  const response = await API.post("/patients/", patientData);
+  const response = await API.get("/patients/", { params });
+  return response.data;  // Returns { count: number, results: Patient[] }
+};
+
+// POST: Create a new patient
+export const registerPatient = async (patientData: {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  date_of_birth?: string;
+  gender?: string;
+  marital_status?: string;
+  occupation?: string;
+  id_type?: string;
+  id_number?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  emergency_name?: string;
+  emergency_phone?: string;
+  emergency_relation?: string;
+  payment_mode?: string;
+  insurance_provider?: string;
+  insurance_number?: string;
+  medical_flags?: string;
+}) => {
+  const response = await API.post("/patients/create/", patientData);
   return response.data;
 };
 
-// Fetch all patients
-export const fetchPatients = async () => {
-  const response = await API.get("/patients/");
+// GET: Patient statistics
+export const fetchPatientStats = async () => {
+  const response = await API.get("/patients/stats/");
   return response.data;
 };
 
+// GET: Single patient by ID
+export const fetchPatientById = async (id: number) => {
+  const response = await API.get(`/patients/${id}/`);
+  return response.data;
+};
+
+// PUT: Update patient
+export const updatePatient = async (id: number, patientData: any) => {
+  const response = await API.put(`/patients/${id}/`, patientData);
+  return response.data;
+};
+
+// DELETE: Remove patient
+export const deletePatient = async (id: number) => {
+  await API.delete(`/patients/${id}/`);
+};
+
+
+// --- VISITS API FUNCTIONS ---
+export const createVisit = async (visitData: {
+  patient: number;
+  service_type: string;
+  priority?: string;
+  assigned_doctor?: number;
+  payment_status?: string;
+  notes?: string;
+}) => {
+  const response = await API.post("/visits/", visitData);
+  return response.data;
+};
+
+export const fetchActiveVisits = async () => {
+  const response = await API.get("/visits/active/");
+  return response.data;
+};
+
+export const updateVisitStatus = async (id: number, status: string) => {
+  const response = await API.patch(`/visits/${id}/status/`, { status });
+  return response.data;
+};
+
+export const fetchVisitStats = async () => {
+  const response = await API.get("/visits/stats/");
+  return response.data;
+};
+
+// --- VITAL SIGNS API ---
+export const recordVitals = async (vitalsData: {
+  visit: number;
+  temperature?: number;
+  blood_pressure_systolic?: number;
+  blood_pressure_diastolic?: number;
+  heart_rate?: number;
+  respiratory_rate?: number;
+  oxygen_saturation?: number;
+  weight?: number;
+  height?: number;
+  notes?: string;
+}) => {
+  const response = await API.post("/visits/vitals/", vitalsData);
+  return response.data;
+};
+
+
+
+// Service Items
+export const fetchServiceItems = async (params?: {
+  search?: string;
+  category?: string;
+}) => {
+  const response = await API.get("/billing/services/", { params });
+  return response.data;
+};
+
+// Invoices
+export const fetchInvoices = async (params?: {
+  status?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+}) => {
+  const response = await API.get("/billing/invoices/", { params });
+  return response.data;
+};
+
+export const fetchPendingInvoices = async () => {
+  const response = await API.get("/billing/invoices/pending/");
+  return response.data;
+};
+
+export const fetchInvoiceById = async (id: number) => {
+  const response = await API.get(`/billing/invoices/${id}/`);
+  return response.data;
+};
+
+export const createInvoice = async (invoiceData: {
+  patient: number;
+  visit?: number;
+  status?: string;
+  payment_method?: string;
+  insurance_provider?: string;
+  insurance_claim_id?: string;
+  notes?: string;
+}) => {
+  const response = await API.post("/billing/invoices/", invoiceData);
+  return response.data;
+};
+
+export const addInvoiceItem = async (
+  invoiceId: number,
+  itemData: {
+    service_item: number;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    discount?: number;
+  }
+) => {
+  const response = await API.post(`/billing/invoices/${invoiceId}/items/`, itemData);
+  return response.data;
+};
+
+// Payments
+export const processPayment = async (
+  invoiceId: number,
+  paymentData: {
+    amount: number;
+    payment_method: string;
+    reference?: string;
+    transaction_id?: string;
+    notes?: string;
+  }
+) => {
+  const response = await API.post(`/billing/invoices/${invoiceId}/pay/`, paymentData);
+  return response.data;
+};
+
+// Stats
+export const fetchBillingStats = async () => {
+  const response = await API.get("/billing/stats/");
+  return response.data;
+};
+
+// Dashboard API Functions
+export const fetchDashboardSummary = async () => {
+  const response = await API.get("/frontdesk/summary/");
+  return response.data;
+};
 
 export default API;

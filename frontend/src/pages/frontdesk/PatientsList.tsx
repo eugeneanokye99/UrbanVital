@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
 import { 
   Search, 
@@ -7,41 +7,47 @@ import {
   Eye, 
   FileText,
   Users,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
+import { fetchPatients } from "../../services/api"; 
 
 export default function StaffPatientsList() {
   const navigate = useNavigate(); 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock Data Generation
-  const patients = Array.from({ length: 16 }, (_, i) => {
-    const flags = ["Allergy", "Diabetes", "Hypertension", "None"];
-    const randomFlag = flags[i % 4];
+  // Fetch patients on component mount
+  useEffect(() => {
+    getPatients();
+  }, []);
+
+const getPatients = async () => {
+  try {
+    setLoading(true);
+    const params: any = {};
     
-    return {
-      no: i + 1,
-      mrn: `UV-2025-04${20 + i}`,
-      name: i % 2 === 0 ? "Williams Boampong" : "Sarah Mensah",
-      phone: "054 673 2719",
-      flag: randomFlag,
-      // Extra data for the profile page
-      gender: i % 2 === 0 ? "Male" : "Female",
-      dob: "1995-05-12",
-      email: "patient@urbanvital.com",
-      occupation: "Teacher",
-      address: "123 High Street, Accra",
-      age: 29
-    };
-  });
+    if (search) params.search = search;
+    if (filter !== "All") params.flag = filter;
+    
+    const data = await fetchPatients(params);
+    
+    setPatients(data.results || []);
+    // setTotalCount(data.count || 0);
+  } catch (error) {
+    console.error("Error fetching patients:", error);
+    setError("Failed to load patients. Please try again.");
+    setPatients([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const filteredPatients = patients.filter(
-    (p) =>
-      (filter === "All" || p.flag === filter) &&
-      (p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.mrn.toLowerCase().includes(search.toLowerCase()))
-  );
+
+
 
   // Navigation Handler
   const handleViewPatient = (patient: any) => {
@@ -55,6 +61,59 @@ export default function StaffPatientsList() {
       case "Hypertension": return "bg-yellow-100 text-yellow-800 border-yellow-200";
       default: return "bg-gray-100 text-gray-600 border-gray-200";
     }
+  };
+
+  // Render individual flag badges
+  const renderFlags = (patient: any) => {
+    if (!patient.flags || patient.flags.length === 0) {
+      return <span className="text-gray-400 text-xs">-</span>;
+    }
+
+    let flagsArray = patient.flags;
+    if (typeof patient.flags === 'string') {
+      try {
+        // Try to parse if it's a JSON string
+        flagsArray = JSON.parse(patient.flags);
+      } catch {
+        // If not JSON, split by comma
+        flagsArray = patient.flags.split(',').map((flag: string) => flag.trim());
+      }
+    }
+
+    if (!Array.isArray(flagsArray) || flagsArray.length === 0) {
+      return <span className="text-gray-400 text-xs">-</span>;
+    }
+
+    return (
+      <div className="flex flex-wrap gap-1">
+        {flagsArray.slice(0, 2).map((flag: string, index: number) => (
+          <span
+            key={index}
+            className={`px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full border ${getFlagStyle(flag)}`}
+          >
+            {flag}
+          </span>
+        ))}
+        {flagsArray.length > 2 && (
+          <span className="text-xs text-gray-500">+{flagsArray.length - 2}</span>
+        )}
+      </div>
+    );
+  };
+
+  // Format phone number for display
+  const formatPhone = (phone: string) => {
+    if (!phone) return "-";
+    // Remove any non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    // Format as Ghanaian number if starts with 0 or 233
+    if (digits.startsWith('0') && digits.length === 10) {
+      return digits.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    } else if (digits.startsWith('233') && digits.length === 12) {
+      const local = digits.slice(3);
+      return `0${local.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}`;
+    }
+    return phone;
   };
 
   return (
@@ -74,13 +133,13 @@ export default function StaffPatientsList() {
         
         <div className="flex flex-wrap items-center gap-3">
           <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-sm text-gray-600 font-medium">
-            <span className="font-bold text-[#073159]">{filteredPatients.length}</span> Found
+            <span className="font-bold text-[#073159]">{patients.length}</span> Found
           </div>
           <button 
-             onClick={() => navigate("/frontdesk/registerpatient")}
-             className="flex items-center gap-2 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors shadow-sm font-medium text-sm"
+            onClick={() => navigate("/frontdesk/registerpatient")}
+            className="flex items-center gap-2 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors shadow-sm font-medium text-sm"
           >
-             <Plus size={18} /> Register Patient
+            <Plus size={18} /> Register Patient
           </button>
         </div>
       </div>
@@ -95,7 +154,7 @@ export default function StaffPatientsList() {
           </div>
           <input
             type="text"
-            placeholder="Search by Name or MRN..."
+            placeholder="Search by Name, MRN, or Phone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition duration-150 ease-in-out text-sm"
@@ -125,108 +184,144 @@ export default function StaffPatientsList() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-8 w-8 text-[#073159] animate-spin mr-3" />
+          <span className="text-lg text-gray-600">Loading patients...</span>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div className="text-red-600 font-medium mb-2">{error}</div>
+          <button
+            onClick={getPatients}
+            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full divide-y divide-gray-200 text-left">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">MRN / ID</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Patient Name</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Flags</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredPatients.length > 0 ? (
-                filteredPatients.map((patient) => (
-                  <tr 
-                    key={patient.mrn} 
-                    onClick={() => handleViewPatient(patient)}
-                    className="hover:bg-blue-50/30 transition-colors group cursor-pointer"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {patient.no}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="font-mono text-sm font-medium text-[#073159] bg-blue-50 px-2 py-1 rounded">
-                        {patient.mrn}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-[#073159] font-bold text-xs mr-3 border border-blue-200">
-                          {patient.name.charAt(0)}
-                        </div>
-                        <div className="text-sm font-bold text-[#073159] group-hover:text-blue-600 group-hover:underline transition-all">
-                          {patient.name}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                      {patient.phone}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {patient.flag !== "None" ? (
-                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getFlagStyle(patient.flag)}`}>
-                          {patient.flag}
+      {!loading && !error && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-[900px] w-full divide-y divide-gray-200 text-left">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">MRN / ID</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Patient Name</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Flags</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {patients.length > 0 ? (
+                  patients.map((patient) => (
+                    <tr 
+                      key={patient.id || patient.mrn} 
+                      onClick={() => handleViewPatient(patient)}
+                      className="hover:bg-blue-50/30 transition-colors group cursor-pointer"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {patient.no}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="font-mono text-sm font-medium text-[#073159] bg-blue-50 px-2 py-1 rounded">
+                          {patient.mrn || `P-${patient.id}`}
                         </span>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation(); 
-                            handleViewPatient(patient);
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye size={18} />
-                        </button>
-                        <button 
-                          onClick={(e) => e.stopPropagation()} 
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                          title="More Options"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-[#073159] font-bold text-xs mr-3 border border-blue-200">
+                            {patient.name?.charAt(0) || '?'}
+                          </div>
+                          <div className="text-sm font-bold text-[#073159] group-hover:text-blue-600 group-hover:underline transition-all">
+                            {patient.name || 'Unknown'}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                        {formatPhone(patient.phone)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {renderFlags(patient)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation(); 
+                              handleViewPatient(patient);
+                            }}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
+                          <button 
+                            onClick={(e) => e.stopPropagation()} 
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                            title="More Options"
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      <div className="flex flex-col items-center justify-center">
+                        <FileText className="h-12 w-12 text-gray-300 mb-3" />
+                        <p className="text-lg font-medium">No patients found</p>
+                        <p className="text-sm">Try adjusting your search or filter.</p>
+                        {patients.length === 0 && (
+                          <button
+                            onClick={() => navigate("/frontdesk/registerpatient")}
+                            className="mt-4 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors text-sm font-medium"
+                          >
+                            Register First Patient
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    <div className="flex flex-col items-center justify-center">
-                      <FileText className="h-12 w-12 text-gray-300 mb-3" />
-                      <p className="text-lg font-medium">No patients found</p>
-                      <p className="text-sm">Try adjusting your search or filter.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination */}
-        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-gray-500 text-center sm:text-left">
-            Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredPatients.length}</span> of <span className="font-medium">{patients.length}</span> results
-          </span>
-          <div className="flex gap-2">
-             <button className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm text-gray-600 disabled:opacity-50 hover:bg-gray-50" disabled>Previous</button>
-             <button className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm text-gray-600 hover:bg-gray-50">Next</button>
+                )}
+              </tbody>
+            </table>
           </div>
+          
+          {/* Pagination - You can implement real pagination later */}
+          {patients.length > 0 && (
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span className="text-sm text-gray-500 text-center sm:text-left">
+                Showing <span className="font-medium">1</span> to <span className="font-medium">{patients.length}</span> of <span className="font-medium">{patients.length}</span> patients
+              </span>
+              <div className="flex gap-2">
+                <button 
+                  className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm text-gray-600 disabled:opacity-50 hover:bg-gray-50" 
+                  disabled
+                >
+                  Previous
+                </button>
+                <button 
+                  className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm text-gray-600 hover:bg-gray-50"
+                  disabled
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-      </div>
+      )}
     </div>
   );
 }

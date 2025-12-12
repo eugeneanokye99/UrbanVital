@@ -39,6 +39,7 @@ export default function Login() {
         const result = await getStaffRole(data.email);
         console.log("Staff Role:", result.role);
         const userRole = result.role;
+        localStorage.setItem("user", userRole);
         if(userRole === "Clinician"){
           navigate("/clinician/dashboard");
         } else if (userRole == "Pharmacy") {

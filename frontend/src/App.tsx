@@ -70,7 +70,7 @@ function App() {
         <Route path="/" element={<Login />} />
 
         {/* === Admin Module (Wrapped in Layout) === */}
-        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+        <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><AdminLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="patients" element={<AdminPatientsList />} />
@@ -82,7 +82,7 @@ function App() {
         </Route>
 
         {/* === Front Desk Module === */}
-        <Route path="/frontdesk" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
+        <Route path="/frontdesk" element={<ProtectedRoute roles={["Cashier"]}><StaffLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="staffdashboard" replace />} />
           <Route path="staffdashboard" element={<StaffDashboard />} />
           <Route path="checkin" element={<StaffCheckIn />} />
@@ -93,7 +93,7 @@ function App() {
         </Route>
 
         {/* === Clinician Module (Wrapped in Layout) === */}
-       <Route path="/clinician" element={<ClinicianLayout />}>
+       <Route path="/clinician" element={<ProtectedRoute roles={["Clinician"]}><ClinicianLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<ClinicianDashboard />} />
           <Route path="patients" element={<ClinicianPatients />} />

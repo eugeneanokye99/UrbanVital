@@ -13,6 +13,7 @@ import {
   Mail
 } from "lucide-react";
 import ghFlag from "../../assets/ghana-flag.png";
+import { registerPatient } from "../../services/api";
 
 export default function RegisterPatient() {
   const navigate = useNavigate();
@@ -45,21 +46,60 @@ export default function RegisterPatient() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+// In your RegisterPatient component
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success(`${form.firstName} registered successfully!`);
-      navigate("/frontdesk/patients"); 
-    } catch (error) {
-      toast.error("Failed to register patient.");
-    } finally {
-      setLoading(false);
+  try {
+    const patientData = {
+      first_name: form.firstName,
+      last_name: form.lastName,
+      date_of_birth: form.dob,
+      gender: form.gender,
+      marital_status: form.maritalStatus,
+      occupation: form.occupation,
+      id_type: form.idType,
+      id_number: form.idNumber,
+      phone: form.phone,
+      email: form.email || "",
+      address: form.address,
+      city: form.city || "",
+      emergency_name: form.emergencyName,
+      emergency_phone: form.emergencyPhone,
+      emergency_relation: form.emergencyRelation,
+      payment_mode: form.paymentMode,
+      insurance_provider: form.paymentMode === "Insurance" ? form.insuranceProvider : "",
+      insurance_number: form.paymentMode === "Insurance" ? form.insuranceNumber : "",
+      medical_flags: form.medicalFlags || "",
+    };
+
+    // Use the separated create endpoint
+    const newPatient = await registerPatient(patientData);
+    toast.success(`${patientData.first_name} ${patientData.last_name} registered successfully!`);
+    console.log("Created patient:", newPatient);
+    
+    // Navigate to patient list or detail page
+    navigate("/frontdesk/patients");
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    
+    // Show specific error messages
+    if (error.response?.data) {
+      Object.entries(error.response.data).forEach(([field, messages]) => {
+        if (Array.isArray(messages)) {
+          messages.forEach((message: string) => {
+            toast.error(`${field}: ${message}`);
+          });
+        }
+      });
+    } else {
+      toast.error("Failed to register patient. Please check your data.");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="max-w-5xl mx-auto h-full flex flex-col">
