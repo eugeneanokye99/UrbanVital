@@ -236,7 +236,7 @@ export const logoutUser = () => {
   // Clear all localStorage items
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
-  localStorage.removeItem("role");
+  localStorage.removeItem("user");
   localStorage.removeItem("login_time");
   
   toast.success("Logged out");
