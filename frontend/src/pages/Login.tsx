@@ -157,7 +157,7 @@ export default function Login() {
                     <input
                         type="text"
                         name="username"
-                        placeholder="Enter your email"
+                        placeholder="Enter your username"
                         value={form.username}
                         onChange={handleChange}
                         className="w-full pl-12 pr-4 py-3 lg:py-3.5 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:bg-white focus:border-[#073159] focus:ring-4 focus:ring-[#073159]/10 transition-all outline-none text-sm lg:text-base"
