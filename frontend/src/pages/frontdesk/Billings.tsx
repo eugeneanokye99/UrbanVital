@@ -31,13 +31,13 @@ export default function StaffBilling() {
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [amountTendered, setAmountTendered] = useState("");
-  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  // const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [serviceItems, setServiceItems] = useState<any[]>([]);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [showPatientSelectModal, setShowPatientSelectModal] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
   const [patientSearch, setPatientSearch] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  // const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
 
   const [newService, setNewService] = useState({
@@ -114,7 +114,7 @@ export default function StaffBilling() {
   };
 
   const handleSelectPatient = (patient: any) => {
-    setSelectedPatient(patient);
+    // setSelectedPatient(patient);
     setShowPatientSelectModal(false);
     createNewInvoiceForPatient(patient);
   };
@@ -171,14 +171,14 @@ export default function StaffBilling() {
         reference: `Payment for ${selectedInvoice.invoice_number}`,
       };
 
-      const result = await processPayment(selectedInvoice.id, paymentData);
+       await processPayment(selectedInvoice.id, paymentData);
       
       toast.success(`Payment processed successfully!`);
       
       // Show receipt if available
-      if (result.receipt) {
-        setIsReceiptModalOpen(true);
-      }
+      // if (result.receipt) {
+      //   setIsReceiptModalOpen(true);
+      // }
       
       // Refresh invoices list
       getPendingInvoices();
