@@ -1,20 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Search, 
-  Bell, 
-  ChevronDown, 
   FlaskConical, 
   Menu, 
   X, 
   ArrowLeft 
 } from "lucide-react";
+import { fetchUserProfile } from "../services/api";
 
 interface LabNavbarProps {
   onMenuClick?: () => void;
+  onSearch?: (query: string) => void; // Added prop for search functionality
 }
 
-export default function LabNavbar({ onMenuClick }: LabNavbarProps) {
+export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Fetch Logged-in User
+  useEffect(() => {
+    fetchUserProfile()
+      .then((data) => setUser(data))
+      .catch((err) => console.error("Failed to load user profile", err));
+  }, []);
+
+  // Handle Search Input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (onSearch) onSearch(query); // Pass data up if a handler exists
+  };
 
   // --- Mobile Search Overlay ---
   if (isMobileSearchOpen) {
@@ -32,9 +48,14 @@ export default function LabNavbar({ onMenuClick }: LabNavbarProps) {
             type="text"
             placeholder="Search Lab ID, MRN..."
             className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
+            value={searchQuery}
+            onChange={handleSearchChange}
           />
           <button 
-            onClick={() => setIsMobileSearchOpen(false)}
+            onClick={() => {
+              setSearchQuery("");
+              setIsMobileSearchOpen(false);
+            }}
             className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
           >
             <X size={18} />
@@ -67,6 +88,8 @@ export default function LabNavbar({ onMenuClick }: LabNavbarProps) {
             type="text"
             placeholder="Search Lab ID, MRN, or Test Name..."
             className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] outline-none transition-all sm:text-sm"
+            value={searchQuery}
+            onChange={handleSearchChange}
           />
         </div>
       </div>
@@ -82,28 +105,25 @@ export default function LabNavbar({ onMenuClick }: LabNavbarProps) {
           <Search size={22} />
         </button>
 
-        {/* Notification Bell */}
-        <button className="relative p-2 text-gray-400 hover:text-[#073159] hover:bg-purple-50 rounded-full transition-all">
-          <Bell size={22} />
-          <span className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
-        </button>
-
-        {/* Profile Section */}
+        {/* Profile Section (Notification removed) */}
         <div className="flex items-center gap-3 cursor-pointer group border-l border-gray-100 pl-2 md:pl-6">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159]">Alex Mensah</p>
-            <p className="text-xs text-gray-500">Senior Lab Tech</p>
+            <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159]">
+              {user ? user.username : "Lab Technician"}
+            </p>
+            <p className="text-xs text-gray-500">
+              {user?.role || "Laboratory Panel"}
+            </p>
           </div>
           
           <div className="relative">
             <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shadow-sm border border-purple-200 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                <FlaskConical size={18} />
+                {user?.username ? user.username.charAt(0).toUpperCase() : <FlaskConical size={18} />}
             </div>
             {/* Online Dot */}
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
 
-          <ChevronDown size={16} className="text-gray-400 hidden sm:block" />
         </div>
       </div>
     </header>
