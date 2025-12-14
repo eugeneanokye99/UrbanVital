@@ -201,12 +201,8 @@ export default function Login() {
                     >
                         {rememberMe && <CheckSquare size={14} className="text-white" />}
                     </div>
-                    <span className="text-gray-600 group-hover:text-gray-800">Remember me</span>
                 </label>
                 
-                <a href="#" className="font-semibold text-[#073159] hover:text-blue-700 hover:underline">
-                    Forgot password?
-                </a>
             </div>
 
             {/* Submit Button */}
