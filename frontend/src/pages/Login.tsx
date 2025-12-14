@@ -34,6 +34,7 @@ export default function Login() {
       const data = await loginUser(form);
 
       if (data.is_superuser) {
+        localStorage.setItem("user", "admin");
         navigate("/admin");
       } else {
         const result = await getStaffRole(data.email);
