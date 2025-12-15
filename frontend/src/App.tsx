@@ -40,12 +40,12 @@ import ClinicianLabResults from './pages/clinician/ClinicianLabResults';
 
 // --- Lab Pages ---
 import LabDashboard from './pages/lab/LabDashboard';
-import LabPatients from './pages/lab/LabPatients';
 import LabPatientProfile from './pages/lab/LabPatientProfile';
 import LabQueue from './pages/lab/LabQueue';
 import LabEntry from './pages/lab/LabEntry';
 import LabResults from './pages/lab/LabResults';
 import LabInventory from './pages/lab/LabInventory';
+import LabResultView from './pages/lab/LabResultView';
 
 // --- Pharmacy Pages ---
 import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
@@ -109,12 +109,12 @@ function App() {
        <Route path="/lab" element={<LabLayout />}>
           <Route index element={<Navigate to="labdashboard" replace />} />
           <Route path="labdashboard" element={<LabDashboard />} />
-          <Route path="labpatients" element={<LabPatients />} />
           <Route path="patient-profile" element={<LabPatientProfile />} />
           <Route path="labqueue" element={<LabQueue />} />
           <Route path="labentry" element={<LabEntry />} />
           <Route path="labresults" element={<LabResults />} />
           <Route path="labinventory" element={<LabInventory />} />
+          <Route path="labresult-view" element={<LabResultView />} />
        </Route>
 
         {/* === Pharmacy Module === */}

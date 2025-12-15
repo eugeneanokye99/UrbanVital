@@ -4,8 +4,8 @@ import toast from "react-hot-toast";
 
 // --- Base Setup ---
 const API = axios.create({
-  // baseURL: "http://127.0.0.1:8000/api", // Django backend URL
-  baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
+  //  baseURL: "http://127.0.0.1:8000/api", // Django backend URL
+ baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
 });
 
 // Store original request queue for retry
@@ -101,8 +101,8 @@ API.interceptors.response.use(
         logoutUser();
         
         // Redirect to login page
-        if (window.location.pathname !== "/login") {
-          window.location.href = "/login";
+        if (window.location.pathname !== "/") {
+          window.location.href = "/";
         }
         
         return Promise.reject(refreshError);

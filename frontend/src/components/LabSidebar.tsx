@@ -4,7 +4,6 @@ import {
   TestTube, 
   Microscope, 
   ClipboardList, 
-  Users,
   LogOut, 
   BookOpenText,
   X // Import Close Icon
@@ -29,7 +28,6 @@ export default function LabSidebar({ isOpen = false, onClose }: SidebarProps) {
 
   const menuItems = [
     { path: "/lab/labdashboard", label: "Overview", icon: <LayoutDashboard size={20} /> },
-    { path: "/lab/labpatients", label: "Patient Database", icon: <Users size={20} /> },
     { path: "/lab/labqueue", label: "Test Queue", icon: <TestTube size={20} /> },
     { path: "/lab/labentry", label: "Result Entry", icon: <Microscope size={20} /> },
     { path: "/lab/labresults", label: "Completed Results", icon: <ClipboardList size={20} /> },
