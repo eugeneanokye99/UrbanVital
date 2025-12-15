@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import Navigation
 import { 
   Search, 
   Menu, 
   Bell, 
-  Settings, 
   ChevronDown,
   X,
   ArrowLeft
@@ -12,9 +12,11 @@ import { fetchUserProfile } from "../services/api";
 
 interface AdminNavbarProps {
   onMenuClick?: () => void;
+  onSearch?: (query: string) => void; // Prop to pass search up
 }
 
-export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
+export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps) {
+  const navigate = useNavigate(); // Hook for navigation
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -24,6 +26,13 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
       .then((data) => setUser(data))
       .catch(() => console.error("Failed to fetch user"));
   }, []);
+
+  // Handle Search Input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (onSearch) onSearch(query);
+  };
 
   // --- Mobile Search View (Overlay) ---
   if (isMobileSearchOpen) {
@@ -41,12 +50,15 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
             type="text"
             placeholder="Search..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
           />
           {searchQuery && (
             <button 
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                  setSearchQuery("");
+                  if (onSearch) onSearch("");
+              }}
               className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
             >
               <X size={18} />
@@ -80,7 +92,7 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
             type="text"
             placeholder="Search patients, doctors, or records..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition-all duration-200 sm:text-sm"
           />
         </div>
@@ -97,15 +109,15 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
           <Search size={24} />
         </button>
 
-        {/* Quick Action Icons */}
-        <div className="flex items-center gap-1 md:gap-2 border-r border-gray-100 pr-2 md:pr-6">
-          <button className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all relative">
+        {/* Notification Bell */}
+        <div className="flex items-center border-r border-gray-100 pr-2 md:pr-6">
+          <button 
+            onClick={() => navigate("/admin/notifications")} // Navigate to Notifications
+            className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all relative"
+          >
             <Bell size={20} />
             {/* Notification Dot */}
             <span className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
-          </button>
-          <button className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all hidden sm:block">
-            <Settings size={20} />
           </button>
         </div>
 
@@ -113,9 +125,9 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
         <div className="flex items-center gap-3 cursor-pointer group pl-2">
           <div className="text-right hidden md:block">
             <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
-              {user ? user.username : "Dr. Kofi Asante"}
+              {user ? user.username : "Administrator"}
             </p>
-            <p className="text-xs text-gray-500">Administrator</p>
+            <p className="text-xs text-gray-500">Admin</p>
           </div>
 
           <div className="relative">
@@ -123,7 +135,6 @@ export default function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
             <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center font-bold text-xs md:text-sm shadow-md ring-2 ring-white group-hover:ring-blue-100 transition-all">
               {user?.username ? user.username.charAt(0) : "A"}
             </div>
-            
             {/* Online Status Dot */}
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 md:h-3 md:w-3 bg-green-500 border-2 border-white rounded-full"></span>
           </div>

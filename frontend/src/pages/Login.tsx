@@ -7,7 +7,7 @@ import {
   Lock, 
   Eye, 
   EyeOff, 
-  CheckSquare, 
+
   Activity,
   ArrowRight
 } from "lucide-react";
@@ -21,7 +21,6 @@ export default function Login() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -195,12 +194,6 @@ export default function Login() {
             {/* Options */}
             <div className="flex items-center justify-between text-xs lg:text-sm">
                 <label className="flex items-center gap-2 cursor-pointer group">
-                    <div 
-                        onClick={() => setRememberMe(!rememberMe)} 
-                        className={`w-4 h-4 lg:w-5 lg:h-5 rounded border flex items-center justify-center transition-colors ${rememberMe ? 'bg-[#073159] border-[#073159]' : 'bg-white border-gray-300'}`}
-                    >
-                        {rememberMe && <CheckSquare size={14} className="text-white" />}
-                    </div>
                 </label>
                 
             </div>

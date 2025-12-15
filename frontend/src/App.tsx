@@ -49,9 +49,11 @@ import LabResultView from './pages/lab/LabResultView';
 
 // --- Pharmacy Pages ---
 import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
+import PharmacyAlerts from './pages/pharmacy/PharmacyAlerts';
 import PharmacyInventory from './pages/pharmacy/PharmacyInventory';
 import PharmacyHistory from './pages/pharmacy/PharmacyHistory';
 import PharmacySettings from './pages/pharmacy/PharmacySettings';
+import PrescriptionReview from './pages/pharmacy/PrescriptionReview';
 
 // -- Ultrasound Pages --
 import UltrasoundDashboard from './pages/ultrasound/UltrasoundDashboard';
@@ -122,9 +124,11 @@ function App() {
         <Route path="/pharmacy" element={<PharmacyLayout />}>
           <Route index element={<Navigate to="pharmacydashboard" replace />} />
           <Route path="pharmacydashboard" element={<PharmacyDashboard />} />
+          <Route path="pharmacyalerts" element={<PharmacyAlerts />} />
           <Route path="pharmacyinventory" element={<PharmacyInventory />} />
           <Route path="pharmacyhistory" element={<PharmacyHistory />} />
           <Route path="pharmacysettings" element={<PharmacySettings />} />
+          <Route path="prescription-review" element={<PrescriptionReview />} />
        </Route>
 
        {/* === Ultrasound Module === */}

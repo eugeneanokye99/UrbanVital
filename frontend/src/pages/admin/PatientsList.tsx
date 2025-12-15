@@ -3,7 +3,6 @@ import {
   Search, 
   Filter, 
   Users,
-  Plus,
   Edit,
   Trash2,
   FileText
@@ -60,10 +59,6 @@ export default function AdminPatientsList() {
           </p>
         </div>
         
-        <button className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-lg shadow-blue-900/20 font-medium text-sm active:scale-95 transform">
-            <Plus size={18} />
-            Add New Patient
-        </button>
       </div>
 
       {/* Controls Section: Stack on Mobile */}

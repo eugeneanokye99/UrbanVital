@@ -1,29 +1,103 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   History, 
   Search, 
   Download, 
   Calendar,
   Filter,
-  ArrowUpRight
+  ArrowUpRight,
+  X
 } from "lucide-react";
+import { useOutletContext } from "react-router-dom";
+import { toast } from "react-hot-toast";
+
+interface PharmacyContextType {
+    globalSearch: string;
+}
 
 export default function PharmacyHistory() {
-  const [search, setSearch] = useState("");
+  // 1. Get Global Search
+  const { globalSearch } = useOutletContext<PharmacyContextType>();
+  
+  // 2. Local State
+  const [localSearch, setLocalSearch] = useState(globalSearch);
+  const [dateFilter, setDateFilter] = useState("");
+
+  // Sync global search to local state
+  useEffect(() => {
+      setLocalSearch(globalSearch);
+  }, [globalSearch]);
 
   // Mock Sales Data
   const salesHistory = [
-    { id: "RX-1001", date: "24 Oct 2025", time: "10:45 AM", patient: "Williams Boampong", items: "Paracetamol, Amoxicillin", amount: 45.00, method: "Cash", pharmacist: "John Doe" },
-    { id: "RX-1002", date: "24 Oct 2025", time: "09:30 AM", patient: "Sarah Mensah", items: "Artemether-Lumefantrine", amount: 35.00, method: "Insurance", pharmacist: "John Doe" },
-    { id: "RX-1003", date: "23 Oct 2025", time: "04:15 PM", patient: "Emmanuel Osei", items: "Atorvastatin, Aspirin", amount: 120.00, method: "MoMo", pharmacist: "Jane Smith" },
-    { id: "RX-1004", date: "23 Oct 2025", time: "02:00 PM", patient: "Ama Kyei", items: "Multivitamin Syrup", amount: 25.00, method: "Cash", pharmacist: "John Doe" },
+    { id: "RX-1001", date: "2025-10-24", time: "10:45 AM", patient: "Williams Boampong", items: "Paracetamol, Amoxicillin", amount: 45.00, method: "Cash", pharmacist: "John Doe" },
+    { id: "RX-1002", date: "2025-10-24", time: "09:30 AM", patient: "Sarah Mensah", items: "Artemether-Lumefantrine", amount: 35.00, method: "Insurance", pharmacist: "John Doe" },
+    { id: "RX-1003", date: "2025-10-23", time: "04:15 PM", patient: "Emmanuel Osei", items: "Atorvastatin, Aspirin", amount: 120.00, method: "MoMo", pharmacist: "Jane Smith" },
+    { id: "RX-1004", date: "2025-10-23", time: "02:00 PM", patient: "Ama Kyei", items: "Multivitamin Syrup", amount: 25.00, method: "Cash", pharmacist: "John Doe" },
   ];
 
-  // Simple filter
-  const filteredHistory = salesHistory.filter(sale => 
-    sale.patient.toLowerCase().includes(search.toLowerCase()) || 
-    sale.id.toLowerCase().includes(search.toLowerCase())
-  );
+  // 3. Filter Logic (Search + Date)
+  const filteredHistory = salesHistory.filter(sale => {
+    const searchLower = localSearch.toLowerCase();
+    const matchesSearch = 
+        sale.patient.toLowerCase().includes(searchLower) || 
+        sale.id.toLowerCase().includes(searchLower) ||
+        sale.items.toLowerCase().includes(searchLower);
+    
+    const matchesDate = dateFilter ? sale.date === dateFilter : true;
+
+    return matchesSearch && matchesDate;
+  });
+
+  // --- EXPORT FUNCTIONALITY ---
+  const handleExport = () => {
+      if (filteredHistory.length === 0) {
+          toast.error("No data available to export.");
+          return;
+      }
+
+      // 1. Define CSV Headers
+      const headers = ["Receipt ID", "Date", "Time", "Patient Name", "Items Dispensed", "Total Amount", "Payment Method", "Pharmacist"];
+
+      // 2. Convert Data to CSV Format
+      const csvRows = filteredHistory.map(row => {
+          return [
+              row.id,
+              row.date,
+              row.time,
+              `"${row.patient}"`, // Wrap strings in quotes to handle commas inside names
+              `"${row.items}"`,   // Wrap items in quotes
+              row.amount.toFixed(2),
+              row.method,
+              row.pharmacist
+          ].join(",");
+      });
+
+      // 3. Combine Headers and Rows
+      const csvString = [headers.join(","), ...csvRows].join("\n");
+
+      // 4. Create a Blob and Download Link
+      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      
+      // 5. Set Filename with Date
+      const fileName = `Pharmacy_Sales_Log_${new Date().toISOString().split('T')[0]}.csv`;
+      
+      link.href = url;
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      
+      // 6. Trigger Download & Cleanup
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Sales log downloaded successfully!");
+  };
+
+  const handleViewDetails = (id: string) => {
+      toast("View Details functionality coming soon", { icon: "ℹ️" });
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -37,7 +111,10 @@ export default function PharmacyHistory() {
           </h1>
           <p className="text-sm sm:text-base text-gray-500 mt-1">Audit trail of all medications dispensed.</p>
         </div>
-        <button className="w-full sm:w-auto bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 shadow-sm transition-colors text-sm">
+        <button 
+            onClick={handleExport}
+            className="w-full sm:w-auto bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 shadow-sm transition-all active:scale-95 text-sm"
+        >
           <Download size={18} /> Export CSV
         </button>
       </div>
@@ -50,16 +127,31 @@ export default function PharmacyHistory() {
                   type="text" 
                   placeholder="Search Patient, Drug, or Receipt #..." 
                   className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:border-teal-500 outline-none transition-all text-sm"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
               />
           </div>
           <div className="flex gap-2">
               <div className="relative flex-1 md:flex-none">
-                  <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                  <input type="date" className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-teal-500 text-sm" />
+                  <div className="absolute left-3 top-2.5 text-gray-400 pointer-events-none">
+                    <Calendar size={18} />
+                  </div>
+                  <input 
+                    type="date" 
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="w-full pl-10 pr-8 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-teal-500 text-sm cursor-pointer" 
+                  />
+                  {dateFilter && (
+                      <button 
+                        onClick={() => setDateFilter("")}
+                        className="absolute right-2 top-2.5 text-gray-400 hover:text-red-500"
+                      >
+                          <X size={16} />
+                      </button>
+                  )}
               </div>
-              <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 flex-shrink-0">
+              <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 flex-shrink-0" title="Advanced Filters">
                   <Filter size={20} />
               </button>
           </div>
@@ -82,7 +174,7 @@ export default function PharmacyHistory() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredHistory.map((item) => (
-                <tr key={item.id} className="hover:bg-teal-50/30 transition-colors">
+                <tr key={item.id} className="hover:bg-teal-50/30 transition-colors group">
                   <td className="px-6 py-4 font-mono text-[#073159] font-bold">{item.id}</td>
                   <td className="px-6 py-4 text-gray-600">
                     {item.date} <br/> <span className="text-xs text-gray-400">{item.time}</span>
@@ -102,7 +194,11 @@ export default function PharmacyHistory() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-gray-400 hover:text-[#073159] p-1 rounded-full hover:bg-gray-100 transition-all">
+                    <button 
+                        onClick={() => handleViewDetails(item.id)}
+                        className="text-gray-400 hover:text-[#073159] p-2 rounded-full hover:bg-gray-100 transition-all"
+                        title="View Receipt"
+                    >
                         <ArrowUpRight size={20} />
                     </button>
                   </td>
@@ -113,7 +209,9 @@ export default function PharmacyHistory() {
         </div>
         
         {filteredHistory.length === 0 && (
-            <div className="p-8 text-center text-gray-400 text-sm">No records found matching your search.</div>
+            <div className="p-12 text-center text-gray-400 text-sm">
+                No records found matching your filters.
+            </div>
         )}
       </div>
 

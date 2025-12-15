@@ -6,7 +6,6 @@ import {
   Package, 
   TrendingUp, 
   TrendingDown, 
-  Download, 
   AlertTriangle, 
   Calendar,
   Activity,
@@ -70,9 +69,6 @@ export default function AdminDashboard() {
   //     .catch(() => console.error("Failed to fetch user"));
   // }, []);
 
-  const exportDashboardData = () => {
-    console.log("Exporting...");
-  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -112,13 +108,6 @@ export default function AdminDashboard() {
           >
             <UserPlus size={18} />
             <span>Add Staff</span>
-          </button>
-          <button 
-            onClick={exportDashboardData}
-            className="flex-1 lg:flex-none flex justify-center items-center gap-2 px-4 py-3 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-lg shadow-blue-900/20 font-bold text-sm active:scale-95"
-          >
-            <Download size={18} />
-            <span>Export Report</span>
           </button>
         </div>
       </div>
