@@ -96,7 +96,7 @@ export default function PharmacyHistory() {
   };
 
   const handleViewDetails = (id: string) => {
-      toast("View Details functionality coming soon", { icon: "ℹ️" });
+      toast("View Details "+ id +" functionality coming soon", { icon: "ℹ️" });
   };
 
   return (
