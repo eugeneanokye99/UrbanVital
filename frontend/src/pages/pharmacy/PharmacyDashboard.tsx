@@ -10,7 +10,7 @@ import {
 
 interface PharmacyContextType {
     globalSearch: string;
-    prescriptions: any[]; // Receive global list
+    prescriptions?: any[]; // Receive global list
     markAsDispensed: (id: string) => void;
 }
 
@@ -28,7 +28,7 @@ export default function PharmacyDashboard() {
   useEffect(() => {
     if (location.state?.highlight) {
         // Search by patient name since alert message usually contains it
-        const itemToHighlight = prescriptions.find(p => 
+        const itemToHighlight = prescriptions?.find(p => 
             p.patient.toLowerCase().includes(location.state.highlight.toLowerCase())
         );
 
@@ -49,7 +49,7 @@ export default function PharmacyDashboard() {
   }, [location.state, prescriptions]);
 
   // 4. Filter Logic (Tab + Search)
-  const filteredList = prescriptions.filter(p => {
+  const filteredList = prescriptions?.filter(p => {
     // Tab Filter
     const matchesTab = activeTab === "pending" ? p.dispenseStatus === "Pending" : p.dispenseStatus === "Dispensed";
     
@@ -102,7 +102,7 @@ export default function PharmacyDashboard() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-        {filteredList.map((rx) => {
+        {filteredList?.map((rx) => {
             const isHighlighted = rx.id === highlightedId;
 
             return (
@@ -174,7 +174,7 @@ export default function PharmacyDashboard() {
         })}
       </div>
       
-      {filteredList.length === 0 && (
+      {filteredList?.length === 0 && (
         <div className="text-center py-20 opacity-50">
             <Pill size={48} className="mx-auto mb-4 text-gray-300" />
             <p className="text-sm sm:text-base">No items found matching "{globalSearch}".</p>
