@@ -3,7 +3,6 @@ import {
   LayoutDashboard, 
   Package, 
   History, 
-  Settings, 
   LogOut, 
   Pill,
   X, AlertOctagon, ShoppingCart
@@ -32,7 +31,6 @@ export default function PharmacySidebar({ isOpen = true, onClose }: SidebarProps
     { path: "/pharmacy/pharmacyalerts", label: "Alerts", icon: <AlertOctagon size={20} /> }, 
     { path: "/pharmacy/pharmacyinventory", label: "Drug Inventory", icon: <Package size={20} /> },
     { path: "/pharmacy/pharmacyhistory", label: "Sales History", icon: <History size={20} /> },
-    { path: "/pharmacy/pharmacysettings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
   return (
