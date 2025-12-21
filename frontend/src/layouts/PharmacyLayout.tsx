@@ -16,12 +16,24 @@ export default function PharmacyLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   
-  // --- 1. SHARED STATE ---
+  // --- SHARED STATE ---
   const [settings, setSettings] = useState({
     lowStockThreshold: 20, // Default threshold
     expiryWarning: true,
     emailReport: false
   });
+
+  //  Shared Sales History State
+  const [sales, setSales] = useState([
+    { id: "RX-1001", date: "24 Oct 2025", time: "10:45 AM", patient: "Williams Boampong", items: "Paracetamol, Amoxicillin", amount: 45.00, method: "Cash", pharmacist: "John Doe" },
+  ]);
+
+  //  Shared Inventory State (Optional but good for stock reduction)
+  const [inventory, setInventory] = useState([
+    { id: 1, name: "Paracetamol 500mg", price: 1.50, stock: 450, category: "Pain Relief" },
+    { id: 2, name: "Amoxicillin 500mg", price: 15.00, stock: 12, category: "Antibiotic" },
+    // ... rest of inventory
+  ]);
 
   const [generatedAlerts, setGeneratedAlerts] = useState<any[]>([]);
 
@@ -77,6 +89,14 @@ export default function PharmacyLayout() {
           onMenuClick={() => setIsSidebarOpen(true)}
           onSearch={(query) => setGlobalSearch(query)}
         />
+
+        <div className="flex h-screen bg-gray-50">
+              {/* ... Navbar & Sidebar ... */}
+              <main className="flex-1 overflow-y-auto p-8">
+                {/* 3. Pass sales and setSales down */}
+                <Outlet context={{ globalSearch, sales, setSales, inventory, setInventory }} />
+              </main>
+            </div>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
            {/* 3. Pass Settings & Alerts Down */}

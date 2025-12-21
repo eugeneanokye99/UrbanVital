@@ -54,6 +54,7 @@ import PharmacyInventory from './pages/pharmacy/PharmacyInventory';
 import PharmacyHistory from './pages/pharmacy/PharmacyHistory';
 import PharmacySettings from './pages/pharmacy/PharmacySettings';
 import PrescriptionReview from './pages/pharmacy/PrescriptionReview';
+import PharmacyPOS from './pages/pharmacy/PharmacyPOS';
 
 // -- Ultrasound Pages --
 import UltrasoundDashboard from './pages/ultrasound/UltrasoundDashboard';
@@ -129,6 +130,7 @@ function App() {
           <Route path="pharmacyhistory" element={<PharmacyHistory />} />
           <Route path="pharmacysettings" element={<PharmacySettings />} />
           <Route path="prescription-review" element={<PrescriptionReview />} />
+          <Route path="pharmacypos" element={<PharmacyPOS />} />
        </Route>
 
        {/* === Ultrasound Module === */}
