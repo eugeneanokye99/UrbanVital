@@ -19,6 +19,7 @@ import AdminFinance from './pages/admin/Finance';
 import AdminInventory from './pages/admin/AdminInventory';
 import RegisterStaff from './pages/admin/RegisterStaff';
 import AdminSettings from './pages/admin/AdminSettings';
+import AdminNotifications from './pages/admin/AdminNotifications';
 
 // --- Front Desk (Staff) Pages ---
 import StaffDashboard from './pages/frontdesk/StaffDashboard';
@@ -82,6 +83,7 @@ function App() {
           <Route path="inventory" element={<AdminInventory />} />
           <Route path="register" element={<RegisterStaff />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="notifications" element={<AdminNotifications />} />
         </Route>
 
         {/* === Front Desk Module === */}
