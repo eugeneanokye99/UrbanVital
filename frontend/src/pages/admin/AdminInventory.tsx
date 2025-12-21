@@ -1,11 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { useOutletContext } from "react-router-dom"; // 1. Import Context Hook
+import { useOutletContext } from "react-router-dom";
 import { 
   Search, 
   Package, 
   Filter, 
   Download, 
-  AlertTriangle, 
   DollarSign, 
   TrendingDown, 
   Calendar,
@@ -14,56 +13,163 @@ import {
   Edit,
   Trash2,
   X,
-  Save
+  Save,
+  Loader2,
+  AlertCircle,
+  Database,
+  RefreshCw
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { 
+  fetchPharmacyItems, 
+  fetchLabItems, 
+  fetchInventoryStats, 
+  createInventoryItem, 
+  updateInventoryItem, 
+  deleteInventoryItem,
+  getStockStatusInfo,
+  formatCurrency,
+  formatDate,
+  calculateTotalInventoryValue
+} from "../../services/api"; 
 
 export default function AdminInventory() {
-  // 2. Get Global Search Context
+  // Get Global Search Context
   const { globalSearch, setGlobalSearch } = useOutletContext<{ 
       globalSearch: string; 
       setGlobalSearch: (s: string) => void 
   }>();
 
   const [activeTab, setActiveTab] = useState<"pharmacy" | "lab">("pharmacy");
-  const [localSearch, setLocalSearch] = useState(globalSearch); // Local state for input
+  const [localSearch, setLocalSearch] = useState(globalSearch);
   const [filter, setFilter] = useState("All");
+  
+  // API State
+  const [pharmacyStock, setPharmacyStock] = useState<any[]>([]);
+  const [labStock, setLabStock] = useState<any[]>([]);
+  const [, setStats] = useState<any>({});
+  const [loading, setLoading] = useState({
+    pharmacy: true,
+    lab: true,
+    stats: true,
+  });
+  const [error, setError] = useState<string | null>(null);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
 
   // Sync Global Search to Local State
   useEffect(() => {
-      setLocalSearch(globalSearch);
+    setLocalSearch(globalSearch);
   }, [globalSearch]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value;
-      setLocalSearch(val);
-      setGlobalSearch(val); // Updates Navbar too
+  // Load data on component mount and tab change
+  useEffect(() => {
+    loadData();
+  }, [activeTab]);
+
+  // Load all required data
+  const loadData = async () => {
+    try {
+      setError(null);
+      
+      // Load stats
+      const statsData = await fetchInventoryStats();
+      setStats(statsData || {});
+
+      // Load inventory based on active tab
+      if (activeTab === "pharmacy") {
+        const pharmacyData = await fetchPharmacyItems();
+        setPharmacyStock(pharmacyData || []);
+      } else {
+        const labData = await fetchLabItems();
+        setLabStock(labData || []);
+      }
+
+      // Reset loading states
+      setLoading({
+        pharmacy: false,
+        lab: false,
+        stats: false,
+      });
+    } catch (error: any) {
+      console.error("Error loading inventory data:", error);
+      setError("Failed to load inventory data. Please try again.");
+      toast.error("Failed to load inventory data");
+      
+      // Reset loading states on error
+      setLoading({
+        pharmacy: false,
+        lab: false,
+        stats: false,
+      });
+    }
   };
 
-  // --- MOCK DATA ---
-  const [pharmacyStock, setPharmacyStock] = useState([
-    { id: 1, name: "Paracetamol 500mg", category: "Analgesic", stock: 450, minLevel: 100, price: 1.50, expiry: "2026-05-20", status: "Good" },
-    { id: 2, name: "Amoxicillin 500mg", category: "Antibiotic", stock: 12, minLevel: 50, price: 15.00, expiry: "2025-12-10", status: "Low Stock" },
-    { id: 3, name: "Artemether-Lum.", category: "Antimalarial", stock: 80, minLevel: 30, price: 35.00, expiry: "2024-02-15", status: "Expiring" },
-  ]);
+  // Refresh data
+  const handleRefresh = () => {
+    setLoading({
+      pharmacy: true,
+      lab: true,
+      stats: true,
+    });
+    loadData();
+  };
 
-  const [labStock, setLabStock] = useState([
-    { id: 101, name: "Malaria RDT Kits", category: "Test Kits", stock: 15, minLevel: 10, unit: "Boxes", expiry: "2025-12-01", status: "Good" },
-    { id: 102, name: "FBC Reagent (Diluent)", category: "Reagents", stock: 2, minLevel: 5, unit: "Bottles", expiry: "2026-01-15", status: "Low Stock" },
-    { id: 103, name: "Microscope Slides", category: "Consumables", stock: 500, minLevel: 100, unit: "Pcs", expiry: "N/A", status: "Good" },
-  ]);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalSearch(val);
+    setGlobalSearch(val);
+  };
 
   // Determine current dataset
   const currentData = activeTab === "pharmacy" ? pharmacyStock : labStock;
+  const currentLoading = activeTab === "pharmacy" ? loading.pharmacy : loading.lab;
 
-  // --- HANDLERS ---
+  // Calculate statistics from current data
+  const calculatedStats = useMemo(() => {
+    if (!currentData.length) return { lowStock: 0, expiringSoon: 0, totalValue: 0 };
+    
+    const lowStock = currentData.filter(item => {
+      const status = getStockStatusInfo(item);
+      return status.text === 'Low Stock' || status.text === 'Out of Stock';
+    }).length;
+    
+    const expiringSoon = currentData.filter(item => {
+      const status = getStockStatusInfo(item);
+      return status.text === 'Expiring Soon';
+    }).length;
+    
+    const totalValue = calculateTotalInventoryValue(currentData);
+    
+    return { lowStock, expiringSoon, totalValue };
+  }, [currentData]);
 
+  // Filter Logic
+  const filteredInventory = useMemo(() => {
+    if (!currentData) return [];
+    
+    return currentData.filter((item: any) => {
+      const matchesSearch = item.name?.toLowerCase().includes(localSearch.toLowerCase()) || 
+                           item.item_id?.toLowerCase().includes(localSearch.toLowerCase());
+      
+      const statusInfo = getStockStatusInfo(item);
+      
+      if (filter === "Low") {
+        return (statusInfo.text === 'Low Stock' || statusInfo.text === 'Out of Stock') && matchesSearch;
+      }
+      if (filter === "Expiring") {
+        return statusInfo.text === 'Expiring Soon' && matchesSearch;
+      }
+      return matchesSearch;
+    });
+  }, [currentData, localSearch, filter]);
+
+  // Handlers
   const handleAddNew = () => {
-    setEditingItem(null); 
+    setEditingItem(null);
     setIsModalOpen(true);
   };
 
@@ -72,134 +178,169 @@ export default function AdminInventory() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if(window.confirm("Are you sure you want to delete this item? This cannot be undone.")) {
-        if(activeTab === "pharmacy") {
-            setPharmacyStock(prev => prev.filter(i => i.id !== id));
-        } else {
-            setLabStock(prev => prev.filter(i => i.id !== id));
-        }
-        toast.success("Item deleted successfully.");
+  const handleDelete = async (id: number) => {
+    if (!window.confirm("Are you sure you want to delete this item? This cannot be undone.")) {
+      return;
     }
-  };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const id = editingItem ? editingItem.id : Date.now();
-    const stock = Number(formData.get("stock"));
-    const minLevel = Number(formData.get("minLevel"));
-    
-    let status = "Good";
-    if (stock === 0) status = "Out of Stock";
-    else if (stock <= minLevel) status = "Low Stock";
-
-    const baseItem = {
-        id,
-        name: String(formData.get("name") || ""),
-        category: String(formData.get("category") || ""),
-        stock,
-        minLevel,
-        expiry: String(formData.get("expiry") || ""),
-        status
-    };
-
-    if (activeTab === "pharmacy") {
-        const newItem = {
-            ...baseItem,
-            price: Number(formData.get("price") || 0),
-        };
-
-        if (editingItem) {
-            setPharmacyStock(prev => prev.map(i => i.id === newItem.id ? newItem : i));
-            toast.success("Pharmacy item updated");
-        } else {
-            setPharmacyStock(prev => [...prev, newItem]);
-            toast.success("Added to Pharmacy Inventory");
-        }
-    } else {
-        const newItem = {
-            ...baseItem,
-            unit: String(formData.get("unit") || "Units"),
-        };
-
-        if (editingItem) {
-            setLabStock(prev => prev.map(i => i.id === newItem.id ? newItem : i));
-            toast.success("Lab item updated");
-        } else {
-            setLabStock(prev => [...prev, newItem]);
-            toast.success("Added to Lab Inventory");
-        }
-    }
-    setIsModalOpen(false);
-  };
-
-  // Filter Logic (Now uses `localSearch` which is synced with Global)
-  const filteredInventory = useMemo(() => {
-    return currentData.filter((item: any) => {
-      const matchesSearch = item.name.toLowerCase().includes(localSearch.toLowerCase());
-      if (filter === "Low") return (item.status === "Low Stock" || item.status === "Out of Stock") && matchesSearch;
-      if (filter === "Expiring") return item.status === "Expiring" && matchesSearch;
-      return matchesSearch;
-    });
-  }, [currentData, localSearch, filter]);
-
-  // --- CSV EXPORT HANDLER ---
-  const handleExport = () => {
-      if (filteredInventory.length === 0) {
-          toast.error("No data to export");
-          return;
+    try {
+      await deleteInventoryItem(id);
+      
+      // Update local state
+      if (activeTab === "pharmacy") {
+        setPharmacyStock(prev => prev.filter(i => i.id !== id));
+      } else {
+        setLabStock(prev => prev.filter(i => i.id !== id));
       }
+      
+      toast.success("Item deleted successfully.");
+    } catch (error: any) {
+      console.error("Error deleting item:", error);
+      toast.error("Failed to delete item");
+    }
+  };
 
-      const headers = activeTab === "pharmacy" 
-        ? ["Item Name", "Category", "Stock Level", "Min Level", "Unit Price", "Expiry Date", "Status"]
-        : ["Item Name", "Category", "Stock Level", "Min Level", "Unit Type", "Expiry Date", "Status"];
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    try {
+      const formData = new FormData(e.target as HTMLFormElement);
+      
+      // Simplified item data for the new backend
+      const itemData: any = {
+        name: String(formData.get("name") || ""),
+        department: activeTab === "pharmacy" ? "PHARMACY" : "LAB", // Send department
+        current_stock: Number(formData.get("stock") || 0),
+        minimum_stock: Number(formData.get("minLevel") || 10),
+        unit_of_measure: String(formData.get("unit") || "PCS"),
+        selling_price: Number(formData.get("sellingPrice") || 0),
+        expiry_date: formData.get("expiry") ? String(formData.get("expiry")) : undefined,
+        is_active: true
+      };
 
-      const csvRows = filteredInventory.map((item: any) => {
-          if (activeTab === "pharmacy") {
-              return [
-                  `"${item.name}"`, 
-                  item.category,
-                  item.stock,
-                  item.minLevel,
-                  item.price.toFixed(2),
-                  item.expiry,
-                  item.status
-              ];
-          } else {
-              return [
-                  `"${item.name}"`,
-                  item.category,
-                  item.stock,
-                  item.minLevel,
-                  item.unit,
-                  item.expiry,
-                  item.status
-              ];
-          }
-      });
+      // Note: Removed category, batch_number, manufacturer, supplier, location, unit_cost
+      // since they're not in the simplified model
 
-      const csvString = [
-          headers.join(","), 
-          ...csvRows.map(row => row.join(","))
-      ].join("\n");
+      if (editingItem) {
+        // Update existing item
+        const updatedItem = await updateInventoryItem(editingItem.id, itemData);
+        
+        // Update local state
+        if (activeTab === "pharmacy") {
+          setPharmacyStock(prev => prev.map(i => i.id === editingItem.id ? updatedItem : i));
+        } else {
+          setLabStock(prev => prev.map(i => i.id === editingItem.id ? updatedItem : i));
+        }
+        
+        toast.success("Item updated successfully");
+      } else {
+        // Create new item
+        const newItem = await createInventoryItem(itemData);
+        
+        // Update local state
+        if (activeTab === "pharmacy") {
+          setPharmacyStock(prev => [...prev, newItem]);
+        } else {
+          setLabStock(prev => [...prev, newItem]);
+        }
+        
+        toast.success("Item added successfully");
+      }
+      
+      setIsModalOpen(false);
+      setEditingItem(null);
+    } catch (error: any) {
+      console.error("Error saving item:", error);
+      const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to save item";
+      toast.error(errorMsg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
-      const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${activeTab}_inventory_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  // CSV Export Handler
+  const handleExport = () => {
+    if (filteredInventory.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
 
-      toast.success(`${activeTab === 'pharmacy' ? 'Pharmacy' : 'Lab'} inventory exported as CSV!`);
+    const headers = activeTab === "pharmacy" 
+      ? ["Item ID", "Name", "Stock", "Min Stock", "Unit", "Selling Price", "Expiry Date", "Status"]
+      : ["Item ID", "Name", "Stock", "Min Stock", "Unit", "Selling Price", "Expiry Date", "Status"];
+
+    const csvRows = filteredInventory.map((item: any) => {
+      const statusInfo = getStockStatusInfo(item);
+      
+      // Simplified CSV for new model
+      return [
+        `"${item.item_id || ''}"`,
+        `"${item.name || ''}"`,
+        item.current_stock || 0,
+        item.minimum_stock || 0,
+        item.unit_of_measure || 'PCS',
+        item.selling_price || 0,
+        item.expiry_date || 'N/A',
+        statusInfo.text,
+      ];
+    });
+
+    const csvString = [
+      headers.join(","),
+      ...csvRows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${activeTab}_inventory_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(`${activeTab === 'pharmacy' ? 'Pharmacy' : 'Lab'} inventory exported as CSV!`);
+  };
+
+  // Loading skeleton for table
+  const renderLoadingSkeleton = () => {
+    return Array.from({ length: 5 }).map((_, index) => (
+      <tr key={index} className="animate-pulse">
+        <td className="px-6 py-4">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+        </td>
+        {activeTab === "pharmacy" && (
+          <td className="px-6 py-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+          </td>
+        )}
+        <td className="px-6 py-4">
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="h-6 bg-gray-200 rounded-full w-20 mx-auto"></div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="flex justify-end gap-2">
+            <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+            <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
+          </div>
+        </td>
+      </tr>
+    ));
   };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
       
-      {/* --- Header --- */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-[#073159] flex items-center gap-2">
@@ -211,72 +352,105 @@ export default function AdminInventory() {
           </p>
         </div>
         <div className="flex gap-2">
-            <button 
-                onClick={handleAddNew}
-                className="bg-[#073159] text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-[#062a4d] transition-transform active:scale-95 text-sm"
-            >
-                <Plus size={18} /> Add New Item
-            </button>
-            <button 
-                onClick={handleExport}
-                className="bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 text-sm active:scale-95 transition-all"
-            >
-                <Download size={18} /> Export CSV
-            </button>
+          <button 
+            onClick={handleRefresh}
+            disabled={loading.pharmacy || loading.lab}
+            className="bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 text-sm active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={18} className={loading.pharmacy || loading.lab ? "animate-spin" : ""} />
+            Refresh
+          </button>
+          <button 
+            onClick={handleAddNew}
+            className="bg-[#073159] text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-[#062a4d] transition-transform active:scale-95 text-sm"
+          >
+            <Plus size={18} /> Add New Item
+          </button>
+          <button 
+            onClick={handleExport}
+            disabled={filteredInventory.length === 0}
+            className="bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 text-sm active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download size={18} /> Export CSV
+          </button>
         </div>
       </div>
 
-      {/* --- Department Switcher --- */}
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <AlertCircle className="text-red-500 mt-0.5 flex-shrink-0" size={20} />
+          <div className="flex-1">
+            <p className="text-red-700 font-medium">{error}</p>
+            <button 
+              onClick={handleRefresh}
+              className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium flex items-center gap-1"
+            >
+              <RefreshCw size={14} /> Try Again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Department Switcher */}
       <div className="flex bg-gray-100 p-1 rounded-xl w-full sm:w-fit">
-          <button 
-            onClick={() => setActiveTab("pharmacy")}
-            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                activeTab === "pharmacy" ? "bg-white text-[#073159] shadow-sm" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-              <Package size={16} /> Pharmacy Stock
-          </button>
-          <button 
-            onClick={() => setActiveTab("lab")}
-            className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                activeTab === "lab" ? "bg-white text-[#073159] shadow-sm" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-              <FlaskConical size={16} /> Lab Inventory
-          </button>
+        <button 
+          onClick={() => setActiveTab("pharmacy")}
+          disabled={loading.pharmacy}
+          className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 ${
+            activeTab === "pharmacy" ? "bg-white text-[#073159] shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <Package size={16} /> Pharmacy Stock
+          {loading.pharmacy && <Loader2 size={14} className="animate-spin" />}
+        </button>
+        <button 
+          onClick={() => setActiveTab("lab")}
+          disabled={loading.lab}
+          className={`flex-1 sm:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-50 ${
+            activeTab === "lab" ? "bg-white text-[#073159] shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <FlaskConical size={16} /> Lab Inventory
+          {loading.lab && <Loader2 size={14} className="animate-spin" />}
+        </button>
       </div>
 
-      {/* --- Stats Cards (Dynamic based on Tab) --- */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard 
           title="Total Items" 
-          value={currentData.length.toString()} 
+          value={currentLoading ? <Loader2 className="animate-spin h-6 w-6" /> : currentData.length.toString()}
           icon={<Package size={20} />} 
           color="bg-blue-50 text-blue-600"
+          loading={currentLoading}
         />
         <StatCard 
           title="Low Stock" 
-          value={currentData.filter((i: any) => i.status === "Low Stock").length.toString()} 
+          value={currentLoading ? <Loader2 className="animate-spin h-6 w-6" /> : calculatedStats.lowStock.toString()}
           icon={<TrendingDown size={20} />} 
           color="bg-red-50 text-red-600"
+          loading={currentLoading}
         />
         <StatCard 
           title="Expiring Soon" 
-          value={currentData.filter((i: any) => i.status === "Expiring").length.toString()} 
+          value={currentLoading ? <Loader2 className="animate-spin h-6 w-6" /> : calculatedStats.expiringSoon.toString()}
           icon={<Calendar size={20} />} 
           color="bg-orange-50 text-orange-600"
+          loading={currentLoading}
         />
         {activeTab === "pharmacy" && (
-            <StatCard 
+          <StatCard 
             title="Total Value" 
-            value={`GH₵ ${pharmacyStock.reduce((acc, i) => acc + (i.price * i.stock), 0).toFixed(2)}`} 
+            value={currentLoading ? <Loader2 className="animate-spin h-6 w-6" /> : formatCurrency(calculatedStats.totalValue)}
             icon={<DollarSign size={20} />} 
             color="bg-green-50 text-green-600"
-            />
+            loading={currentLoading}
+          />
         )}
       </div>
 
-      {/* --- Unified Inventory Table --- */}
+      {/* Unified Inventory Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         
         {/* Toolbar */}
@@ -286,25 +460,27 @@ export default function AdminInventory() {
             <input 
               type="text" 
               placeholder={`Search ${activeTab} items...`}
-              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-white focus:border-[#073159] outline-none transition-all text-sm"
+              className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-white focus:border-[#073159] outline-none transition-all text-sm disabled:opacity-50"
               value={localSearch}
               onChange={handleSearchChange}
+              disabled={currentLoading}
             />
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <Filter size={18} className="text-gray-400 hidden md:block flex-shrink-0" />
-              {['All', 'Low', 'Expiring'].map((f) => (
-                <button 
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors flex-shrink-0 ${
-                    filter === f ? "bg-[#073159] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {f === 'All' ? 'All Stock' : f}
-                </button>
-              ))}
+            <Filter size={18} className="text-gray-400 hidden md:block flex-shrink-0" />
+            {['All', 'Low', 'Expiring'].map((f) => (
+              <button 
+                key={f}
+                onClick={() => setFilter(f)}
+                disabled={currentLoading}
+                className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors flex-shrink-0 disabled:opacity-50 ${
+                  filter === f ? "bg-[#073159] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {f === 'All' ? 'All Stock' : f}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -314,7 +490,6 @@ export default function AdminInventory() {
             <thead className="bg-gray-50 text-xs font-bold text-gray-500 uppercase">
               <tr>
                 <th className="px-6 py-4">Item Name</th>
-                <th className="px-6 py-4">Category</th>
                 <th className="px-6 py-4">Stock Level</th>
                 {activeTab === "pharmacy" && <th className="px-6 py-4">Unit Price</th>}
                 <th className="px-6 py-4">Expiry</th>
@@ -323,140 +498,256 @@ export default function AdminInventory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {filteredInventory.map((item: any) => (
-                <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="px-6 py-4 font-bold text-[#073159]">{item.name}</td>
-                  <td className="px-6 py-4 text-gray-600">{item.category}</td>
-                  <td className="px-6 py-4 font-medium">
-                      {item.stock} <span className="text-xs text-gray-400">{activeTab === "lab" ? item.unit : ""}</span>
-                  </td>
-                  {activeTab === "pharmacy" && (
-                      <td className="px-6 py-4 text-gray-700">₵{item.price.toFixed(2)}</td>
-                  )}
-                  <td className="px-6 py-4 font-mono text-gray-600">{item.expiry}</td>
-                  <td className="px-6 py-4 text-center">
-                      <StatusBadge status={item.status} />
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              {currentLoading ? (
+                renderLoadingSkeleton()
+              ) : filteredInventory.length > 0 ? (
+                filteredInventory.map((item: any) => {
+                  const statusInfo = getStockStatusInfo(item);
+                  return (
+                    <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-[#073159]">{item.name}</div>
+                        <div className="text-xs text-gray-400 mt-1">ID: {item.item_id}</div>
+                      </td>
+                      <td className="px-6 py-4 font-medium">
+                        {item.current_stock || 0} 
+                        <span className="text-xs text-gray-400 ml-1">
+                          ({item.unit_of_measure || 'PCS'})
+                        </span>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Min: {item.minimum_stock || 0}
+                        </div>
+                      </td>
+                      {activeTab === "pharmacy" && (
+                        <td className="px-6 py-4">
+                          <div className="text-gray-700 font-medium">
+                            {formatCurrency(item.selling_price || 0)}
+                          </div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4 font-mono text-gray-600">
+                        {formatDate(item.expiry_date || 'N/A')}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <StatusBadge statusInfo={statusInfo} />
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => handleEdit(item)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit"
                           >
-                              <Edit size={16} />
+                            <Edit size={16} />
                           </button>
                           <button 
                             onClick={() => handleDelete(item.id)}
                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
                           >
-                              <Trash2 size={16} />
+                            <Trash2 size={16} />
                           </button>
-                      </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={activeTab === "pharmacy" ? 6 : 5} className="px-6 py-12">
+                    <div className="text-center text-gray-400">
+                      <Database size={48} className="mx-auto mb-4 opacity-30" />
+                      <p className="text-lg font-medium mb-2">No inventory items found</p>
+                      <p className="text-sm mb-4">
+                        {localSearch 
+                          ? `No items match "${localSearch}"` 
+                          : `No ${activeTab} items available. Add your first item!`}
+                      </p>
+                      <button 
+                        onClick={handleAddNew}
+                        className="bg-[#073159] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#062a4d] transition-colors inline-flex items-center gap-2"
+                      >
+                        <Plus size={16} /> Add First Item
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
-
-        {filteredInventory.length === 0 && (
-          <div className="p-12 text-center text-gray-400 text-sm">
-              No inventory items found matching your filters.
-          </div>
-        )}
       </div>
 
-      {/* --- ADD / EDIT MODAL --- */}
+      {/* Add/Edit Modal */}
       {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-                  <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-[#073159] text-white">
-                      <h3 className="font-bold flex items-center gap-2">
-                          {editingItem ? <Edit size={18} /> : <Plus size={18} />}
-                          {editingItem ? `Edit ${activeTab === 'pharmacy' ? 'Drug' : 'Item'}` : `Add to ${activeTab === 'pharmacy' ? 'Pharmacy' : 'Lab'}`}
-                      </h3>
-                      <button onClick={() => setIsModalOpen(false)} className="p-1 hover:bg-white/20 rounded-full">
-                          <X size={20} />
-                      </button>
-                  </div>
-                  
-                  <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto">
-                      <div>
-                          <label className="text-xs font-bold text-gray-500 uppercase">Item Name</label>
-                          <input name="name" type="text" defaultValue={editingItem?.name} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none focus:border-[#073159] transition-all" required />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                              <label className="text-xs font-bold text-gray-500 uppercase">Category</label>
-                              <input name="category" type="text" defaultValue={editingItem?.category} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none" required />
-                          </div>
-                          <div>
-                              <label className="text-xs font-bold text-gray-500 uppercase">Expiry Date</label>
-                              <input name="expiry" type="date" defaultValue={editingItem?.expiry} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none" required />
-                          </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                          <div>
-                              <label className="text-xs font-bold text-gray-500 uppercase">Current Stock</label>
-                              <input name="stock" type="number" defaultValue={editingItem?.stock} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none font-bold text-gray-800" required />
-                          </div>
-                          <div>
-                              <label className="text-xs font-bold text-gray-500 uppercase text-red-500">Min. Level Alert</label>
-                              <input name="minLevel" type="number" defaultValue={editingItem?.minLevel || 10} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none" required />
-                          </div>
-                      </div>
-
-                      {/* Conditional Fields based on Tab */}
-                      {activeTab === "pharmacy" ? (
-                          <div>
-                              <label className="text-xs font-bold text-gray-500 uppercase">Selling Price (₵)</label>
-                              <input name="price" type="number" step="0.01" defaultValue={editingItem?.price} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none" required />
-                          </div>
-                      ) : (
-                          <div>
-                              <label className="text-xs font-bold text-gray-500 uppercase">Unit Type</label>
-                              <select name="unit" defaultValue={editingItem?.unit || "Pcs"} className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none">
-                                  <option value="Pcs">Pieces</option>
-                                  <option value="Boxes">Boxes</option>
-                                  <option value="Bottles">Bottles</option>
-                                  <option value="Kits">Kits</option>
-                              </select>
-                          </div>
-                      )}
-
-                      <div className="pt-4 flex gap-3">
-                          <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50">Cancel</button>
-                          <button type="submit" className="flex-1 py-3 bg-[#073159] text-white rounded-xl font-bold hover:bg-[#062a4d] flex items-center justify-center gap-2 shadow-lg">
-                              <Save size={18} /> Save Item
-                          </button>
-                      </div>
-                  </form>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-[#073159] text-white">
+              <h3 className="font-bold flex items-center gap-2">
+                {editingItem ? <Edit size={18} /> : <Plus size={18} />}
+                {editingItem 
+                  ? `Edit ${activeTab === 'pharmacy' ? 'Drug' : 'Item'}`
+                  : `Add to ${activeTab === 'pharmacy' ? 'Pharmacy' : 'Lab'}`}
+              </h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                disabled={saving}
+                className="p-1 hover:bg-white/20 rounded-full disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto">
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">Item Name *</label>
+                <input 
+                  name="name" 
+                  type="text" 
+                  defaultValue={editingItem?.name}
+                  className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none focus:border-[#073159] transition-all"
+                  required 
+                  disabled={saving}
+                />
               </div>
-          </div>
-      )}
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">Current Stock</label>
+                  <input 
+                    name="stock" 
+                    type="number" 
+                    min="0"
+                    defaultValue={editingItem?.current_stock || 0}
+                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none font-bold text-gray-800"
+                    required
+                    disabled={saving}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase text-red-500">Minimum Stock Alert</label>
+                  <input 
+                    name="minLevel" 
+                    type="number" 
+                    min="0"
+                    defaultValue={editingItem?.minimum_stock || 10}
+                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none"
+                    required
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">Unit Type</label>
+                  <select 
+                    name="unit" 
+                    defaultValue={editingItem?.unit_of_measure || "PCS"}
+                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none"
+                    disabled={saving}
+                  >
+                    <option value="PCS">Pieces</option>
+                    <option value="BOX">Boxes</option>
+                    <option value="BTL">Bottles</option>
+                    <option value="KIT">Kits</option>
+                    <option value="TAB">Tablets</option>
+                    <option value="CAP">Capsules</option>
+                    <option value="ML">Milliliters</option>
+                    <option value="GM">Grams</option>
+                    <option value="TEST">Tests</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase">Expiry Date</label>
+                  <input 
+                    name="expiry" 
+                    type="date" 
+                    defaultValue={editingItem?.expiry_date}
+                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none"
+                    disabled={saving}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase">Selling Price (₵)</label>
+                <input 
+                  name="sellingPrice" 
+                  type="number" 
+                  step="0.01"
+                  min="0"
+                  defaultValue={editingItem?.selling_price || 0}
+                  className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none"
+                  required
+                  disabled={saving}
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={saving}
+                  className="flex-1 py-3 border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={saving}
+                  className="flex-1 py-3 bg-[#073159] text-white rounded-xl font-bold hover:bg-[#062a4d] flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={18} /> Save Item
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 // Reusable Helper Components
-function StatCard({ title, value, icon, color }: any) {
-    return (
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md cursor-pointer hover:-translate-y-1">
-            <div>
-                <p className="text-xs text-gray-500 font-bold uppercase mb-1">{title}</p>
-                <h3 className="text-2xl font-bold text-[#073159]">{value}</h3>
-            </div>
-            <div className={`p-3 rounded-xl ${color}`}>{icon}</div>
-        </div>
-    )
+function StatCard({ title, value, icon, color, loading }: any) {
+  return (
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md cursor-pointer hover:-translate-y-1">
+      <div>
+        <p className="text-xs text-gray-500 font-bold uppercase mb-1">{title}</p>
+        <h3 className={`text-2xl font-bold text-[#073159] ${loading ? 'flex items-center' : ''}`}>
+          {value}
+        </h3>
+      </div>
+      <div className={`p-3 rounded-xl ${color}`}>{icon}</div>
+    </div>
+  );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === "Out of Stock") return <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1">Empty</span>;
-  if (status === "Low Stock") return <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1"><TrendingDown size={10}/> Low</span>;
-  if (status === "Expiring") return <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1"><AlertTriangle size={10}/> Expiring</span>;
-  return <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase">Good</span>;
+function StatusBadge({ statusInfo }: { statusInfo: any }) {
+  const { text, color } = statusInfo;
+  
+  let icon;
+  if (text === 'Out of Stock') icon = '❌';
+  else if (text === 'Low Stock') icon = '⚠️';
+  else if (text === 'Expiring Soon') icon = '⏳';
+  else if (text === 'Expired') icon = '⏰';
+  else icon = '✅';
+  
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-bold ${color} inline-flex items-center gap-1`}>
+      {icon} {text}
+    </span>
+  );
 }

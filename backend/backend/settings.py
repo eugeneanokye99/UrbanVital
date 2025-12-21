@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     "visits",
     "billing",
     'django_filters',
-    "frontdesk"
+    "frontdesk",
+    "inventory"
 ]
 
 MIDDLEWARE = [

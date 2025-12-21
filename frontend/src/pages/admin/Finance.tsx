@@ -12,13 +12,8 @@ import {
 export default function AdminFinance() {
   const [dateRange, setDateRange] = useState("This Week");
 
-  // Mock Transactions
-  const transactions = [
-    { id: "TRX-991", date: "24 Oct", desc: "Pharmacy Sales", category: "Revenue", amount: 4500, status: "Cleared" },
-    { id: "TRX-992", date: "24 Oct", desc: "Supplier Payment (Drugs)", category: "Expense", amount: -1200, status: "Cleared" },
-    { id: "TRX-993", date: "23 Oct", desc: "Lab Services", category: "Revenue", amount: 2100, status: "Cleared" },
-    { id: "TRX-994", date: "23 Oct", desc: "Maintenance Repair", category: "Expense", amount: -350, status: "Pending" },
-  ];
+  // Empty Transactions
+  const transactions: any[] = [];
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -46,7 +41,6 @@ export default function AdminFinance() {
                <option>This Month</option>
                <option>This Year</option>
             </select>
-            {/* Custom chevron could go here if appearance-none is used */}
           </div>
           <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] text-sm font-bold shadow-md transition-transform active:scale-95">
             <Download size={16} /> Report
@@ -55,12 +49,11 @@ export default function AdminFinance() {
       </div>
 
       {/* --- Metrics Cards --- */}
-      {/* 1 col mobile -> 2 cols tablet -> 4 cols desktop */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <FinanceCard title="Total Revenue" value="GH₵ 24,500" change="+12.5%" icon={<Wallet size={20}/>} color="bg-green-50 text-green-600" />
-        <FinanceCard title="Total Expenses" value="GH₵ 8,200" change="+4.1%" icon={<CreditCard size={20}/>} color="bg-red-50 text-red-600" trend="down" />
-        <FinanceCard title="Net Profit" value="GH₵ 16,300" change="+15.2%" icon={<TrendingUp size={20}/>} color="bg-blue-50 text-blue-600" />
-        <FinanceCard title="Pending Claims" value="GH₵ 3,450" subtext="Insurance" icon={<Activity size={20}/>} color="bg-orange-50 text-orange-600" />
+        <FinanceCard title="Total Revenue" value="GH₵ 0" change="+0.0%" icon={<Wallet size={20}/>} color="bg-green-50 text-green-600" />
+        <FinanceCard title="Total Expenses" value="GH₵ 0" change="+0.0%" icon={<CreditCard size={20}/>} color="bg-red-50 text-red-600" trend="down" />
+        <FinanceCard title="Net Profit" value="GH₵ 0" change="+0.0%" icon={<TrendingUp size={20}/>} color="bg-blue-50 text-blue-600" />
+        <FinanceCard title="Pending Claims" value="GH₵ 0" subtext="Insurance" icon={<Activity size={20}/>} color="bg-orange-50 text-orange-600" />
       </div>
 
       {/* --- Main Content Split --- */}
@@ -70,25 +63,18 @@ export default function AdminFinance() {
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
           <h3 className="font-bold text-base md:text-lg text-gray-800 mb-6">Revenue Trends & Sources</h3>
           
-          {/* Chart Container */}
-          <div className="h-48 w-full mb-8 overflow-hidden relative">
-              <svg viewBox="0 0 600 150" className="w-full h-full" preserveAspectRatio="none">
-                  <path d="M0 100 Q 150 20 300 80 T 600 40" fill="none" stroke="#073159" strokeWidth="3" vectorEffect="non-scaling-stroke" />
-                  <path d="M0 100 Q 150 20 300 80 T 600 40 V 150 H 0 Z" fill="url(#grad1)" opacity="0.1" />
-                  <defs>
-                      <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor="#073159" stopOpacity="1" />
-                          <stop offset="100%" stopColor="#073159" stopOpacity="0" />
-                      </linearGradient>
-                  </defs>
-              </svg>
+          {/* Empty Chart Container */}
+          <div className="h-48 w-full mb-8 overflow-hidden relative bg-gray-50 rounded-xl flex items-center justify-center">
+            <div className="text-center text-gray-400">
+              <p className="text-sm">No revenue data available</p>
+            </div>
           </div>
 
-          {/* Department Breakdown Bars */}
+          {/* Empty Department Breakdown Bars */}
           <div className="space-y-5">
-              <BreakdownBar label="Consultation Fees" amount="GH₵ 10,200" percent={45} color="bg-[#073159]" />
-              <BreakdownBar label="Pharmacy Sales" amount="GH₵ 8,400" percent={35} color="bg-teal-500" />
-              <BreakdownBar label="Laboratory Services" amount="GH₵ 5,900" percent={20} color="bg-purple-500" />
+              <BreakdownBar label="Consultation Fees" amount="GH₵ 0" percent={0} color="bg-gray-300" />
+              <BreakdownBar label="Pharmacy Sales" amount="GH₵ 0" percent={0} color="bg-gray-300" />
+              <BreakdownBar label="Laboratory Services" amount="GH₵ 0" percent={0} color="bg-gray-300" />
           </div>
         </div>
 
@@ -99,8 +85,22 @@ export default function AdminFinance() {
               <button className="text-xs font-bold text-[#073159] hover:underline">View All</button>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {transactions.map((tx) => (
+          <div className="flex-1 overflow-y-auto p-4">
+            {transactions.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <div className="mx-auto mb-3">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Activity className="h-6 w-6 text-gray-300" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium mb-1">No transactions yet</p>
+                  <p className="text-xs">Financial transactions will appear here</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transactions.map((tx) => (
                   <div key={tx.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-gray-100">
                       <div className="flex items-center gap-3">
                           <div className={`p-2 rounded-full shrink-0 ${tx.amount > 0 ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"}`}>
@@ -118,7 +118,9 @@ export default function AdminFinance() {
                           <p className="text-[10px] text-gray-400">{tx.status}</p>
                       </div>
                   </div>
-              ))}
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="p-4 border-t border-gray-100 bg-gray-50 text-center shrink-0">
@@ -127,9 +129,7 @@ export default function AdminFinance() {
               </button>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }

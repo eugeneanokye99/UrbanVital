@@ -440,4 +440,183 @@ export const fetchDashboardSummary = async () => {
   return response.data;
 };
 
+// --- STAFF API FUNCTIONS ---
+
+// GET: Fetch all staff with optional search/filter
+export const fetchAllStaff = async (params?: {
+  search?: string;
+  role?: string;
+}) => {
+  const response = await API.get("/staff/all/", { params });
+  return response.data; // Returns { staff: [], total_count: number, active_count: number }
+};
+
+// GET: Fetch staff statistics
+export const fetchStaffStats = async () => {
+  const response = await API.get("/staff/stats/");
+  return response.data; // Returns { total_staff: number, role_counts: object }
+};
+
+// GET: Fetch staff by email
+export const fetchStaffByEmail = async (email: string) => {
+  const response = await API.get("/staff/get-by-email/", {
+    params: { email }
+  });
+  return response.data;
+};
+
+// PUT: Update staff member
+export const updateStaff = async (id: number, staffData: {
+  username?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  // Add other updatable fields as needed
+}) => {
+  const response = await API.put(`/staff/${id}/`, staffData);
+  return response.data;
+};
+
+// DELETE: Remove staff member (admin only)
+export const deleteStaff = async (id: number) => {
+  await API.delete(`/staff/${id}/`);
+};
+
+// PATCH: Update staff status (active, suspended, on leave)
+export const updateStaffStatus = async (id: number, status: string) => {
+  const response = await API.patch(`/staff/${id}/status/`, { status });
+  return response.data;
+};
+
+// PATCH: Reset staff password (admin only)
+export const resetStaffPassword = async (id: number, newPassword: string) => {
+  const response = await API.patch(`/staff/${id}/reset-password/`, {
+    new_password: newPassword
+  });
+  return response.data;
+};
+
+// GET: Fetch staff roles (for dropdowns)
+export const fetchStaffRoles = async () => {
+  const response = await API.get("/staff/roles/");
+  return response.data;
+};
+
+// --- INVENTORY API FUNCTIONS ---
+
+// GET: Fetch all inventory items
+export const fetchAllInventory = async (params?: {
+  search?: string;
+  department?: 'PHARMACY' | 'LAB';
+}) => {
+  const response = await API.get("/inventory/", { params });
+  return response.data;
+};
+
+// GET: Fetch pharmacy items only
+export const fetchPharmacyItems = async () => {
+  const response = await API.get("/inventory/pharmacy/");
+  return response.data;
+};
+
+// GET: Fetch lab items only
+export const fetchLabItems = async () => {
+  const response = await API.get("/inventory/lab/");
+  return response.data;
+};
+
+// GET: Fetch inventory statistics
+export const fetchInventoryStats = async () => {
+  const response = await API.get("/inventory/stats/");
+  return response.data;
+};
+
+// GET: Fetch single inventory item by ID
+export const fetchInventoryById = async (id: number) => {
+  const response = await API.get(`/inventory/${id}/`);
+  return response.data;
+};
+
+// POST: Create new inventory item
+export const createInventoryItem = async (itemData: {
+  name: string;
+  department: 'PHARMACY' | 'LAB';
+  current_stock?: number;
+  minimum_stock?: number;
+  unit_of_measure?: string;
+  selling_price?: number;
+  expiry_date?: string;
+  is_active?: boolean;
+}) => {
+  const response = await API.post("/inventory/", itemData);
+  return response.data;
+};
+
+// PUT: Update inventory item
+export const updateInventoryItem = async (id: number, itemData: {
+  name?: string;
+  department?: 'PHARMACY' | 'LAB';
+  current_stock?: number;
+  minimum_stock?: number;
+  unit_of_measure?: string;
+  selling_price?: number;
+  expiry_date?: string;
+  is_active?: boolean;
+}) => {
+  const response = await API.put(`/inventory/${id}/`, itemData);
+  return response.data;
+};
+
+// PATCH: Partial update inventory item
+export const partialUpdateInventoryItem = async (id: number, itemData: any) => {
+  const response = await API.patch(`/inventory/${id}/`, itemData);
+  return response.data;
+};
+
+// DELETE: Remove inventory item
+export const deleteInventoryItem = async (id: number) => {
+  await API.delete(`/inventory/${id}/`);
+};
+
+// Utility functions
+export const getStockStatusInfo = (item: any) => {
+  const status = item.stock_status || '';
+  
+  if (status === 'OUT_OF_STOCK') {
+    return { text: 'Out of Stock', color: 'bg-red-100 text-red-700' };
+  }
+  if (status === 'LOW_STOCK') {
+    return { text: 'Low Stock', color: 'bg-orange-100 text-orange-700' };
+  }
+  if (status === 'EXPIRING_SOON') {
+    return { text: 'Expiring Soon', color: 'bg-yellow-100 text-yellow-700' };
+  }
+  return { text: 'Good', color: 'bg-green-100 text-green-700' };
+};
+
+export const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-GH', {
+    style: 'currency',
+    currency: 'GHS',
+    minimumFractionDigits: 2
+  }).format(amount);
+};
+
+// Format date
+export const formatDate = (dateString: string) => {
+  if (!dateString || dateString === 'N/A') return 'N/A';
+  return new Date(dateString).toLocaleDateString('en-GH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+
+export const calculateTotalInventoryValue = (items: any[]) => {
+  return items.reduce((total, item) => {
+    const value = item.total_value || (item.current_stock * item.unit_cost) || 0;
+    return total + value;
+  }, 0);
+};
 export default API;
