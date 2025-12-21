@@ -3,9 +3,10 @@ import {
   LayoutDashboard, 
   Package, 
   History, 
+  Settings, 
   LogOut, 
   Pill,
-  X, AlertOctagon, ShoppingCart
+  X, AlertOctagon
 } from "lucide-react";
 import { logoutUser } from "../services/api";
 import logo from "../assets/urbanvital-logo.png";
@@ -27,10 +28,10 @@ export default function PharmacySidebar({ isOpen = true, onClose }: SidebarProps
 
   const menuItems = [
     { path: "/pharmacy/pharmacydashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-    { path: "/pharmacy/pharmacypos", label: "Point of Sale", icon: <ShoppingCart size={20} /> }, // NEW LINK
     { path: "/pharmacy/pharmacyalerts", label: "Alerts", icon: <AlertOctagon size={20} /> }, 
     { path: "/pharmacy/pharmacyinventory", label: "Drug Inventory", icon: <Package size={20} /> },
     { path: "/pharmacy/pharmacyhistory", label: "Sales History", icon: <History size={20} /> },
+    { path: "/pharmacy/pharmacysettings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
   return (
