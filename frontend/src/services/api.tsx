@@ -402,7 +402,7 @@ export const createInvoice = async (invoiceData: {
 export const addInvoiceItem = async (
   invoiceId: number,
   itemData: {
-    service_item: number;
+    service_item?: number | null;
     description: string;
     quantity: number;
     unit_price: number;
@@ -618,5 +618,73 @@ export const calculateTotalInventoryValue = (items: any[]) => {
     const value = item.total_value || (item.current_stock * item.unit_cost) || 0;
     return total + value;
   }, 0);
+};
+
+
+
+// Update inventory after sale (you need to create this endpoint in Django)
+export const updateInventoryAfterSale = async (cartItems: any[]) => {
+  const response = await API.post("/inventory/update-after-sale/", {
+    items: cartItems.map(item => ({
+      id: item.id,
+      quantity_sold: item.qty
+    }))
+  });
+  return response.data;
+};
+
+
+// --- CART API FUNCTIONS ---
+
+// Create a new cart
+export const createCart = async (cartData?: {
+  patient_id?: number;
+  patient_name?: string;
+}) => {
+  const response = await API.post("/cart/create/", cartData || {});
+  return response.data;
+};
+
+// Get active cart for current user
+export const getActiveCart = async () => {
+  const response = await API.get("/cart/active/");
+  return response.data;
+};
+
+// Add item to cart
+export const addToCart = async (cartId: number, itemData: {
+  inventory_item_id: number;
+  quantity: number;
+}) => {
+  const response = await API.post(`/cart/${cartId}/add-item/`, itemData);
+  return response.data;
+};
+
+// Update cart item quantity
+export const updateCartItem = async (cartId: number, itemId: number, quantity: number) => {
+  const response = await API.patch(`/cart/${cartId}/items/${itemId}/`, { quantity });
+  return response.data;
+};
+
+// Remove item from cart
+export const removeCartItem = async (cartId: number, itemId: number) => {
+  const response = await API.delete(`/cart/${cartId}/items/${itemId}/`);
+  return response.data;
+};
+
+// Checkout cart (complete sale)
+export const checkoutCart = async (cartId: number, checkoutData: {
+  payment_method: string;
+  patient_id?: number;
+  patient_name?: string;
+}) => {
+  const response = await API.post(`/cart/${cartId}/checkout/`, checkoutData);
+  return response.data;
+};
+
+// Get cart details
+export const getCart = async (cartId: number) => {
+  const response = await API.get(`/cart/${cartId}/`);
+  return response.data;
 };
 export default API;

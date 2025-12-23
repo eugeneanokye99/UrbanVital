@@ -123,7 +123,7 @@ class Invoice(models.Model):
 class InvoiceItem(models.Model):
     """Line items on an invoice"""
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
-    service_item = models.ForeignKey(ServiceItem, on_delete=models.PROTECT, related_name='invoice_items')
+    service_item = models.ForeignKey(ServiceItem, on_delete=models.PROTECT, related_name='invoice_items', null=True, blank=True)
     description = models.CharField(max_length=500)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)

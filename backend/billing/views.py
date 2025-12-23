@@ -11,6 +11,7 @@ from .serializers import (
     ServiceItemSerializer, InvoiceSerializer, InvoiceListSerializer,
     InvoiceItemSerializer, PaymentSerializer, ReceiptSerializer
 )
+from decimal import Decimal  
 
 class ServiceItemListView(generics.ListCreateAPIView):
     """GET: List all service items, POST: Create new service item"""
@@ -88,9 +89,13 @@ class AddInvoiceItemView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        serializer = InvoiceItemSerializer(data=request.data)
+        # Add invoice to data
+        request_data = request.data.copy()
+        request_data['invoice'] = invoice.id
+        
+        serializer = InvoiceItemSerializer(data=request_data)
         if serializer.is_valid():
-            serializer.save(invoice=invoice)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -110,6 +115,8 @@ class ProcessPaymentView(APIView):
         amount = request.data.get('amount')
         payment_method = request.data.get('payment_method')
         reference = request.data.get('reference', '')
+        transaction_id = request.data.get('transaction_id', '')
+        notes = request.data.get('notes', '')
         
         if not amount or not payment_method:
             return Response(
@@ -118,24 +125,44 @@ class ProcessPaymentView(APIView):
             )
         
         try:
-            amount = float(amount)
-        except ValueError:
+            # Convert to Decimal properly
+            amount_decimal = Decimal(str(amount))  # Convert string to Decimal
+        except (ValueError, TypeError):
             return Response(
                 {'error': 'Invalid amount'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if amount is positive
+        if amount_decimal <= 0:
+            return Response(
+                {'error': 'Amount must be greater than 0'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if payment would exceed invoice total
+        if amount_decimal > invoice.balance:
+            return Response(
+                {'error': f'Payment amount ({amount_decimal}) exceeds balance ({invoice.balance})'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         # Create payment
         payment = Payment.objects.create(
             invoice=invoice,
-            amount=amount,
+            amount=amount_decimal,  # Use Decimal
             payment_method=payment_method,
             reference=reference,
+            transaction_id=transaction_id,
+            notes=notes,
             received_by=request.user
         )
         
+        # Refresh invoice from database to get updated amount_paid
+        invoice.refresh_from_db()
+        
         # Create receipt if payment completes the invoice
-        if invoice.amount_paid + amount >= invoice.total_amount:
+        if invoice.balance <= 0:  # Use balance instead of calculating
             receipt = Receipt.objects.create(
                 invoice=invoice,
                 amount=invoice.total_amount,
@@ -144,7 +171,7 @@ class ProcessPaymentView(APIView):
             )
             
             return Response({
-                'message': 'Payment processed successfully',
+                'message': 'Payment processed successfully - Invoice fully paid',
                 'payment': PaymentSerializer(payment).data,
                 'receipt': ReceiptSerializer(receipt).data,
                 'invoice': InvoiceSerializer(invoice).data
@@ -155,7 +182,7 @@ class ProcessPaymentView(APIView):
             'payment': PaymentSerializer(payment).data,
             'invoice': InvoiceSerializer(invoice).data
         }, status=status.HTTP_201_CREATED)
-
+    
 class BillingStatsView(APIView):
     """GET: Billing statistics"""
     permission_classes = [permissions.IsAuthenticated]

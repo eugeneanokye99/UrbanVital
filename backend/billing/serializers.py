@@ -16,6 +16,19 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         model = InvoiceItem
         fields = '__all__'
         read_only_fields = ['total_price']
+        extra_kwargs = {
+            'service_item': {'required': False, 'allow_null': True}  # Make service_item optional
+        }
+    
+    def create(self, validated_data):
+        # Calculate total_price if not provided
+        if 'total_price' not in validated_data:
+            quantity = validated_data.get('quantity', 1)
+            unit_price = validated_data.get('unit_price', 0)
+            discount = validated_data.get('discount', 0)
+            validated_data['total_price'] = (unit_price * quantity) - discount
+        
+        return super().create(validated_data)
 
 class InvoiceSerializer(serializers.ModelSerializer):
     patient_details = PatientSerializer(source='patient', read_only=True)
@@ -30,9 +43,16 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'invoice_number', 'total_amount', 'amount_paid', 'balance',
             'created_at', 'updated_at', 'payment_date'
         ]
+        extra_kwargs = {
+            'status': {'required': False},  # Status is auto-calculated
+            'patient': {'required': False}  # Patient can be null for walk-in
+        }
     
     def create(self, validated_data):
         validated_data['created_by'] = self.context['request'].user
+        # Don't set status here, let the model's save() handle it
+        if 'status' not in validated_data:
+            validated_data['status'] = 'Pending'
         return super().create(validated_data)
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -43,6 +63,10 @@ class PaymentSerializer(serializers.ModelSerializer):
         model = Payment
         fields = '__all__'
         read_only_fields = ['created_at']
+        extra_kwargs = {
+            'amount': {'required': True},
+            'payment_method': {'required': True}
+        }
     
     def create(self, validated_data):
         validated_data['received_by'] = self.context['request'].user
@@ -76,3 +100,6 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             'status', 'total_amount', 'amount_paid', 'balance', 'invoice_date',
             'payment_method', 'items_count'
         ]
+        extra_kwargs = {
+            'patient': {'required': False}  # Patient can be null
+        }
