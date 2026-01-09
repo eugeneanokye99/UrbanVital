@@ -4,11 +4,8 @@ import {
   Save, 
   FileText,
   Monitor,
-  Wifi,
   Plus,
   Loader2,
-  Edit,
-  Trash2
 } from "lucide-react";
 import { 
   fetchUltrasoundEquipment, 

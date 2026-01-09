@@ -109,6 +109,9 @@ export default function UltrasoundReport() {
       }
 
       // Complete the scan
+      if (!currentScanId) {
+        throw new Error("Failed to create or retrieve scan ID");
+      }
       await completeUltrasoundScan(currentScanId);
       toast.success("Scan completed successfully");
       navigate("/ultrasound/worklist");
