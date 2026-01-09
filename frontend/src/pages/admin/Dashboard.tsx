@@ -1,31 +1,25 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Users, 
-  DollarSign, 
-  Package, 
   TrendingUp, 
   TrendingDown, 
-  AlertTriangle, 
   Calendar,
-  Activity,
   ArrowRight,
-  Clock,
-  Stethoscope,
-  CreditCard,
   UserPlus,
   MoreHorizontal,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Users,
+  DollarSign,
+  Package,
+  Clock,
+  Stethoscope,
+  Activity,
+  CreditCard,
+  AlertTriangle
 } from "lucide-react";
 import { 
-  fetchDashboardSummary,
-  fetchPatientStats,
-  fetchInventoryStats,
-  fetchPendingInvoices,
-  fetchBillingStats,
-  fetchActiveVisits,
-  fetchAllStaff
+  fetchAdminStats
 } from "../../services/api";
 
 export default function AdminDashboard() {
@@ -48,6 +42,7 @@ export default function AdminDashboard() {
 
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [onDutyStaff, setOnDutyStaff] = useState<any[]>([]);
   const [weeklyData, setWeeklyData] = useState([
     { day: "Mon", value: 0 },
     { day: "Tue", value: 0 },
@@ -58,179 +53,76 @@ export default function AdminDashboard() {
     { day: "Sun", value: 0 },
   ]);
 
-  const [loading, setLoading] = useState({
-    dashboard: true,
-    patients: true,
-    inventory: true,
-    billing: true,
-    visits: true,
-    alerts: true
-  });
-
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [onDutyStaff] = useState<any[]>([]);
 
   // Fetch all dashboard data
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setError(null);
+        setIsLoading(true);
         
-        // Load multiple data sources in parallel
-        const [
-          dashboardSummary,
-          patientStats,
-          inventoryStats,
-          billingStats,
-          activeVisits,
-          lowStockItems
-        ] = await Promise.all([
-          fetchDashboardSummary().catch(() => ({})),
-          fetchPatientStats().catch(() => ({})),
-          fetchInventoryStats().catch(() => ({ total_items: 0, total_value: 0, low_stock: 0, out_of_stock: 0, expiring_soon: 0 })),
-          fetchBillingStats().catch(() => ({})),
-          fetchActiveVisits().catch(() => []),
-          fetchAllStaff().catch(() => [])
-        ]);
-
-        // Set analytics
+        // Fetch comprehensive admin stats
+        const adminStats = await fetchAdminStats();
+        
+        // Set analytics from real data
         setAnalytics({
-          revenue: billingStats.total_revenue || dashboardSummary.revenue || 0,
-          revenueChange: "+0%", // You can calculate this from historical data
-          patients: patientStats.total_patients || patientStats.count || 0,
-          patientsChange: "+0%", // Calculate from historical data
-          drugs: inventoryStats.total_items || 0,
+          revenue: adminStats.revenue.today || 0,
+          revenueChange: adminStats.revenue.change_percentage || "+0%",
+          patients: adminStats.patients.total || 0,
+          patientsChange: adminStats.patients.change_percentage || "+0%",
+          drugs: adminStats.inventory.total_items || 0,
         });
 
-        // Set live stats
+        // Set live stats from real data
         setLiveStats({
-          waitingRoom: activeVisits.length || 0,
-          doctorsActive:  0,
-          triageQueue: activeVisits.filter((visit: any) => visit.priority === "High" || visit.status === "Waiting").length || 0
+          waitingRoom: adminStats.visits.active || 0,
+          doctorsActive: 0, // Can add staff active tracking later
+          triageQueue: adminStats.visits.today || 0
         });
 
-        // Set recent transactions (pending invoices)
-        const pendingInvoices = await fetchPendingInvoices().catch(() => []);
-        const transactions = pendingInvoices.slice(0, 3).map((invoice: any) => ({
-          id: invoice.id,
-          patient: invoice.patient_name || `Patient ${invoice.patient_id}`,
-          service: invoice.items?.[0]?.description || "General Service",
-          amount: invoice.total_amount || 0,
-          status: invoice.payment_status === "PAID" ? "Paid" : "Pending",
-          method: invoice.payment_method || "Cash"
+        // Set recent transactions from real data
+        const transactions = adminStats.recent_transactions.map((tx: any) => ({
+          id: tx.id,
+          patient: tx.patient,
+          service: "Payment",
+          amount: tx.amount,
+          status: "Paid",
+          method: tx.method
         }));
         setRecentTransactions(transactions);
 
-        // Set recent activity (alerts)
-        const alerts = [];
-        
-        // Add inventory alerts
-        if (lowStockItems.length > 0) {
-          alerts.push({
-            id: 1,
-            type: "critical",
-            title: "Stockout Alert",
-            message: `${lowStockItems.length} items are low on stock.`,
-            action: "View Inventory"
-          });
-        }
+        // Set recent activity/alerts from real data
+        setRecentActivity(adminStats.alerts || []);
 
-        
-        setRecentActivity(alerts);
+        // Set on duty staff from real data
+        setOnDutyStaff(adminStats.staff || []);
 
-        // Set on duty staff (first 3 active staff)
+        // Set weekly data from charts
+        const chartData = adminStats.charts.weekly_trend.map((day: any) => ({
+          day: day.day,
+          value: day.revenue
+        }));
+        setWeeklyData(chartData);
 
-        // Set weekly data (you might need to fetch actual weekly data)
-        // For now, using mock data with real values
-        setWeeklyData([
-          { day: "Mon", value: Math.floor(Math.random() * 3000) },
-          { day: "Tue", value: Math.floor(Math.random() * 3000) },
-          { day: "Wed", value: Math.floor(Math.random() * 3000) },
-          { day: "Thu", value: Math.floor(Math.random() * 3000) },
-          { day: "Fri", value: Math.floor(Math.random() * 3000) },
-          { day: "Sat", value: Math.floor(Math.random() * 3000) },
-          { day: "Sun", value: Math.floor(Math.random() * 3000) },
-        ]);
+        setIsLoading(false);
 
-        // Reset loading states
-        setLoading({
-          dashboard: false,
-          patients: false,
-          inventory: false,
-          billing: false,
-          visits: false,
-          alerts: false
-        });
-
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error loading dashboard data:", error);
-        setError("Failed to load dashboard data. Some features may be limited.");
-        
-        // Reset loading states on error
-        setLoading({
-          dashboard: false,
-          patients: false,
-          inventory: false,
-          billing: false,
-          visits: false,
-          alerts: false
-        });
+        setError("Failed to load dashboard data. Please try again.");
+        setIsLoading(false);
       }
     };
 
     loadDashboardData();
   }, []);
 
-  const maxWeekly = Math.max(...weeklyData.map((d) => d.value));
+  const maxWeekly = Math.max(...weeklyData.map((d) => d.value), 1);
 
   const handleRefresh = () => {
-    setLoading({
-      dashboard: true,
-      patients: true,
-      inventory: true,
-      billing: true,
-      visits: true,
-      alerts: true
-    });
-    setError(null);
-    
-    // Reload data
-    setTimeout(() => {
-      const loadDashboardData = async () => {
-        try {
-          // Simulate API calls with actual data or defaults
-          const inventoryStats = await fetchInventoryStats().catch(() => ({ total_items: 0 }));
-          const patientStats = await fetchPatientStats().catch(() => ({ total_patients: 0 }));
-          
-          setAnalytics(prev => ({
-            ...prev,
-            drugs: inventoryStats.total_items || 0,
-            patients: patientStats.total_patients || 0
-          }));
-          
-          setLoading(prev => ({
-            ...prev,
-            dashboard: false,
-            inventory: false,
-            patients: false
-          }));
-        } catch (error) {
-          console.error("Error refreshing data:", error);
-          setLoading(prev => ({
-            ...prev,
-            dashboard: false,
-            inventory: false,
-            patients: false
-          }));
-        }
-      };
-      
-      loadDashboardData();
-    }, 1000);
+    window.location.reload();
   };
-
-  // Check if any data is still loading
-  const isLoading = Object.values(loading).some(value => value);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -319,7 +211,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="text-gray-500 text-sm font-medium">Active Doctors</p>
                     <h3 className="text-2xl font-bold text-[#073159] mt-1">
-                      {liveStats.doctorsActive} <span className="text-sm text-gray-400 font-normal">/ {onDutyStaff.length + 2}</span>
+                      {liveStats.doctorsActive} <span className="text-sm text-gray-400 font-normal">/ 5</span>
                     </h3>
                   </div>
                   <div className="p-2 bg-green-50 rounded-lg">
@@ -327,7 +219,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
-                  <div className="bg-green-500 h-full rounded-full" style={{ width: `${(liveStats.doctorsActive / (onDutyStaff.length + 2)) * 100}%` }}></div>
+                  <div className="bg-green-500 h-full rounded-full" style={{ width: `${(liveStats.doctorsActive / 5) * 100}%` }}></div>
                 </div>
             </div>
 

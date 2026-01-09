@@ -4,8 +4,8 @@ from .models import StaffProfile
 
 class StaffProfileSerializer(serializers.ModelSerializer):
     # Read fields (for GET requests)
-    username = serializers.CharField(source='user.username')
-    email = serializers.EmailField(source='user.email')
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
     
     # Write fields (for POST requests)
     password = serializers.CharField(write_only=True, required=False)
@@ -34,9 +34,20 @@ class StaffProfileSerializer(serializers.ModelSerializer):
         # For create/update operations, check if username/email already exists
         request = self.context.get('request')
         
+        if request and request.method == 'POST':
+            # For creation, new_username and new_email are required
+            if not data.get('new_username'):
+                raise serializers.ValidationError({
+                    "new_username": "Username is required for staff registration."
+                })
+            if not data.get('new_email'):
+                raise serializers.ValidationError({
+                    "new_email": "Email is required for staff registration."
+                })
+        
         if request and request.method in ['POST', 'PUT', 'PATCH']:
-            new_username = data.get('new_username') or data.get('username')
-            new_email = data.get('new_email') or data.get('email')
+            new_username = data.get('new_username')
+            new_email = data.get('new_email')
             
             # Check for duplicate username
             if new_username:
@@ -45,7 +56,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
                     user_qs = user_qs.exclude(id=self.instance.user.id)
                 if user_qs.exists():
                     raise serializers.ValidationError({
-                        "username": "A user with that username already exists."
+                        "new_username": "A user with that username already exists."
                     })
             
             # Check for duplicate email
@@ -55,7 +66,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
                     user_qs = user_qs.exclude(id=self.instance.user.id)
                 if user_qs.exists():
                     raise serializers.ValidationError({
-                        "email": "A user with that email already exists."
+                        "new_email": "A user with that email already exists."
                     })
         
         return data
@@ -63,20 +74,16 @@ class StaffProfileSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Extract user creation data
         password = validated_data.pop('password', None)
-        new_username = validated_data.pop('new_username', None)
-        new_email = validated_data.pop('new_email', None)
+        username = validated_data.pop('new_username')
+        email = validated_data.pop('new_email')
         phone = validated_data.pop('phone', None)
         role = validated_data.get('role')
-        
-        # Use new_username/email if provided, otherwise fallback to regular fields
-        username = new_username or validated_data.get('username', '')
-        email = new_email or validated_data.get('email', '')
         
         # Create Django user
         user = User.objects.create(username=username, email=email)
         if password:
             user.set_password(password)
-        user.save()
+            user.save()
 
         # Get the admin who created this staff member
         request = self.context.get('request')
@@ -89,7 +96,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             email=email,
             phone=phone,
             role=role,
-            created_by_id=created_by
+            created_by=created_by
         )
 
         return staff

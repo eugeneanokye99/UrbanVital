@@ -12,6 +12,47 @@ const API = axios.create({
 let isRefreshing = false;
 let failedQueue: any[] = [];
 
+// Simple in-memory cache with TTL
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCachedData = (key: string) => {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  
+  const isExpired = Date.now() - entry.timestamp > CACHE_TTL;
+  if (isExpired) {
+    cache.delete(key);
+    return null;
+  }
+  
+  return entry.data;
+};
+
+const setCachedData = (key: string, data: any) => {
+  cache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+};
+
+export const clearCache = (pattern?: string) => {
+  if (!pattern) {
+    cache.clear();
+  } else {
+    Array.from(cache.keys()).forEach(key => {
+      if (key.includes(pattern)) {
+        cache.delete(key);
+      }
+    });
+  }
+};
+
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(prom => {
     if (error) {
@@ -164,12 +205,23 @@ export const registerStaff = async (staffData: {
   role: string;
 }) => {
   try {
-    const response = await API.post("/staff/register/", staffData);
+    // Map frontend fields to backend expected fields
+    const backendData = {
+      new_username: staffData.username,
+      new_email: staffData.email,
+      phone: staffData.phone,
+      password: staffData.password,
+      role: staffData.role,
+    };
+    
+    const response = await API.post("/staff/register/", backendData);
     toast.success(`${staffData.role} registered`);
     return response.data;
   } catch (error: any) {
     const message =
       error?.response?.data?.detail ||
+      error?.response?.data?.new_username?.[0] ||
+      error?.response?.data?.new_email?.[0] ||
       error?.response?.data?.message ||
       "Failed to register staff";
     toast.error(message);
@@ -254,9 +306,24 @@ export const fetchPatients = async (params?: {
   search?: string;
   gender?: string;
   flag?: string;
-}) => {
+}, useCache: boolean = true) => {
+  const cacheKey = `patients_${JSON.stringify(params || {})}`;
+  
+  // Check cache first
+  if (useCache) {
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+  }
+  
   const response = await API.get("/patients/", { params });
-  return response.data;  // Returns { count: number, results: Patient[] }
+  const data = response.data;
+  
+  // Cache the response
+  if (useCache) {
+    setCachedData(cacheKey, data);
+  }
+  
+  return data;  // Returns { count: number, results: Patient[] }
 };
 
 // POST: Create a new patient
@@ -282,6 +349,10 @@ export const registerPatient = async (patientData: {
   medical_flags?: string;
 }) => {
   const response = await API.post("/patients/create/", patientData);
+  
+  // Invalidate patients cache
+  clearCache('patients');
+  
   return response.data;
 };
 
@@ -300,12 +371,19 @@ export const fetchPatientById = async (id: number) => {
 // PUT: Update patient
 export const updatePatient = async (id: number, patientData: any) => {
   const response = await API.put(`/patients/${id}/`, patientData);
+  
+  // Invalidate patients cache
+  clearCache('patients');
+  
   return response.data;
 };
 
 // DELETE: Remove patient
 export const deletePatient = async (id: number) => {
   await API.delete(`/patients/${id}/`);
+  
+  // Invalidate patients cache
+  clearCache('patients');
 };
 
 
@@ -437,6 +515,21 @@ export const fetchBillingStats = async () => {
 // Dashboard API Functions
 export const fetchDashboardSummary = async () => {
   const response = await API.get("/frontdesk/summary/");
+  return response.data;
+};
+
+// GET: Comprehensive admin statistics for Admin Dashboard
+export const fetchAdminStats = async () => {
+  const response = await API.get("/frontdesk/admin-stats/");
+  return response.data;
+};
+
+// GET: Financial transactions with filtering for Admin Finance page
+export const fetchFinancialTransactions = async (params?: {
+  range?: string;
+  department?: string;
+}) => {
+  const response = await API.get("/billing/transactions/", { params });
   return response.data;
 };
 
@@ -687,4 +780,483 @@ export const getCart = async (cartId: number) => {
   const response = await API.get(`/cart/${cartId}/`);
   return response.data;
 };
+
+// --- ULTRASOUND API FUNCTIONS ---
+
+// GET: Fetch ultrasound statistics for dashboard
+export const fetchUltrasoundStats = async (useCache: boolean = true) => {
+  const cacheKey = 'ultrasound_stats';
+  
+  if (useCache) {
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+  }
+  
+  const response = await API.get("/ultrasound/stats/");
+  const data = response.data;
+  
+  if (useCache) {
+    setCachedData(cacheKey, data);
+  }
+  
+  return data;
+};
+
+// GET: Fetch worklist data (pending orders + in-progress scans)
+export const fetchUltrasoundWorklist = async (useCache: boolean = false) => {
+  const cacheKey = 'ultrasound_worklist';
+  
+  // Worklist should be fresh, use shorter cache TTL (1 minute)
+  if (useCache) {
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+  }
+  
+  const response = await API.get("/ultrasound/worklist/");
+  const data = response.data;
+  
+  if (useCache) {
+    setCachedData(cacheKey, data);
+  }
+  
+  return data;
+};
+
+// GET: Fetch all ultrasound orders
+export const fetchUltrasoundOrders = async (params?: {
+  status?: string;
+  urgency?: string;
+  patient_id?: number;
+  search?: string;
+}) => {
+  const response = await API.get("/ultrasound/orders/", { params });
+  return response.data;
+};
+
+// POST: Create ultrasound order
+export const createUltrasoundOrder = async (orderData: {
+  patient: number;
+  visit?: number;
+  scan_type: string;
+  urgency: string;
+  clinical_indication: string;
+  special_instructions?: string;
+}) => {
+  const response = await API.post("/ultrasound/orders/", orderData);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// GET: Fetch single ultrasound order
+export const fetchUltrasoundOrder = async (id: number) => {
+  const response = await API.get(`/ultrasound/orders/${id}/`);
+  return response.data;
+};
+
+// PUT/PATCH: Update ultrasound order
+export const updateUltrasoundOrder = async (id: number, orderData: any) => {
+  const response = await API.patch(`/ultrasound/orders/${id}/`, orderData);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// POST: Update order status
+export const updateUltrasoundOrderStatus = async (id: number, status: string, scheduled_date?: string) => {
+  const response = await API.post(`/ultrasound/orders/${id}/status/`, { 
+    status, 
+    scheduled_date 
+  });
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// DELETE: Delete ultrasound order
+export const deleteUltrasoundOrder = async (id: number) => {
+  const response = await API.delete(`/ultrasound/orders/${id}/`);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// GET: Fetch all ultrasound scans
+export const fetchUltrasoundScans = async (params?: {
+  status?: string;
+  patient_id?: number;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+}) => {
+  const response = await API.get("/ultrasound/scans/", { params });
+  return response.data;
+};
+
+// POST: Create ultrasound scan
+export const createUltrasoundScan = async (scanData: {
+  order: number;
+  patient: number;
+  scan_type: string;
+  machine_used?: string;
+  clinical_indication: string;
+  lmp?: string;
+  gestational_age?: string;
+  technique?: string;
+  findings: string;
+  measurements?: any;
+  impression: string;
+  recommendations?: string;
+  status?: string;
+}) => {
+  const response = await API.post("/ultrasound/scans/", scanData);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// GET: Fetch single ultrasound scan
+export const fetchUltrasoundScan = async (id: number) => {
+  const response = await API.get(`/ultrasound/scans/${id}/`);
+  return response.data;
+};
+
+// PUT/PATCH: Update ultrasound scan
+export const updateUltrasoundScan = async (id: number, scanData: any) => {
+  const response = await API.patch(`/ultrasound/scans/${id}/`, scanData);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// POST: Complete scan
+export const completeUltrasoundScan = async (id: number) => {
+  const response = await API.post(`/ultrasound/scans/${id}/complete/`);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  clearCache('ultrasound_worklist');
+  
+  return response.data;
+};
+
+// POST: Verify scan
+export const verifyUltrasoundScan = async (id: number) => {
+  const response = await API.post(`/ultrasound/scans/${id}/verify/`);
+  
+  // Invalidate relevant caches
+  clearCache('ultrasound_stats');
+  
+  return response.data;
+};
+
+// GET: Fetch completed scans
+export const fetchCompletedUltrasoundScans = async () => {
+  const response = await API.get("/ultrasound/scans/completed/");
+  return response.data;
+};
+
+// GET: Fetch patient ultrasound history
+export const fetchPatientUltrasoundHistory = async (patientId: number) => {
+  const response = await API.get(`/ultrasound/patient/${patientId}/history/`);
+  return response.data;
+};
+
+// GET: Fetch ultrasound equipment
+export const fetchUltrasoundEquipment = async (useCache: boolean = true) => {
+  const cacheKey = 'ultrasound_equipment';
+  
+  if (useCache) {
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+  }
+  
+  const response = await API.get("/ultrasound/equipment/");
+  const data = response.data;
+  
+  if (useCache) {
+    setCachedData(cacheKey, data);
+  }
+  
+  return data;
+};
+
+// POST: Create ultrasound equipment
+export const createUltrasoundEquipment = async (equipmentData: {
+  name: string;
+  model?: string;
+  serial_number?: string;
+  manufacturer?: string;
+  status: string;
+  location?: string;
+}) => {
+  const response = await API.post("/ultrasound/equipment/", equipmentData);
+  
+  // Invalidate equipment cache
+  clearCache('ultrasound_equipment');
+  clearCache('ultrasound_stats');
+  
+  return response.data;
+};
+
+// PUT/PATCH: Update ultrasound equipment
+export const updateUltrasoundEquipment = async (id: number, equipmentData: any) => {
+  const response = await API.patch(`/ultrasound/equipment/${id}/`, equipmentData);
+  
+  // Invalidate equipment cache
+  clearCache('ultrasound_equipment');
+  clearCache('ultrasound_stats');
+  
+  return response.data;
+};
+
+
+// --- LAB API FUNCTIONS ---
+
+// GET: Fetch lab statistics for dashboard
+export const fetchLabStats = async (useCache: boolean = true) => {
+  const cacheKey = 'lab_stats';
+  
+  if (useCache) {
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+  }
+  
+  const response = await API.get("/lab/statistics/");
+  const data = response.data;
+  
+  if (useCache) {
+    setCachedData(cacheKey, data);
+  }
+  
+  return data;
+};
+
+// GET: Fetch lab worklist (pending, sample_collected, in_progress)
+export const fetchLabWorklist = async (useCache: boolean = false) => {
+  const cacheKey = 'lab_worklist';
+  
+  if (useCache) {
+    const cached = getCachedData(cacheKey);
+    if (cached) return cached;
+  }
+  
+  const response = await API.get("/lab/worklist/");
+  const data = response.data;
+  
+  if (useCache) {
+    setCachedData(cacheKey, data);
+  }
+  
+  return data;
+};
+
+// GET: Fetch all lab tests (catalog)
+export const fetchLabTests = async (params?: {
+  category?: string;
+  is_active?: boolean;
+  search?: string;
+}) => {
+  const response = await API.get("/lab/tests/", { params });
+  return response.data;
+};
+
+// GET: Fetch single lab test
+export const fetchLabTest = async (id: number) => {
+  const response = await API.get(`/lab/tests/${id}/`);
+  return response.data;
+};
+
+// POST: Create lab test
+export const createLabTest = async (testData: {
+  name: string;
+  code: string;
+  category: string;
+  description?: string;
+  sample_type: string;
+  turnaround_time: string;
+  normal_range?: string;
+  is_active?: boolean;
+}) => {
+  const response = await API.post("/lab/tests/", testData);
+  return response.data;
+};
+
+// PUT/PATCH: Update lab test
+export const updateLabTest = async (id: number, testData: any) => {
+  const response = await API.patch(`/lab/tests/${id}/`, testData);
+  return response.data;
+};
+
+// GET: Fetch all lab orders
+export const fetchLabOrders = async (params?: {
+  status?: string;
+  urgency?: string;
+  patient_id?: number;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+}) => {
+  const response = await API.get("/lab/orders/", { params });
+  return response.data;
+};
+
+// POST: Create lab order
+export const createLabOrder = async (orderData: {
+  patient: number;
+  urgency: string;
+  clinical_indication: string;
+  special_instructions?: string;
+  test_ids: number[];
+}) => {
+  const response = await API.post("/lab/orders/", orderData);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// GET: Fetch single lab order
+export const fetchLabOrder = async (id: number) => {
+  const response = await API.get(`/lab/orders/${id}/`);
+  return response.data;
+};
+
+// PUT/PATCH: Update lab order
+export const updateLabOrder = async (id: number, orderData: any) => {
+  const response = await API.patch(`/lab/orders/${id}/`, orderData);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// POST: Collect sample for lab order
+export const collectLabSample = async (orderId: number) => {
+  const response = await API.post(`/lab/orders/${orderId}/collect-sample/`);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// POST: Start processing lab order
+export const startLabProcessing = async (orderId: number) => {
+  const response = await API.post(`/lab/orders/${orderId}/start-processing/`);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// POST: Cancel lab order
+export const cancelLabOrder = async (orderId: number) => {
+  const response = await API.post(`/lab/orders/${orderId}/cancel/`);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// DELETE: Delete lab order
+export const deleteLabOrder = async (id: number) => {
+  const response = await API.delete(`/lab/orders/${id}/`);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// GET: Fetch all lab results
+export const fetchLabResults = async (params?: {
+  status?: string;
+  patient_id?: number;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+}) => {
+  const response = await API.get("/lab/results/", { params });
+  return response.data;
+};
+
+// POST: Create lab result
+export const createLabResult = async (resultData: {
+  order: number;
+  results_data: any;
+  interpretation?: string;
+  abnormal_flags?: string[];
+  status?: string;
+}) => {
+  const response = await API.post("/lab/results/", resultData);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  clearCache('lab_worklist');
+  
+  return response.data;
+};
+
+// GET: Fetch single lab result
+export const fetchLabResult = async (id: number) => {
+  const response = await API.get(`/lab/results/${id}/`);
+  return response.data;
+};
+
+// GET: Fetch lab result by order ID
+export const fetchLabResultByOrder = async (orderId: number) => {
+  const response = await API.get(`/lab/results/by-order/${orderId}/`);
+  return response.data;
+};
+
+// PUT/PATCH: Update lab result
+export const updateLabResult = async (id: number, resultData: any) => {
+  const response = await API.patch(`/lab/results/${id}/`, resultData);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  
+  return response.data;
+};
+
+// POST: Verify lab result
+export const verifyLabResult = async (resultId: number) => {
+  const response = await API.post(`/lab/results/${resultId}/verify/`);
+  
+  // Invalidate relevant caches
+  clearCache('lab_stats');
+  
+  return response.data;
+};
+
+
 export default API;

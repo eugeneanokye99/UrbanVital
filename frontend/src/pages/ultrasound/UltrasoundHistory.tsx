@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   History, 
   Search, 
@@ -7,24 +7,75 @@ import {
   Filter,
   Eye,
   Printer,
-  FileImage
+  FileImage,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
+import { fetchCompletedUltrasoundScans } from "../../services/api";
+import { useDebounce } from "../../hooks/useDebounce";
+import toast from "react-hot-toast";
 
 export default function UltrasoundHistory() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+  const [loading, setLoading] = useState(true);
+  const [scanHistory, setScanHistory] = useState<any[]>([]);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
-  // Mock History Data
-  const scanHistory = [
-    { id: "SCN-1001", date: "24 Oct 2025", time: "10:45 AM", patient: "Ama Kyei", scan: "Obstetric (2nd Tri)", findings: "Normal fetal growth", sonographer: "James" },
-    { id: "SCN-1002", date: "24 Oct 2025", time: "09:30 AM", patient: "John Doe", scan: "Abdominal", findings: "Mild fatty liver", sonographer: "James" },
-    { id: "SCN-1003", date: "23 Oct 2025", time: "04:15 PM", patient: "Sarah Smith", scan: "Pelvic", findings: "Ovarian cyst (Right)", sonographer: "Sarah" },
-    { id: "SCN-1004", date: "23 Oct 2025", time: "02:00 PM", patient: "Kwame Osei", scan: "Thyroid", findings: "No nodules detected", sonographer: "James" },
-  ];
+  useEffect(() => {
+    loadCompletedScans();
+  }, []);
 
-  const filteredHistory = scanHistory.filter(item => 
-    item.patient.toLowerCase().includes(search.toLowerCase()) || 
-    item.scan.toLowerCase().includes(search.toLowerCase())
-  );
+  const loadCompletedScans = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchCompletedUltrasoundScans();
+      setScanHistory(data.results || data || []);
+    } catch (error) {
+      console.error("Error loading scan history:", error);
+      toast.error("Failed to load scan history");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredHistory = scanHistory.filter(item => {
+    const matchesSearch = debouncedSearch === "" || 
+      item.patient_name?.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+      item.scan_type?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      item.scan_number?.toLowerCase().includes(debouncedSearch.toLowerCase());
+    
+    let matchesDate = true;
+    if (dateFrom && item.scan_completed_at) {
+      matchesDate = matchesDate && new Date(item.scan_completed_at) >= new Date(dateFrom);
+    }
+    if (dateTo && item.scan_completed_at) {
+      matchesDate = matchesDate && new Date(item.scan_completed_at) <= new Date(dateTo);
+    }
+    
+    return matchesSearch && matchesDate;
+  });
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const formatTime = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-[#073159]" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -58,11 +109,23 @@ export default function UltrasoundHistory() {
           <div className="flex gap-2">
               <div className="relative flex-1 md:flex-none">
                   <Calendar className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                  <input type="date" className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-indigo-500 text-sm" />
+                  <input 
+                    type="date" 
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-indigo-500 text-sm" 
+                    placeholder="From"
+                  />
               </div>
-              <button className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 flex-shrink-0">
-                  <Filter size={20} />
-              </button>
+              <div className="relative flex-1 md:flex-none">
+                  <input 
+                    type="date" 
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="w-full pr-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 outline-none focus:border-indigo-500 text-sm" 
+                    placeholder="To"
+                  />
+              </div>
           </div>
       </div>
 
@@ -84,18 +147,19 @@ export default function UltrasoundHistory() {
             <tbody className="divide-y divide-gray-100">
               {filteredHistory.map((item) => (
                 <tr key={item.id} className="hover:bg-indigo-50/30 transition-colors">
-                  <td className="px-6 py-4 font-mono text-[#073159] font-bold">{item.id}</td>
+                  <td className="px-6 py-4 font-mono text-[#073159] font-bold">{item.scan_number || `SCN-${item.id}`}</td>
                   <td className="px-6 py-4 text-gray-600">
-                    {item.date} <br/> <span className="text-xs text-gray-400">{item.time}</span>
+                    {formatDate(item.scan_completed_at || item.created_at)} <br/> 
+                    <span className="text-xs text-gray-400">{formatTime(item.scan_completed_at || item.created_at)}</span>
                   </td>
-                  <td className="px-6 py-4 font-medium text-gray-800">{item.patient}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800">{item.patient_name}</td>
                   <td className="px-6 py-4">
                     <span className="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-xs font-bold border border-indigo-100">
-                        {item.scan}
+                        {item.scan_type}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-600 truncate max-w-xs">{item.findings}</td>
-                  <td className="px-6 py-4 text-gray-500">{item.sonographer}</td>
+                  <td className="px-6 py-4 text-gray-600 truncate max-w-xs">{item.impression || item.findings || "No findings"}</td>
+                  <td className="px-6 py-4 text-gray-500">{item.performed_by_name || "N/A"}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="View Images">
@@ -116,7 +180,16 @@ export default function UltrasoundHistory() {
         </div>
         
         {filteredHistory.length === 0 && (
-            <div className="p-12 text-center text-gray-400 text-sm">No scan records found.</div>
+          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+            <AlertCircle size={48} className="mb-4 opacity-50" />
+            <p className="text-base font-medium mb-1">No scan records found</p>
+            <p className="text-sm">
+              {debouncedSearch || dateFrom || dateTo
+                ? "Try adjusting your filters"
+                : "Completed scans will appear here"
+              }
+            </p>
+          </div>
         )}
       </div>
 

@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Q, Sum
 from django.utils import timezone
+from datetime import timedelta
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import ServiceItem, Invoice, InvoiceItem, Payment, Receipt
 from .serializers import (
@@ -225,3 +226,111 @@ class BillingStatsView(APIView):
             stats['by_payment_method'][method_name] = count
         
         return Response(stats)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def financial_transactions_view(request):
+    """
+    GET: Retrieve all financial transactions with filtering
+    Returns unified view of payments and invoices for Finance dashboard
+    """
+    # Get filter parameters
+    date_range = request.query_params.get('range', 'This Month')
+    department = request.query_params.get('department', 'All Departments')
+    
+    today = timezone.now().date()
+    
+    # Calculate date range
+    if date_range == 'Today':
+        start_date = today
+        end_date = today
+    elif date_range == 'This Week':
+        start_date = today - timedelta(days=today.weekday())
+        end_date = today
+    elif date_range == 'This Month':
+        start_date = today.replace(day=1)
+        end_date = today
+    elif date_range == 'This Year':
+        start_date = today.replace(month=1, day=1)
+        end_date = today
+    else:
+        start_date = today.replace(day=1)
+        end_date = today
+    
+    # Fetch payments within date range
+    payments = Payment.objects.filter(
+        payment_date__date__gte=start_date,
+        payment_date__date__lte=end_date
+    ).select_related('invoice__patient', 'received_by')
+    
+    # Build transactions list
+    transactions = []
+    for payment in payments:
+        # Determine category from invoice items
+        category = 'General'
+        if payment.invoice.items.exists():
+            first_item = payment.invoice.items.first()
+            if first_item and first_item.service_item:
+                category = first_item.service_item.get_category_display()
+        
+        # Filter by department if specified
+        if department != 'All Departments' and category != department:
+            continue
+        
+        transactions.append({
+            'id': payment.id,
+            'date': payment.payment_date.isoformat(),
+            'description': f'Payment for Invoice #{payment.invoice.invoice_number}',
+            'category': category,
+            'patient': payment.invoice.patient.name,
+            'amount': float(payment.amount),
+            'method': payment.payment_method,
+            'cashier': payment.received_by.get_full_name() if payment.received_by else 'Unknown',
+            'reference': payment.reference or '',
+        })
+    
+    # Sort by date descending
+    transactions.sort(key=lambda x: x['date'], reverse=True)
+    
+    # Calculate summaries
+    revenue = sum(t['amount'] for t in transactions if t['amount'] > 0)
+    expenses = 0  # Add expense tracking if needed
+    
+    # Department breakdown
+    dept_breakdown = {}
+    for category_code, category_name in ServiceItem.CATEGORY_CHOICES:
+        dept_revenue = sum(
+            t['amount'] for t in transactions 
+            if t['category'] == category_name and t['amount'] > 0
+        )
+        dept_breakdown[category_name] = dept_revenue
+    
+    # Daily aggregation for charts
+    daily_revenue = {}
+    for transaction in transactions:
+        date = transaction['date'].split('T')[0]
+        if date not in daily_revenue:
+            daily_revenue[date] = 0
+        if transaction['amount'] > 0:
+            daily_revenue[date] += transaction['amount']
+    
+    line_chart_data = [
+        {
+            'date': date,
+            'Revenue': amount
+        }
+        for date, amount in sorted(daily_revenue.items())
+    ]
+    
+    return Response({
+        'transactions': transactions,
+        'summary': {
+            'revenue': revenue,
+            'expenses': expenses,
+            'profit': revenue - expenses,
+            'total_transactions': len(transactions),
+        },
+        'department_breakdown': dept_breakdown,
+        'chart_data': line_chart_data,
+    })

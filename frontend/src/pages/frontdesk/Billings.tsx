@@ -37,7 +37,6 @@ export default function StaffBilling() {
   const [showPatientSelectModal, setShowPatientSelectModal] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
   const [patientSearch, setPatientSearch] = useState("");
-  // const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [creatingInvoice, setCreatingInvoice] = useState(false);
 
   const [newService, setNewService] = useState({
@@ -114,7 +113,6 @@ export default function StaffBilling() {
   };
 
   const handleSelectPatient = (patient: any) => {
-    // setSelectedPatient(patient);
     setShowPatientSelectModal(false);
     createNewInvoiceForPatient(patient);
   };
@@ -128,21 +126,19 @@ export default function StaffBilling() {
         notes: `New invoice for ${patient.name}`,
       };
 
-       await createInvoice(invoiceData);
+      const newInvoice = await createInvoice(invoiceData);
       toast.success(`Invoice created for ${patient.name}`);
       
-      // Refresh invoices list and select the new invoice
-      await getPendingInvoices();
+      setSelectedInvoice(newInvoice);
+      setInvoices(prev => [newInvoice, ...prev]);
       
-      // Find and select the new invoice
-      const updatedInvoices = await fetchPendingInvoices();
-      const createdInvoice = updatedInvoices.find((inv: any) => 
-        inv.patient === patient.id && inv.status === 'Pending'
-      );
-      
-      if (createdInvoice) {
-        setSelectedInvoice(createdInvoice);
-      }
+      fetchPendingInvoices().then(updatedInvoices => {
+        if (updatedInvoices && updatedInvoices.length > 0) {
+          setInvoices(updatedInvoices);
+        }
+      }).catch(err => {
+        console.error('Background refresh failed:', err);
+      });
       
     } catch (error: any) {
       console.error("Error creating invoice:", error);
@@ -261,6 +257,8 @@ export default function StaffBilling() {
     return `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Unknown Patient';
   };
 
+
+
   return (
     <div className="max-w-7xl mx-auto h-full flex flex-col">
       {/* Header */}
@@ -321,11 +319,11 @@ export default function StaffBilling() {
               filteredInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  onClick={() => setSelectedInvoice(invoice)}
-                  className={`p-4 border-b border-gray-50 cursor-pointer transition-all hover:bg-blue-50 group ${
-                    selectedInvoice?.id === invoice.id
-                      ? "bg-blue-50 border-l-4 border-l-[#073159]"
-                      : "border-l-4 border-l-transparent"
+                  onClick={() => {
+                    console.log('Invoice clicked:', invoice);
+                    setSelectedInvoice(invoice);
+                  }}
+                  className={`p-4setSelectedInvoice(invoice)   : "border-l-4 border-l-transparent"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-1">
@@ -650,7 +648,6 @@ export default function StaffBilling() {
         </div>
       </div>
 
-      {/* Patient Selection Modal */}
       {showPatientSelectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
@@ -700,7 +697,10 @@ export default function StaffBilling() {
                           </p>
                         </div>
                       </div>
-                      <button className="px-3 py-1 bg-[#073159] text-white text-xs rounded-lg hover:bg-[#062a4d] transition-colors">
+                      <button 
+                        onClick={() => handleSelectPatient(patient)}
+                        className="px-3 py-1 bg-[#073159] text-white text-xs rounded-lg hover:bg-[#062a4d] transition-colors"
+                      >
                         Select
                       </button>
                     </div>
@@ -762,7 +762,7 @@ export default function StaffBilling() {
                   <option value="">Select a service...</option>
                   {serviceItems.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.name} - ₵{item.price.toFixed(2)}
+                      {item.name} - ₵{item.price}
                     </option>
                   ))}
                 </select>

@@ -49,7 +49,9 @@ INSTALLED_APPS = [
     'django_filters',
     "frontdesk",
     "inventory",
-    "cart"
+    "cart",
+    "ultrasound",
+    "lab",
 ]
 
 MIDDLEWARE = [

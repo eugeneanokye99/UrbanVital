@@ -19,7 +19,7 @@ import {
 } from "recharts"; 
 import { toast } from "react-hot-toast";
 import logo from "../../assets/urbanvital-logo.png";
-import api from "../../services/api";
+import { fetchFinancialTransactions } from "../../services/api";
 
 export default function AdminFinance() {
   const [dateRange, setDateRange] = useState("This Month");
@@ -32,11 +32,29 @@ export default function AdminFinance() {
   const fetchFinanceData = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get(`/finance/transactions?range=${dateRange}`);
-      setTransactions(response.data || []); 
+      const data = await fetchFinancialTransactions({
+        range: dateRange,
+        department: selectedDept !== "All Departments" ? selectedDept : undefined
+      });
+      
+      // Transform transactions to match expected format
+      const transformedTransactions = data.transactions.map((tx: any) => ({
+        id: tx.id,
+        date: tx.date,
+        description: tx.description,
+        category: tx.category,
+        patient: tx.patient,
+        amount: tx.amount,
+        method: tx.method,
+        cashier: tx.cashier,
+        reference: tx.reference
+      }));
+      
+      setTransactions(transformedTransactions);
     } catch (error) {
       console.error("Fetch error:", error);
-      toast.error("Unable to connect to financial server");
+      toast.error("Unable to load financial data");
+      setTransactions([]);
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +62,7 @@ export default function AdminFinance() {
 
   useEffect(() => {
     fetchFinanceData();
-  }, [dateRange]);
+  }, [dateRange, selectedDept]);
 
   // --- Multi-Level Filter & Metrics Logic ---
   const metrics = useMemo(() => {

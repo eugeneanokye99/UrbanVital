@@ -3,26 +3,57 @@ import {
   Activity, 
   Clock, 
   CheckCircle, 
-  ArrowRight 
+  ArrowRight,
+  Loader2
 } from "lucide-react";
-import { useOutletContext, useNavigate } from "react-router-dom"; 
+import { useState, useEffect } from "react";
+import { useOutletContext, useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { fetchLabStats, fetchLabWorklist } from "../../services/api"; 
 
 export default function LabDashboard() {
   const navigate = useNavigate();
-  // Get Search Text from Layout
   const { globalSearch } = useOutletContext<{ globalSearch: string }>();
 
-  // Mock Data for "Incoming Requests" (Added MRN for data passing)
-  const incomingRequests = [
-    { id: 1, patient: "Kwame Osei", mrn: "UV-2025-0099", test: "Full Blood Count", urgency: "STAT" },
-    { id: 2, patient: "Sarah Mensah", mrn: "UV-2025-0422", test: "Malaria RDT", urgency: "Normal" },
-    { id: 3, patient: "John Doe", mrn: "UV-2025-0012", test: "Typhoid (IgM/IgG)", urgency: "Normal" }, // Updated test name to match valid ones
-  ];
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>({
+    orders_today: 0,
+    pending_count: 0,
+    sample_collected_count: 0,
+    in_progress_count: 0,
+    completed_today: 0,
+    total_completed: 0
+  });
+  const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsData, worklistData] = await Promise.all([
+        fetchLabStats(),
+        fetchLabWorklist()
+      ]);
+      
+      setStats(statsData);
+      // Get first 5 pending orders for incoming requests
+      setIncomingRequests(worklistData.pending_orders?.slice(0, 5) || []);
+    } catch (error) {
+      console.error("Error loading dashboard:", error);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter Logic
   const filteredRequests = incomingRequests.filter(req => 
-    req.patient.toLowerCase().includes(globalSearch.toLowerCase()) || 
-    req.test.toLowerCase().includes(globalSearch.toLowerCase())
+    req.patient_name?.toLowerCase().includes(globalSearch.toLowerCase()) ||
+    req.patient_mrn?.toLowerCase().includes(globalSearch.toLowerCase()) ||
+    req.tests?.some((t: any) => t.test_name?.toLowerCase().includes(globalSearch.toLowerCase()))
   );
 
   // --- Handlers ---
@@ -32,11 +63,10 @@ export default function LabDashboard() {
   };
 
   const handleProcessRequest = (request: any) => {
-    // Navigate to Result Entry page and pre-fill data
     navigate("/lab/labentry", { 
         state: { 
-            patient: { name: request.patient, id: request.mrn },
-            testToSelect: request.test 
+            order: request,
+            patient: { name: request.patient_name, mrn: request.patient_mrn },
         } 
     });
   };
@@ -44,6 +74,14 @@ export default function LabDashboard() {
   const handleViewCompleted = () => {
       navigate("/lab/labresults");
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-[#073159]" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
@@ -58,28 +96,28 @@ export default function LabDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
             label="Pending Samples" 
-            value="8" 
+            value={stats.pending_count.toString()} 
             icon={<Clock size={20} />} 
             color="bg-orange-50 text-orange-600" 
-            onClick={handleViewQueue} // Navigates to Queue
+            onClick={handleViewQueue}
         />
         <StatCard 
             label="Processing" 
-            value="3" 
+            value={(stats.sample_collected_count + stats.in_progress_count).toString()} 
             icon={<Activity size={20} />} 
             color="bg-blue-50 text-blue-600" 
             onClick={handleViewQueue} 
         />
         <StatCard 
             label="Completed Today" 
-            value="24" 
+            value={stats.completed_today.toString()} 
             icon={<CheckCircle size={20} />} 
             color="bg-green-50 text-green-600" 
-            onClick={handleViewCompleted} // Navigates to Results
+            onClick={handleViewCompleted}
         />
         <StatCard 
             label="Total Requests" 
-            value="35" 
+            value={stats.orders_today.toString()} 
             icon={<TestTube size={20} />} 
             color="bg-purple-50 text-purple-600" 
         />
@@ -114,11 +152,16 @@ export default function LabDashboard() {
                 {filteredRequests.length > 0 ? (
                   filteredRequests.map((req) => (
                     <tr key={req.id} className="hover:bg-purple-50/30 transition-colors">
-                      <td className="px-6 py-4 font-medium text-gray-800">{req.patient}</td>
-                      <td className="px-6 py-4 text-gray-600">{req.test}</td>
+                      <td className="px-6 py-4 font-medium text-gray-800">{req.patient_name}</td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {req.tests?.slice(0, 1).map((t: any) => t.test_name).join(", ")}
+                        {req.tests?.length > 1 && ` +${req.tests.length - 1}`}
+                      </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
-                            req.urgency === "STAT" ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"
+                            req.urgency === "Emergency" ? "bg-red-50 text-red-600" : 
+                            req.urgency === "Urgent" ? "bg-orange-50 text-orange-600" :
+                            "bg-blue-50 text-blue-600"
                         }`}>
                             {req.urgency}
                         </span>

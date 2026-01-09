@@ -1,64 +1,88 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { 
   TestTube, 
   Droplet, 
   FileText,
-  CheckCircle 
+  CheckCircle,
+  Loader2,
+  Plus
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { fetchLabWorklist, collectLabSample, startLabProcessing } from "../../services/api";
 
 export default function LabTestQueue() {
   const navigate = useNavigate();
-  // 1. Get search query from the Layout
   const { globalSearch } = useOutletContext<{ globalSearch: string }>();
   
   const [filter, setFilter] = useState("Pending");
+  const [loading, setLoading] = useState(true);
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+  const [sampleCollected, setSampleCollected] = useState<any[]>([]);
+  const [inProgress, setInProgress] = useState<any[]>([]);
 
-  // 2. State for Queue (so we can update statuses locally)
-  const [queue, setQueue] = useState([
-    { id: 1, patient: "Williams Boampong", mrn: "UV-2025-0421", test: "Full Blood Count", status: "Pending Sample", doctor: "Dr. Asante" },
-    { id: 2, patient: "Sarah Mensah", mrn: "UV-2025-0422", test: "Malaria RDT", status: "Processing", doctor: "Dr. Asante" },
-    { id: 3, patient: "Emmanuel Osei", mrn: "UV-2025-0423", test: "Lipid Profile", status: "Result Ready", doctor: "Dr. Mensah" },
-    { id: 4, patient: "Ama Kyei", mrn: "UV-2025-0424", test: "H. Pylori", status: "Pending Sample", doctor: "Dr. Mensah" },
-  ]);
+  useEffect(() => {
+    loadWorklist();
+  }, []);
 
-  // 3. Smart Filtering (Status Tab + Search Bar)
-  const filteredQueue = queue.filter(item => {
-    // Step 1: Filter by Tab (Pending/Processing/Completed)
-    let statusMatch = false;
-    if (filter === "Pending") statusMatch = item.status === "Pending Sample";
-    else if (filter === "Processing") statusMatch = item.status === "Processing";
-    else if (filter === "Completed") statusMatch = item.status === "Result Ready";
-    else statusMatch = true; // "All" case if needed
+  const loadWorklist = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchLabWorklist();
+      setPendingOrders(data.pending_orders || []);
+      setSampleCollected(data.sample_collected || []);
+      setInProgress(data.in_progress || []);
+    } catch (error) {
+      console.error("Error loading worklist:", error);
+      toast.error("Failed to load worklist");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Step 2: Filter by Search Text (Name or MRN)
-    const searchMatch = 
-      item.patient.toLowerCase().includes(globalSearch.toLowerCase()) || 
-      item.mrn.toLowerCase().includes(globalSearch.toLowerCase()) ||
-      item.test.toLowerCase().includes(globalSearch.toLowerCase());
+  // Get current orders based on filter
+  const getCurrentOrders = () => {
+    if (filter === "Pending") return pendingOrders;
+    if (filter === "Processing") return [...sampleCollected, ...inProgress];
+    if (filter === "Completed") return [];
+    return [];
+  };
 
-    return statusMatch && searchMatch;
+  const filteredQueue = getCurrentOrders().filter(item => {
+    const searchLower = globalSearch.toLowerCase();
+    return (
+      item.patient_name?.toLowerCase().includes(searchLower) ||
+      item.patient_mrn?.toLowerCase().includes(searchLower) ||
+      item.tests?.some((t: any) => t.test_name?.toLowerCase().includes(searchLower))
+    );
   });
 
   // --- Handlers ---
 
-  const handleCollect = (id: number, patientName: string) => {
-    // Simulate collecting sample -> Move to Processing
-    setQueue(prev => prev.map(item => 
-        item.id === id ? { ...item, status: "Processing" } : item
-    ));
-    toast.success(`Sample collected for ${patientName}`);
+  const handleCollect = async (id: number, patientName: string) => {
+    try {
+      await collectLabSample(id);
+      toast.success(`Sample collected for ${patientName}`);
+      await loadWorklist();
+    } catch (error: any) {
+      console.error("Error collecting sample:", error);
+      toast.error(error?.response?.data?.detail || "Failed to collect sample");
+    }
   };
 
-  const handleEnterResult = (item: any) => {
-    // Navigate to Entry page with patient/test data
-    navigate("/lab/labentry", { 
-        state: { 
-            patient: { name: item.patient, id: item.mrn },
-            testToSelect: item.test 
-        } 
-    });
+  const handleEnterResult = async (item: any) => {
+    try {
+      await startLabProcessing(item.id);
+      navigate("/lab/labentry", { 
+          state: { 
+              order: item,
+              patient: { name: item.patient_name, mrn: item.patient_mrn },
+          } 
+      });
+    } catch (error: any) {
+      console.error("Error starting processing:", error);
+      toast.error(error?.response?.data?.detail || "Failed to start processing");
+    }
   };
 
   const handleViewReport = (item: any) => {
@@ -80,14 +104,34 @@ export default function LabTestQueue() {
       });
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-[#073159]" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-xl md:text-2xl font-bold text-[#073159]">Test Queue</h1>
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-[#073159]">Test Queue</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage pending lab requests and sample collection</p>
+        </div>
         
-        {/* Filter Tabs */}
+        <button
+          onClick={() => navigate("/lab/labentry")}
+          className="bg-[#073159] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#062a4d] transition-all shadow-md active:scale-95 whitespace-nowrap"
+        >
+          <Plus size={18} /> New Lab Order
+        </button>
+      </div>
+
+      {/* Filter Tabs - moved below header */}
+      <div className="flex justify-start">
         <div className="flex flex-wrap gap-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 w-full md:w-auto">
           {['Pending', 'Processing', 'Completed'].map(f => (
             <button 
@@ -121,32 +165,39 @@ export default function LabTestQueue() {
                   filteredQueue.map((item) => (
                     <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="px-6 py-4">
-                        <p className="font-bold text-[#073159]">{item.patient}</p>
-                        <p className="text-xs text-gray-500">{item.mrn}</p>
+                        <p className="font-bold text-[#073159]">{item.patient_name}</p>
+                        <p className="text-xs text-gray-500">{item.patient_mrn}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-medium text-xs border border-blue-100 whitespace-nowrap">
-                          {item.test}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {item.tests?.slice(0, 2).map((t: any, idx: number) => (
+                            <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg font-medium text-xs border border-blue-100 whitespace-nowrap">
+                              {t.test_name}
+                            </span>
+                          ))}
+                          {item.tests?.length > 2 && (
+                            <span className="text-xs text-gray-500">+{item.tests.length - 2}</span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{item.doctor}</td>
+                      <td className="px-6 py-4 text-gray-600">{item.ordered_by_name}</td>
                       <td className="px-6 py-4">
                         <StatusBadge status={item.status} />
                       </td>
                       <td className="px-6 py-4 text-right">
                         
                         {/* 1. Pending -> Collect Action */}
-                        {item.status === "Pending Sample" && (
+                        {item.status === "Pending" && (
                           <button 
-                            onClick={() => handleCollect(item.id, item.patient)}
+                            onClick={() => handleCollect(item.id, item.patient_name)}
                             className="bg-[#073159] text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-[#062a4d] flex items-center gap-2 ml-auto transition-transform active:scale-95"
                           >
                             <Droplet size={14} /> Collect
                           </button>
                         )}
 
-                        {/* 2. Processing -> Result Action */}
-                        {item.status === "Processing" && (
+                        {/* 2. Sample Collected or In Progress -> Result Action */}
+                        {(item.status === "Sample Collected" || item.status === "In Progress") && (
                           <button 
                             onClick={() => handleEnterResult(item)}
                             className="bg-purple-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-purple-700 flex items-center gap-2 ml-auto transition-transform active:scale-95"
@@ -156,7 +207,7 @@ export default function LabTestQueue() {
                         )}
 
                         {/* 3. Completed -> View Report Action */}
-                        {item.status === "Result Ready" && (
+                        {item.status === "Completed" && (
                           <button 
                             onClick={() => handleViewReport(item)}
                             className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg font-bold text-xs hover:bg-gray-50 flex items-center gap-2 ml-auto transition-colors"
@@ -185,7 +236,9 @@ export default function LabTestQueue() {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "Pending Sample") return <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-full whitespace-nowrap">Waiting Sample</span>;
-  if (status === "Processing") return <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">In Lab</span>;
-  return <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full whitespace-nowrap flex items-center w-fit gap-1"><CheckCircle size={12}/> Ready</span>;
+  if (status === "Pending") return <span className="text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-full whitespace-nowrap">Waiting Sample</span>;
+  if (status === "Sample Collected") return <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded-full whitespace-nowrap">Ready to Process</span>;
+  if (status === "In Progress") return <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-full whitespace-nowrap">In Lab</span>;
+  if (status === "Completed") return <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full whitespace-nowrap flex items-center w-fit gap-1"><CheckCircle size={12}/> Ready</span>;
+  return <span className="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-full whitespace-nowrap">{status}</span>;
 }

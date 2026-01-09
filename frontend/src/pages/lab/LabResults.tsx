@@ -3,11 +3,13 @@ import {
   Download, 
   Printer, 
   Eye,
-  Filter
+  Filter,
+  Loader2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { fetchLabResults } from "../../services/api";
 
 interface LabContextType {
     globalSearch: string;
@@ -15,59 +17,64 @@ interface LabContextType {
 
 export default function LabCompletedResults() {
   const navigate = useNavigate();
-  // 1. Get search query from the Layout
   const { globalSearch } = useOutletContext<LabContextType>();
   
-  // Local state for date filtering
   const [dateFilter, setDateFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [results, setResults] = useState<any[]>([]);
 
-  // Mock History Data (Enhanced with patient details for the report view)
-  const history = [
-    { id: 101, request_id: "REQ-101", patient: "Sarah Mensah", mrn: "UV-2025-0422", age: 45, gender: "Female", test: "Malaria RDT", result: "Negative", date: "2025-10-24", time: "10:30 AM", tech: "Alex" },
-    { id: 102, request_id: "REQ-102", patient: "John Doe", mrn: "UV-2025-0012", age: 32, gender: "Male", test: "Typhoid (Widal)", result: "Reactive 1:80", date: "2025-10-23", time: "09:15 AM", tech: "Alex" },
-    { id: 103, request_id: "REQ-103", patient: "Ama Kyei", mrn: "UV-2025-0424", age: 28, gender: "Female", test: "H. Pylori", result: "Positive", date: "2025-10-23", time: "02:00 PM", tech: "Sarah" },
-    { id: 104, request_id: "REQ-104", patient: "Emmanuel Osei", mrn: "UV-2025-0423", age: 31, gender: "Male", test: "FBC", result: "Hb 12.5 g/dL", date: "2025-10-22", time: "04:45 PM", tech: "Kofi" },
-  ];
+  useEffect(() => {
+    loadResults();
+  }, [dateFilter]);
 
-  // 2. Filter Logic (Global Search + Date)
-  const filteredHistory = history.filter(record => {
+  const loadResults = async () => {
+    try {
+      setLoading(true);
+      const params: any = {};
+      if (dateFilter) {
+        params.date_from = dateFilter;
+        params.date_to = dateFilter;
+      }
+      const data = await fetchLabResults(params);
+      setResults(data || []);
+    } catch (error) {
+      console.error("Error loading results:", error);
+      toast.error("Failed to load results");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filter Logic (Global Search)
+  const filteredHistory = results.filter(record => {
     const searchLower = globalSearch.toLowerCase();
     const matchesSearch = 
-        record.patient.toLowerCase().includes(searchLower) || 
-        record.test.toLowerCase().includes(searchLower) ||
-        record.mrn.toLowerCase().includes(searchLower);
+        record.patient_name?.toLowerCase().includes(searchLower) || 
+        record.patient_mrn?.toLowerCase().includes(searchLower) ||
+        record.tests?.some((t: any) => t.test_name?.toLowerCase().includes(searchLower));
     
-    const matchesDate = dateFilter ? record.date === dateFilter : true;
-
-    return matchesSearch && matchesDate;
+    return matchesSearch;
   });
 
   // --- Handlers ---
 
   const handleViewReport = (record: any) => {
-    // Navigate to the printable report view with data
     navigate("/lab/labresult-view", { 
         state: { 
-            record: {
-                id: record.request_id,
-                test: record.test,
-                date: record.date,
-                time: record.time,
-                result: record.result,
-                tech: record.tech
-            },
+            result: record,
+            order: record.order,
             patient: {
-                name: record.patient,
-                age: record.age,
-                gender: record.gender,
-                mrn: record.mrn
+                name: record.patient_name,
+                age: record.patient_age,
+                gender: record.patient_gender,
+                mrn: record.patient_mrn
             }
         } 
     });
   };
 
-  const handleReprint = (id: string) => {
-    toast.success(`Sent Report #${id} to printer`);
+  const handleReprint = (orderId: number) => {
+    toast.success(`Sent Report for Order #${orderId} to printer`);
   };
 
   const handleExport = () => {
@@ -95,6 +102,11 @@ export default function LabCompletedResults() {
         </button>
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin text-[#073159]" />
+        </div>
+      ) : (
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         
         {/* Toolbar: Date Filter */}
@@ -129,22 +141,35 @@ export default function LabCompletedResults() {
             <tbody className="divide-y divide-gray-100">
               {filteredHistory.map((record) => (
                 <tr key={record.id} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="px-6 py-4 font-mono text-gray-500">{record.date}</td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-gray-800">{record.patient}</p>
-                    <p className="text-xs text-gray-500">{record.mrn}</p>
+                  <td className="px-6 py-4 font-mono text-gray-500">
+                    {new Date(record.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-[#073159] font-medium">{record.test}</td>
+                  <td className="px-6 py-4">
+                    <p className="font-bold text-gray-800">{record.patient_name}</p>
+                    <p className="text-xs text-gray-500">{record.patient_mrn}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {record.tests?.slice(0, 2).map((t: any, idx: number) => (
+                        <span key={idx} className="text-[#073159] font-medium text-xs">
+                          {t.test_name}{idx < Math.min(1, record.tests.length - 1) && ', '}
+                        </span>
+                      ))}
+                      {record.tests?.length > 2 && (
+                        <span className="text-xs text-gray-500">+{record.tests.length - 2} more</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-xs font-bold whitespace-nowrap ${
-                        record.result.includes("Negative") ? "bg-green-100 text-green-700" :
-                        record.result.includes("Positive") || record.result.includes("Reactive") ? "bg-red-100 text-red-700" :
+                        record.status === "Final" ? "bg-green-100 text-green-700" :
+                        record.status === "Preliminary" ? "bg-yellow-100 text-yellow-700" :
                         "bg-gray-100 text-gray-700"
                     }`}>
-                        {record.result}
+                        {record.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{record.tech}</td>
+                  <td className="px-6 py-4 text-gray-500">{record.performed_by_name}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button 
@@ -155,7 +180,7 @@ export default function LabCompletedResults() {
                           <Eye size={16} />
                       </button>
                       <button 
-                        onClick={() => handleReprint(record.request_id)}
+                        onClick={() => handleReprint(record.order_id)}
                         className="p-2 text-gray-500 hover:text-[#073159] hover:bg-blue-50 rounded-lg transition-colors" 
                         title="Reprint"
                       >
@@ -175,6 +200,7 @@ export default function LabCompletedResults() {
             </div>
         )}
       </div>
+      )}
 
     </div>
   );

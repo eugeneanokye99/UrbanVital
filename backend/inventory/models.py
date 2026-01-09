@@ -4,11 +4,15 @@ from django.core.validators import MinValueValidator
 import uuid
 from datetime import date, timedelta
 
+def generate_item_id():
+    """Generate unique item ID"""
+    return uuid.uuid4().hex[:8].upper()
+
 class Inventory(models.Model):
     """Simplified inventory model"""
     
     # Basic Information
-    item_id = models.CharField(max_length=50, unique=True, default=uuid.uuid4().hex[:8].upper())
+    item_id = models.CharField(max_length=50, unique=True, default=generate_item_id)
     name = models.CharField(max_length=200)
     
     # Department only (Pharmacy or Lab)

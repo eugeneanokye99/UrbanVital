@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from patients.models import Patient
 from visits.models import Visit
 from django.utils import timezone
+from decimal import Decimal
 import random
 
 def generate_invoice_number():
@@ -98,7 +99,7 @@ class Invoice(models.Model):
         self.balance = self.total_amount - self.amount_paid
         
         # Update status based on payments
-        if self.amount_paid >= self.total_amount:
+        if self.total_amount > 0 and self.amount_paid >= self.total_amount:
             self.status = 'Paid'
             if not self.payment_date:
                 self.payment_date = timezone.now()
@@ -132,8 +133,9 @@ class InvoiceItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def save(self, *args, **kwargs):
-        # Calculate total price
-        self.total_price = (self.unit_price * self.quantity) - self.discount
+        # Calculate total price - ensure discount is Decimal
+        discount = Decimal(str(self.discount)) if self.discount else Decimal('0.00')
+        self.total_price = (self.unit_price * self.quantity) - discount
         
         super().save(*args, **kwargs)
         

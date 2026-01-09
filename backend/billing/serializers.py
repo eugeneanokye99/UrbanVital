@@ -92,13 +92,15 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source='patient.name', read_only=True)
     patient_mrn = serializers.CharField(source='patient.mrn', read_only=True)
     items_count = serializers.IntegerField(source='items.count', read_only=True)
+    items = InvoiceItemSerializer(many=True, read_only=True)
+    balance = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     
     class Meta:
         model = Invoice
         fields = [
             'id', 'invoice_number', 'patient', 'patient_name', 'patient_mrn',
             'status', 'total_amount', 'amount_paid', 'balance', 'invoice_date',
-            'payment_method', 'items_count'
+            'payment_method', 'items_count', 'items'
         ]
         extra_kwargs = {
             'patient': {'required': False}  # Patient can be null
