@@ -349,15 +349,7 @@ export default function StaffCheckIn() {
                         }
                       >
                         <option value="">Any Available Doctor</option>
-                        <option value="Dr. William Asante">
-                          Dr. William Asante
-                        </option>
-                        <option value="Dr. Sarah Mensah">
-                          Dr. Sarah Mensah
-                        </option>
-                        <option value="Dr. Kwame Asante">
-                          Dr. Kwame Asante
-                        </option>
+                        {/* should be replaced with fetched doctors/clinicians list in the database */}
                       </select>
                     </div>
                   </div>
