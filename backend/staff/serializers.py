@@ -14,11 +14,13 @@ class StaffProfileSerializer(serializers.ModelSerializer):
     
     # Phone can be read and written
     phone = serializers.CharField(required=False, allow_blank=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
     
     class Meta:
         model = StaffProfile
         fields = [
             'id', 
+            'user_id',   # Include the actual user ID
             'username',  # Read from user.username
             'email',     # Read from user.email
             'new_username',  # Write only (for updates)
@@ -28,7 +30,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             'phone',
             'created_by_id'  # Add this if you want to show who created the staff
         ]
-        read_only_fields = ['id', 'created_by_id']
+        read_only_fields = ['id', 'user_id', 'created_by_id']
 
     def validate(self, data):
         # For create/update operations, check if username/email already exists

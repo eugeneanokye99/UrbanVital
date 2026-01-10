@@ -44,7 +44,7 @@ class Visit(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='visits')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_visits')
     assigned_doctor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
-                                        related_name='assigned_visits', limit_choices_to={'groups__name': 'Doctor'})
+                                        related_name='assigned_visits')
     
     # Visit Details
     service_type = models.CharField(max_length=100, choices=SERVICE_CHOICES, default='General Consultation')

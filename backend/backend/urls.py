@@ -29,4 +29,7 @@ urlpatterns = [
     path('api/cart/', include('cart.urls')),
     path('api/ultrasound/', include('ultrasound.urls')),
     path('api/lab/', include('lab.urls')),
+    path('api/consultations/', include('consultations.urls')),
+    path('api/appointments/', include('appointments.urls')),
+    path('api/medical-documents/', include('medical_documents.urls')),
 ]

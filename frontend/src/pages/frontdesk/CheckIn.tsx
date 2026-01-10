@@ -10,22 +10,37 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
-import { fetchPatients } from "../../services/api";
+import { fetchPatients, createVisit, fetchStaff } from "../../services/api";
 
 export default function StaffCheckIn() {
   const [search, setSearch] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [patients, setPatients] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
 
   // Form State
   const [visitDetails, setVisitDetails] = useState({
     service: "General Consultation",
     priority: "Normal",
-    assignedDoctor: "",
+    assignedDoctorId: "",
+    paymentStatus: "Pay Later",
     notes: "",
   });
+
+  // Fetch all staff on component mount
+  useEffect(() => {
+    const loadStaff = async () => {
+      try {
+        const data = await fetchStaff(); // Fetches all staff roles
+        setStaffList(data.staff || []);
+      } catch (error) {
+        console.error("Error fetching staff:", error);
+      }
+    };
+    loadStaff();
+  }, []);
 
   // Fetch patients on component mount
   useEffect(() => {
@@ -47,11 +62,11 @@ export default function StaffCheckIn() {
     try {
       setLoadingPatients(true);
       const params: any = {};
-      
+
       if (search) params.search = search;
-      
+
       const data = await fetchPatients(params);
-      setPatients(data.results || []);
+      setPatients(data.results || data); // Adjust for API response format
     } catch (error) {
       console.error("Error fetching patients:", error);
       toast.error("Failed to load patients");
@@ -61,38 +76,42 @@ export default function StaffCheckIn() {
     }
   };
 
-  // Filter logic for local filtering (optional, backend already does it)
-  const filteredPatients = patients.filter(
-    (p) =>
-      p.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.mrn?.toLowerCase().includes(search.toLowerCase()) ||
-      p.first_name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.last_name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.phone?.includes(search)
-  );
-
   const handleCheckIn = async () => {
     if (!selectedPatient) return;
     setLoading(true);
 
     try {
-      // TODO: Create API endpoint for check-in
-      // For now, simulate API Call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+      const assignedDoctorId = visitDetails.assignedDoctorId ? parseInt(visitDetails.assignedDoctorId) : undefined;
+
+      await createVisit({
+        patient: selectedPatient.id,
+        service_type: visitDetails.service,
+        priority: visitDetails.priority,
+        assigned_doctor: isNaN(assignedDoctorId as any) ? undefined : assignedDoctorId,
+        payment_status: visitDetails.paymentStatus,
+        notes: visitDetails.notes,
+      });
+
       toast.success(`${selectedPatient.name || selectedPatient.first_name} checked in successfully!`);
-      
+
       // Reset form
       setSelectedPatient(null);
       setSearch("");
       setVisitDetails({
         service: "General Consultation",
         priority: "Normal",
-        assignedDoctor: "",
+        assignedDoctorId: "",
+        paymentStatus: "Pay Later",
         notes: "",
       });
-    } catch (error) {
-      toast.error("Failed to check in patient");
+    } catch (error: any) {
+      console.error("Check-in error:", error);
+      const serverError = error?.response?.data;
+      const errorMessage = serverError
+        ? Object.entries(serverError).map(([key, value]) => `${key}: ${value}`).join(", ")
+        : "Failed to check in patient";
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -104,17 +123,9 @@ export default function StaffCheckIn() {
     return `${patient.first_name || ''} ${patient.last_name || ''}`.trim();
   };
 
-  // Get patient type (Returning/New) - you might want to calculate this based on visit history
-  const getPatientType = (patient: any) => {
-    // For now, we'll assume all are Returning if they exist in database
-    // You can add logic based on created_at date or visit count
-    console.log(patient)
-    return "Returning";
-  };
-
   return (
     <div className="max-w-7xl mx-auto h-full flex flex-col">
-      
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-[#073159] flex items-center gap-2">
@@ -128,7 +139,7 @@ export default function StaffCheckIn() {
 
       {/* Main Content Area: Stacks on Mobile */}
       <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
-        
+
         {/* --- LEFT: SEARCH PANEL --- */}
         <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden h-[300px] lg:h-auto flex-shrink-0">
           <div className="p-4 border-b border-gray-100 bg-gray-50/50">
@@ -154,47 +165,31 @@ export default function StaffCheckIn() {
                 <Loader2 className="h-6 w-6 text-[#073159] animate-spin" />
                 <span className="ml-2 text-sm text-gray-600">Loading patients...</span>
               </div>
-            ) : filteredPatients.length > 0 ? (
-              filteredPatients.map((patient) => (
+            ) : patients.length > 0 ? (
+              patients.map((patient) => (
                 <div
                   key={patient.id}
                   onClick={() => setSelectedPatient(patient)}
-                  className={`p-4 border-b border-gray-50 cursor-pointer transition-all hover:bg-blue-50 group ${
-                    selectedPatient?.id === patient.id
-                      ? "bg-blue-50 border-l-4 border-l-[#073159]"
-                      : "border-l-4 border-l-transparent"
-                  }`}
+                  className={`p-4 border-b border-gray-50 cursor-pointer transition-all hover:bg-blue-50 group ${selectedPatient?.id === patient.id
+                    ? "bg-blue-50 border-l-4 border-l-[#073159]"
+                    : "border-l-4 border-l-transparent"
+                    }`}
                 >
                   <div className="flex justify-between items-start">
                     <div>
                       <h4
-                        className={`font-bold text-sm ${
-                          selectedPatient?.id === patient.id
-                            ? "text-[#073159]"
-                            : "text-gray-800"
-                        }`}
+                        className={`font-bold text-sm ${selectedPatient?.id === patient.id
+                          ? "text-[#073159]"
+                          : "text-gray-800"
+                          }`}
                       >
                         {getPatientName(patient)}
                       </h4>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {patient.mrn} • {patient.phone}
-                        {patient.date_of_birth && (
-                          <span> • {
-                            new Date().getFullYear() - 
-                            new Date(patient.date_of_birth).getFullYear()
-                          } Yrs</span>
-                        )}
+                        {patient.age && <span> • {patient.age} Yrs</span>}
                       </p>
                     </div>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        getPatientType(patient) === "New"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {getPatientType(patient)}
-                    </span>
                   </div>
                 </div>
               ))
@@ -245,13 +240,10 @@ export default function StaffCheckIn() {
                       <span>{selectedPatient.mrn}</span>
                       <span>•</span>
                       <span>{selectedPatient.phone}</span>
-                      {selectedPatient.date_of_birth && (
+                      {selectedPatient.age && (
                         <>
                           <span>•</span>
-                          <span>{
-                            new Date().getFullYear() - 
-                            new Date(selectedPatient.date_of_birth).getFullYear()
-                          } years</span>
+                          <span>{selectedPatient.age} years</span>
                         </>
                       )}
                       {selectedPatient.gender && (
@@ -267,32 +259,6 @@ export default function StaffCheckIn() {
                   </div>
                 </div>
               </div>
-
-              {/* Patient Info Summary */}
-              {selectedPatient.address || selectedPatient.emergency_name ? (
-                <div className="p-4 bg-blue-50 border-b border-blue-100">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {selectedPatient.address && (
-                      <div className="text-xs">
-                        <span className="text-gray-500">Address: </span>
-                        <span className="font-medium text-gray-700">
-                          {selectedPatient.address}
-                          {selectedPatient.city && `, ${selectedPatient.city}`}
-                        </span>
-                      </div>
-                    )}
-                    {selectedPatient.emergency_name && (
-                      <div className="text-xs">
-                        <span className="text-gray-500">Emergency: </span>
-                        <span className="font-medium text-gray-700">
-                          {selectedPatient.emergency_name}
-                          {selectedPatient.emergency_relation && ` (${selectedPatient.emergency_relation})`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : null}
 
               {/* Form Controls */}
               <div className="p-4 md:p-8 space-y-6 overflow-y-auto flex-1">
@@ -315,11 +281,10 @@ export default function StaffCheckIn() {
                         onClick={() =>
                           setVisitDetails({ ...visitDetails, service })
                         }
-                        className={`p-3 rounded-xl border text-xs md:text-sm font-medium transition-all text-left ${
-                          visitDetails.service === service
-                            ? "border-[#073159] bg-blue-50 text-[#073159] ring-1 ring-[#073159]"
-                            : "border-gray-200 text-gray-600 hover:border-blue-300"
-                        }`}
+                        className={`p-3 rounded-xl border text-xs md:text-sm font-medium transition-all text-left ${visitDetails.service === service
+                          ? "border-[#073159] bg-blue-50 text-[#073159] ring-1 ring-[#073159]"
+                          : "border-gray-200 text-gray-600 hover:border-blue-300"
+                          }`}
                       >
                         {service}
                       </button>
@@ -340,24 +305,18 @@ export default function StaffCheckIn() {
                       />
                       <select
                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#073159] outline-none appearance-none text-sm cursor-pointer"
-                        value={visitDetails.assignedDoctor}
+                        value={visitDetails.assignedDoctorId}
                         onChange={(e) =>
                           setVisitDetails({
                             ...visitDetails,
-                            assignedDoctor: e.target.value,
+                            assignedDoctorId: e.target.value,
                           })
                         }
                       >
-                        <option value="">Any Available Doctor</option>
-                        <option value="Dr. William Asante">
-                          Dr. William Asante
-                        </option>
-                        <option value="Dr. Sarah Mensah">
-                          Dr. Sarah Mensah
-                        </option>
-                        <option value="Dr. Kwame Asante">
-                          Dr. Kwame Asante
-                        </option>
+                        <option value="">Any Available Staff</option>
+                        {staffList.map((doc: any) => (
+                          <option key={doc.id} value={doc.user_id}>{doc.username} ({doc.role})</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -371,18 +330,16 @@ export default function StaffCheckIn() {
                         className="absolute left-3 top-3 text-gray-400"
                         size={18}
                       />
-                      <select 
+                      <select
                         className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-[#073159] outline-none appearance-none text-sm cursor-pointer"
-                        defaultValue="Pay Later (After Service)"
+                        value={visitDetails.paymentStatus}
+                        onChange={(e) => setVisitDetails({ ...visitDetails, paymentStatus: e.target.value })}
                       >
-                        <option value="pay_later">Pay Later (After Service)</option>
-                        <option value="insurance" disabled={!selectedPatient.insurance_provider}>
-                          {selectedPatient.insurance_provider 
-                            ? `${selectedPatient.insurance_provider} Insurance`
-                            : "Insurance (Not Registered)"}
-                        </option>
-                        <option value="cash">Paid Cash</option>
-                        <option value="mobile_money">Mobile Money</option>
+                        <option value="Pay Later">Pay Later (After Service)</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Cash">Paid Cash</option>
+                        <option value="Mobile Money">Mobile Money</option>
+                        <option value="Card">Credit/Debit Card</option>
                       </select>
                     </div>
                   </div>
@@ -418,6 +375,7 @@ export default function StaffCheckIn() {
                     <input
                       type="checkbox"
                       className="w-5 h-5 rounded text-[#073159] focus:ring-[#073159]"
+                      checked={visitDetails.priority === "Urgent"}
                       onChange={(e) =>
                         setVisitDetails({
                           ...visitDetails,
@@ -488,14 +446,6 @@ export default function StaffCheckIn() {
                 Find a patient from the list on the left to view details
                 and proceed with check-in.
               </p>
-              {patients.length === 0 && !loadingPatients && (
-                <button
-                  onClick={() => window.location.href = "/frontdesk/registerpatient"}
-                  className="mt-4 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors text-sm font-medium"
-                >
-                  Register First Patient
-                </button>
-              )}
             </div>
           )}
         </div>

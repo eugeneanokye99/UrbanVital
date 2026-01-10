@@ -52,6 +52,9 @@ INSTALLED_APPS = [
     "cart",
     "ultrasound",
     "lab",
+    "consultations",
+    "appointments",
+    "medical_documents",
 ]
 
 MIDDLEWARE = [

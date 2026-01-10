@@ -4,8 +4,8 @@ import toast from "react-hot-toast";
 
 // --- Base Setup ---
 const API = axios.create({
-  //  baseURL: "http://127.0.0.1:8000/api", // Django backend URL
- baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
+  // baseURL: "http://127.0.0.1:8000/api", // Django backend URL
+   baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
 });
 
 // Store original request queue for retry
@@ -24,13 +24,13 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const getCachedData = (key: string) => {
   const entry = cache.get(key);
   if (!entry) return null;
-  
+
   const isExpired = Date.now() - entry.timestamp > CACHE_TTL;
   if (isExpired) {
     cache.delete(key);
     return null;
   }
-  
+
   return entry.data;
 };
 
@@ -104,7 +104,7 @@ API.interceptors.response.use(
       try {
         // Try to refresh token
         const refreshToken = localStorage.getItem("refresh");
-        
+
         if (!refreshToken) {
           throw new Error("No refresh token available");
         }
@@ -116,36 +116,36 @@ API.interceptors.response.use(
         );
 
         const { access } = response.data;
-        
+
         // Update localStorage
         localStorage.setItem("access", access);
-        
+
         // Update login timestamp
         localStorage.setItem("login_time", Date.now().toString());
-        
+
         // Update the failed request with new token
         originalRequest.headers.Authorization = `Bearer ${access}`;
-        
+
         // Process queued requests
         processQueue(null, access);
         isRefreshing = false;
-        
+
         // Retry the original request
         return API(originalRequest);
-        
+
       } catch (refreshError) {
         // If refresh fails, logout user
         processQueue(refreshError, null);
         isRefreshing = false;
-        
+
         // Clear tokens and redirect to login
         logoutUser();
-        
+
         // Redirect to login page
         if (window.location.pathname !== "/") {
           window.location.href = "/";
         }
-        
+
         return Promise.reject(refreshError);
       }
     }
@@ -155,12 +155,12 @@ API.interceptors.response.use(
       error.response?.data?.detail ||
       error.response?.data?.message ||
       "Something went wrong. Please try again.";
-    
+
     // Don't show error toast for auth errors (they're handled above)
     if (error.response?.status !== 401) {
       toast.error(message);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -182,10 +182,10 @@ export const loginUser = async (credentials: {
     // Store JWT tokens
     localStorage.setItem("access", data.access);
     localStorage.setItem("refresh", data.refresh);
-    
+
     // Store login timestamp to track token age
     localStorage.setItem("login_time", Date.now().toString());
-    
+
     toast.success("Login successful");
     return data;
   } catch (error: any) {
@@ -213,7 +213,7 @@ export const registerStaff = async (staffData: {
       password: staffData.password,
       role: staffData.role,
     };
-    
+
     const response = await API.post("/staff/register/", backendData);
     toast.success(`${staffData.role} registered`);
     return response.data;
@@ -227,6 +227,15 @@ export const registerStaff = async (staffData: {
     toast.error(message);
     throw error;
   }
+};
+
+// Fetch staff members with optional filters
+export const fetchStaff = async (params?: {
+  role?: string;
+  search?: string;
+}) => {
+  const response = await API.get("/staff/all/", { params });
+  return response.data;
 };
 
 // Fetch staff profile by email
@@ -247,11 +256,11 @@ export const fetchUserProfile = async () => {
 export const isTokenExpired = () => {
   const loginTime = localStorage.getItem("login_time");
   if (!loginTime) return true;
-  
+
   const loginTimestamp = parseInt(loginTime);
   const now = Date.now();
   const hoursSinceLogin = (now - loginTimestamp) / (1000 * 60 * 60);
-  
+
   // If token is older than 55 minutes (5 minutes before 1 hour expiry)
   return hoursSinceLogin > 0.916; // 55 minutes
 };
@@ -263,18 +272,18 @@ export const manualRefreshToken = async () => {
     if (!refresh) {
       throw new Error("No refresh token found");
     }
-    
+
     const response = await axios.post(
       `${API.defaults.baseURL}/auth/token/refresh/`,
       { refresh }
     );
-    
+
     const data = response.data;
     localStorage.setItem("access", data.access);
-    
+
     // Update login time
     localStorage.setItem("login_time", Date.now().toString());
-    
+
     return data;
   } catch (error) {
     // Clear tokens on refresh failure
@@ -290,9 +299,9 @@ export const logoutUser = () => {
   localStorage.removeItem("refresh");
   localStorage.removeItem("user");
   localStorage.removeItem("login_time");
-  
+
   toast.success("Logged out");
-  
+
   // Optional: Redirect to login page
   // window.location.href = "/login";
 };
@@ -308,21 +317,21 @@ export const fetchPatients = async (params?: {
   flag?: string;
 }, useCache: boolean = true) => {
   const cacheKey = `patients_${JSON.stringify(params || {})}`;
-  
+
   // Check cache first
   if (useCache) {
     const cached = getCachedData(cacheKey);
     if (cached) return cached;
   }
-  
+
   const response = await API.get("/patients/", { params });
   const data = response.data;
-  
+
   // Cache the response
   if (useCache) {
     setCachedData(cacheKey, data);
   }
-  
+
   return data;  // Returns { count: number, results: Patient[] }
 };
 
@@ -349,10 +358,10 @@ export const registerPatient = async (patientData: {
   medical_flags?: string;
 }) => {
   const response = await API.post("/patients/create/", patientData);
-  
+
   // Invalidate patients cache
   clearCache('patients');
-  
+
   return response.data;
 };
 
@@ -371,17 +380,17 @@ export const fetchPatientById = async (id: number) => {
 // PUT: Update patient
 export const updatePatient = async (id: number, patientData: any) => {
   const response = await API.put(`/patients/${id}/`, patientData);
-  
+
   // Invalidate patients cache
   clearCache('patients');
-  
+
   return response.data;
 };
 
 // DELETE: Remove patient
 export const deletePatient = async (id: number) => {
   await API.delete(`/patients/${id}/`);
-  
+
   // Invalidate patients cache
   clearCache('patients');
 };
@@ -415,6 +424,11 @@ export const fetchVisitStats = async () => {
   return response.data;
 };
 
+export const fetchVisitById = async (id: number) => {
+  const response = await API.get(`/visits/${id}/`);
+  return response.data;
+};
+
 // --- VITAL SIGNS API ---
 export const recordVitals = async (vitalsData: {
   visit: number;
@@ -432,6 +446,99 @@ export const recordVitals = async (vitalsData: {
   return response.data;
 };
 
+
+// --- CONSULTATION API ---
+export const createConsultation = async (consultationData: {
+  visit: number;
+  patient: number;
+  chief_complaint: string;
+  history_of_present_illness?: string;
+  past_medical_history?: string;
+  physical_examination?: string;
+  diagnosis: string;
+  clinical_plan: string;
+  prescription?: string;
+  admit_patient?: boolean;
+  admission_notes?: string;
+}) => {
+  const response = await API.post("/consultations/", consultationData);
+  return response.data;
+};
+
+export const fetchConsultationByVisit = async (visitId: number) => {
+  const response = await API.get(`/consultations/visit/${visitId}/`);
+  return response.data;
+};
+
+export const fetchPatientConsultationHistory = async (patientId: number) => {
+  const response = await API.get(`/consultations/patient/${patientId}/history/`);
+  return response.data;
+};
+
+export const fetchConsultationById = async (id: number) => {
+  const response = await API.get(`/consultations/${id}/`);
+  return response.data;
+};
+
+export const fetchClinicianStats = async () => {
+  const response = await API.get("/consultations/stats/");
+  return response.data;
+};
+// --- APPOINTMENTS API ---
+export const createAppointment = async (appointmentData: {
+  patient: number;
+  doctor?: number;
+  appointment_date: string;
+  appointment_time: string;
+  reason: string;
+  notes?: string;
+}) => {
+  const response = await API.post("/appointments/", appointmentData);
+  return response.data;
+};
+
+export const fetchAppointments = async (params?: {
+  status?: string;
+  patient_id?: number;
+  doctor_id?: number;
+  time_filter?: 'upcoming' | 'missed';
+  search?: string;
+}) => {
+  const response = await API.get("/appointments/", { params });
+  return response.data;
+};
+
+export const fetchPatientAppointmentHistory = async (patientId: number) => {
+  const response = await API.get(`/appointments/patient/${patientId}/history/`);
+  return response.data;
+};
+
+export const updateAppointmentStatus = async (id: number, status: string) => {
+  const response = await API.patch(`/appointments/${id}/`, { status });
+  return response.data;
+};
+// --- MEDICAL DOCUMENTS API ---
+export const createMedicalDocument = async (documentData: {
+  patient: number;
+  document_type: string;
+  title: string;
+  content: any;
+}) => {
+  const response = await API.post("/medical-documents/", documentData);
+  return response.data;
+};
+
+export const fetchMedicalDocuments = async (params?: {
+  patient_id?: number;
+}) => {
+  const response = await API.get("/medical-documents/", { params });
+  return response.data;
+};
+
+export const fetchMedicalDocumentById = async (id: number) => {
+  const response = await API.get(`/medical-documents/${id}/`);
+  return response.data;
+};
 
 
 // Service Items
@@ -485,6 +592,7 @@ export const addInvoiceItem = async (
     quantity: number;
     unit_price: number;
     discount?: number;
+    notes?: string;
   }
 ) => {
   const response = await API.post(`/billing/invoices/${invoiceId}/items/`, itemData);
@@ -674,7 +782,7 @@ export const deleteInventoryItem = async (id: number) => {
 // Utility functions
 export const getStockStatusInfo = (item: any) => {
   const status = item.stock_status || '';
-  
+
   if (status === 'OUT_OF_STOCK') {
     return { text: 'Out of Stock', color: 'bg-red-100 text-red-700' };
   }
@@ -786,39 +894,39 @@ export const getCart = async (cartId: number) => {
 // GET: Fetch ultrasound statistics for dashboard
 export const fetchUltrasoundStats = async (useCache: boolean = true) => {
   const cacheKey = 'ultrasound_stats';
-  
+
   if (useCache) {
     const cached = getCachedData(cacheKey);
     if (cached) return cached;
   }
-  
+
   const response = await API.get("/ultrasound/stats/");
   const data = response.data;
-  
+
   if (useCache) {
     setCachedData(cacheKey, data);
   }
-  
+
   return data;
 };
 
 // GET: Fetch worklist data (pending orders + in-progress scans)
 export const fetchUltrasoundWorklist = async (useCache: boolean = false) => {
   const cacheKey = 'ultrasound_worklist';
-  
+
   // Worklist should be fresh, use shorter cache TTL (1 minute)
   if (useCache) {
     const cached = getCachedData(cacheKey);
     if (cached) return cached;
   }
-  
+
   const response = await API.get("/ultrasound/worklist/");
   const data = response.data;
-  
+
   if (useCache) {
     setCachedData(cacheKey, data);
   }
-  
+
   return data;
 };
 
@@ -843,11 +951,11 @@ export const createUltrasoundOrder = async (orderData: {
   special_instructions?: string;
 }) => {
   const response = await API.post("/ultrasound/orders/", orderData);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
@@ -860,36 +968,36 @@ export const fetchUltrasoundOrder = async (id: number) => {
 // PUT/PATCH: Update ultrasound order
 export const updateUltrasoundOrder = async (id: number, orderData: any) => {
   const response = await API.patch(`/ultrasound/orders/${id}/`, orderData);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
 // POST: Update order status
 export const updateUltrasoundOrderStatus = async (id: number, status: string, scheduled_date?: string) => {
-  const response = await API.post(`/ultrasound/orders/${id}/status/`, { 
-    status, 
-    scheduled_date 
+  const response = await API.post(`/ultrasound/orders/${id}/status/`, {
+    status,
+    scheduled_date
   });
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
 // DELETE: Delete ultrasound order
 export const deleteUltrasoundOrder = async (id: number) => {
   const response = await API.delete(`/ultrasound/orders/${id}/`);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
@@ -922,11 +1030,11 @@ export const createUltrasoundScan = async (scanData: {
   status?: string;
 }) => {
   const response = await API.post("/ultrasound/scans/", scanData);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
@@ -939,32 +1047,32 @@ export const fetchUltrasoundScan = async (id: number) => {
 // PUT/PATCH: Update ultrasound scan
 export const updateUltrasoundScan = async (id: number, scanData: any) => {
   const response = await API.patch(`/ultrasound/scans/${id}/`, scanData);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
 // POST: Complete scan
 export const completeUltrasoundScan = async (id: number) => {
   const response = await API.post(`/ultrasound/scans/${id}/complete/`);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
   clearCache('ultrasound_worklist');
-  
+
   return response.data;
 };
 
 // POST: Verify scan
 export const verifyUltrasoundScan = async (id: number) => {
   const response = await API.post(`/ultrasound/scans/${id}/verify/`);
-  
+
   // Invalidate relevant caches
   clearCache('ultrasound_stats');
-  
+
   return response.data;
 };
 
@@ -983,19 +1091,19 @@ export const fetchPatientUltrasoundHistory = async (patientId: number) => {
 // GET: Fetch ultrasound equipment
 export const fetchUltrasoundEquipment = async (useCache: boolean = true) => {
   const cacheKey = 'ultrasound_equipment';
-  
+
   if (useCache) {
     const cached = getCachedData(cacheKey);
     if (cached) return cached;
   }
-  
+
   const response = await API.get("/ultrasound/equipment/");
   const data = response.data;
-  
+
   if (useCache) {
     setCachedData(cacheKey, data);
   }
-  
+
   return data;
 };
 
@@ -1009,22 +1117,22 @@ export const createUltrasoundEquipment = async (equipmentData: {
   location?: string;
 }) => {
   const response = await API.post("/ultrasound/equipment/", equipmentData);
-  
+
   // Invalidate equipment cache
   clearCache('ultrasound_equipment');
   clearCache('ultrasound_stats');
-  
+
   return response.data;
 };
 
 // PUT/PATCH: Update ultrasound equipment
 export const updateUltrasoundEquipment = async (id: number, equipmentData: any) => {
   const response = await API.patch(`/ultrasound/equipment/${id}/`, equipmentData);
-  
+
   // Invalidate equipment cache
   clearCache('ultrasound_equipment');
   clearCache('ultrasound_stats');
-  
+
   return response.data;
 };
 
@@ -1034,38 +1142,38 @@ export const updateUltrasoundEquipment = async (id: number, equipmentData: any) 
 // GET: Fetch lab statistics for dashboard
 export const fetchLabStats = async (useCache: boolean = true) => {
   const cacheKey = 'lab_stats';
-  
+
   if (useCache) {
     const cached = getCachedData(cacheKey);
     if (cached) return cached;
   }
-  
+
   const response = await API.get("/lab/statistics/");
   const data = response.data;
-  
+
   if (useCache) {
     setCachedData(cacheKey, data);
   }
-  
+
   return data;
 };
 
 // GET: Fetch lab worklist (pending, sample_collected, in_progress)
 export const fetchLabWorklist = async (useCache: boolean = false) => {
   const cacheKey = 'lab_worklist';
-  
+
   if (useCache) {
     const cached = getCachedData(cacheKey);
     if (cached) return cached;
   }
-  
+
   const response = await API.get("/lab/worklist/");
   const data = response.data;
-  
+
   if (useCache) {
     setCachedData(cacheKey, data);
   }
-  
+
   return data;
 };
 
@@ -1128,11 +1236,11 @@ export const createLabOrder = async (orderData: {
   test_ids: number[];
 }) => {
   const response = await API.post("/lab/orders/", orderData);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
@@ -1145,55 +1253,55 @@ export const fetchLabOrder = async (id: number) => {
 // PUT/PATCH: Update lab order
 export const updateLabOrder = async (id: number, orderData: any) => {
   const response = await API.patch(`/lab/orders/${id}/`, orderData);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
 // POST: Collect sample for lab order
 export const collectLabSample = async (orderId: number) => {
   const response = await API.post(`/lab/orders/${orderId}/collect-sample/`);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
 // POST: Start processing lab order
 export const startLabProcessing = async (orderId: number) => {
   const response = await API.post(`/lab/orders/${orderId}/start-processing/`);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
 // POST: Cancel lab order
 export const cancelLabOrder = async (orderId: number) => {
   const response = await API.post(`/lab/orders/${orderId}/cancel/`);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
 // DELETE: Delete lab order
 export const deleteLabOrder = async (id: number) => {
   const response = await API.delete(`/lab/orders/${id}/`);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
@@ -1218,11 +1326,11 @@ export const createLabResult = async (resultData: {
   status?: string;
 }) => {
   const response = await API.post("/lab/results/", resultData);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
   clearCache('lab_worklist');
-  
+
   return response.data;
 };
 
@@ -1241,20 +1349,20 @@ export const fetchLabResultByOrder = async (orderId: number) => {
 // PUT/PATCH: Update lab result
 export const updateLabResult = async (id: number, resultData: any) => {
   const response = await API.patch(`/lab/results/${id}/`, resultData);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
-  
+
   return response.data;
 };
 
 // POST: Verify lab result
 export const verifyLabResult = async (resultId: number) => {
   const response = await API.post(`/lab/results/${resultId}/verify/`);
-  
+
   // Invalidate relevant caches
   clearCache('lab_stats');
-  
+
   return response.data;
 };
 
