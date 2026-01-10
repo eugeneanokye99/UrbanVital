@@ -6,7 +6,6 @@ import {
   History, 
   LogOut, 
   X,
-  Settings
 } from "lucide-react";
 import { logoutUser } from "../services/api";
 import logo from "../assets/urbanvital-logo.png";
@@ -25,7 +24,6 @@ export default function UltrasoundSidebar({ isOpen = false, onClose }: SidebarPr
     { path: "/ultrasound/worklist", label: "Scan Worklist", icon: <Waves size={20} /> },
     { path: "/ultrasound/reports", label: "Report Entry", icon: <FileImage size={20} /> },
     { path: "/ultrasound/history", label: "Scan History", icon: <History size={20} /> },
-    { path: "/ultrasound/settings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
   return (
