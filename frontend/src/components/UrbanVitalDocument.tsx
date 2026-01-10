@@ -7,7 +7,6 @@ interface DocumentProps {
   patient: {
     name: string;
     mrn: string;
-    age: string | number;
     phone: string;
   };
   doctorName: string;
@@ -40,7 +39,6 @@ export const UrbanVitalDocument = ({
       <div className="border-y-2 border-[#073159] bg-[#eef2f6] py-3 px-4 flex flex-wrap justify-between items-center text-sm font-bold text-[#073159] uppercase tracking-wide print:border-gray-400 print:bg-gray-100">
         <span>{patient.mrn}</span>
         <span>{patient.name}</span>
-        <span>AGE: {patient.age}</span>
         <span>{patient.phone}</span>
       </div>
 

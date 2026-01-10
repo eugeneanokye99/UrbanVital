@@ -98,17 +98,7 @@ export default function StaffNavbar({ onMenuClick }: StaffNavbarProps) {
           <Search size={24} />
         </button>
 
-        {/* Quick Actions */}
-        <div className="flex items-center gap-1 md:gap-2 border-r border-gray-100 pr-2 md:pr-6">
-          <button className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all relative">
-            <Bell size={20} />
-            {/* Notification Dot */}
-            <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-orange-500 rounded-full border border-white"></span>
-          </button>
-          <button className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all hidden sm:block">
-            <Settings size={20} />
-          </button>
-        </div>
+
 
         {/* User Profile */}
         <div className="flex items-center gap-3 cursor-pointer group pl-2">
