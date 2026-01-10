@@ -61,7 +61,6 @@ import PharmacyPOS from './pages/pharmacy/PharmacyPOS';
 import UltrasoundDashboard from './pages/ultrasound/UltrasoundDashboard';
 import UltrasoundWorklist from './pages/ultrasound/UltrasoundWorklist';
 import UltrasoundReport from './pages/ultrasound/UltrasoundReport';
-import UltrasoundSettings from './pages/ultrasound/UltrasoundSettings';
 import UltrasoundHistory from './pages/ultrasound/UltrasoundHistory';
 
 function App() {
@@ -141,7 +140,6 @@ function App() {
         <Route path="dashboard" element={<UltrasoundDashboard />} />
         <Route path="worklist" element={<UltrasoundWorklist />} />
         <Route path="reports" element={<UltrasoundReport />} />
-        <Route path="settings" element={<UltrasoundSettings />} />
         <Route path="history" element={<UltrasoundHistory />} />
       </Route>
 

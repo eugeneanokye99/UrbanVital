@@ -291,7 +291,6 @@ export default function UltrasoundReport() {
                         title="ULTRASOUND REPORT"
                         patient={{ 
                           name: order?.patient_name || "Unknown Patient", 
-                          age: order?.patient_age || 0, 
                           mrn: order?.patient_mrn || "N/A", 
                           phone: order?.patient_phone || "" 
                         }}

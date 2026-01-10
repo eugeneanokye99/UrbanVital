@@ -1,4 +1,4 @@
-import { Menu, Bell, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 
 interface NavbarProps { onMenuClick?: () => void; }
 
@@ -15,10 +15,7 @@ export default function UltrasoundNavbar({ onMenuClick }: NavbarProps) {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <button className="p-2 text-gray-500 hover:bg-blue-50 rounded-full relative">
-            <Bell size={20} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+
         <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center font-bold text-sm">US</div>
       </div>
     </header>
