@@ -1,4 +1,4 @@
-import { Menu, Bell, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 
 interface NavbarProps { onMenuClick?: () => void; }
 

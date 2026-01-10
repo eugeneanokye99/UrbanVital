@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Search, 
-  Menu, 
-  Bell, 
-  Settings, 
+  Menu,  
   ChevronDown,
   User,
   ArrowLeft,
