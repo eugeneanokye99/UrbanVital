@@ -4,8 +4,8 @@ import toast from "react-hot-toast";
 
 // --- Base Setup ---
 const API = axios.create({
-  baseURL: "http://127.0.0.1:8000/api", // Django backend URL
-  //  baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
+  // baseURL: "http://127.0.0.1:8000/api", // Django backend URL
+   baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
 });
 
 // Store original request queue for retry
