@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+import dj_database_url
+from dotenv import load_dotenv
 
+
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -73,7 +77,7 @@ ROOT_URLCONF = 'backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'frontend/dist')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -91,29 +95,34 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
-        'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DATABASE_NAME'),
-        'USER': os.environ.get('DATABASE_USER'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
-        'HOST': os.environ.get('DATABASE_HOST'),
-        'PORT': os.environ.get('DATABASE_PORT'),
-    }
-    #     'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'urbanvital',
-    #     'USER': 'postgres',
-    #     'PASSWORD': 'Final@2025',
-    #     'HOST': 'localhost',
-    #     'PORT': '5432',
-    # }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+#         'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.environ.get('DATABASE_NAME'),
+#         'USER': os.environ.get('DATABASE_USER'),
+#         'PASSWORD': os.environ.get('DATABASE_PASSWORD'),
+#         'HOST': os.environ.get('DATABASE_HOST'),
+#         'PORT': os.environ.get('DATABASE_PORT'),
+#     }
+#         'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'urbanvital',
+#         'USER': 'postgres',
+#         'PASSWORD': 'Final@2025',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 
+DATABASES = {
+    'default': dj_database_url.parse(
+        os.environ.get('DATABASE_URL')
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -149,7 +158,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/assets/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'frontend/dist/assets'),
+]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
