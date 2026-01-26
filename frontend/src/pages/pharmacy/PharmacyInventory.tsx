@@ -8,25 +8,18 @@ import {
   DollarSign, 
   TrendingDown, 
   Calendar,
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  Save,
   Loader2,
   AlertCircle,
   Database,
   RefreshCw,
   Pill,
-  ListPlus,
-  AlertTriangle
+  AlertTriangle,
+  X,
+  CheckCircle
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { 
   fetchPharmacyItems, 
-  createInventoryItem, 
-  updateInventoryItem, 
-  deleteInventoryItem,
   getStockStatusInfo,
   formatCurrency,
   formatDate,
@@ -47,22 +40,9 @@ export default function PharmacyInventory() {
   
   // API State
   const [inventory, setInventory] = useState<any[]>([]);
-  const [loading, setLoading] = useState({
-    inventory: true,
-    save: false
-  });
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [saving, setSaving] = useState(false);
-
-  // Dynamic Categories State
-  const [categories, setCategories] = useState(["Antibiotic", "Analgesic", "Supplement", "Antimalarial", "Antihypertensive"]);
-  const [newCategoryMode, setNewCategoryMode] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState("");
-
   // Highlighting Logic
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
 
@@ -85,34 +65,29 @@ export default function PharmacyInventory() {
 
       if (itemToHighlight) {
         setHighlightedId(itemToHighlight.id);
-        // Auto-clear highlight after 3 seconds
         setTimeout(() => setHighlightedId(null), 3000);
       }
     }
   }, [location.state, inventory]);
 
-  // Load all required data
+  // Load data
   const loadData = async () => {
     try {
       setError(null);
-      setLoading(prev => ({ ...prev, inventory: true }));
-
-      // Load pharmacy inventory
+      setLoading(true);
       const pharmacyData = await fetchPharmacyItems();
       setInventory(pharmacyData || []);
-
     } catch (error: any) {
       console.error("Error loading pharmacy inventory:", error);
-      setError("Failed to load pharmacy inventory. Please try again.");
+      setError("Failed to load inventory data.");
       toast.error("Failed to load inventory data");
     } finally {
-      setLoading(prev => ({ ...prev, inventory: false }));
+      setLoading(false);
     }
   };
 
   // Refresh data
   const handleRefresh = () => {
-    setLoading(prev => ({ ...prev, inventory: true }));
     loadData();
   };
 
@@ -122,7 +97,7 @@ export default function PharmacyInventory() {
     setGlobalSearch(val);
   };
 
-  // Calculate statistics from current data
+  // Calculate statistics
   const calculatedStats = useMemo(() => {
     if (!inventory.length) return { lowStock: 0, expiringSoon: 0, totalValue: 0 };
     
@@ -147,7 +122,7 @@ export default function PharmacyInventory() {
     
     return inventory.filter((item: any) => {
       const matchesSearch = item.name?.toLowerCase().includes(localSearch.toLowerCase()) || 
-                           item.item_id?.toLowerCase().includes(localSearch.toLowerCase());
+                            item.item_id?.toLowerCase().includes(localSearch.toLowerCase());
       
       const statusInfo = getStockStatusInfo(item);
       
@@ -161,100 +136,6 @@ export default function PharmacyInventory() {
     });
   }, [inventory, localSearch, filter]);
 
-  // Handlers
-  const handleAddNew = () => {
-    setEditingItem({ category: categories[0] });
-    setNewCategoryMode(false);
-    setNewCategoryName("");
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (item: any) => {
-    setEditingItem(item);
-    setNewCategoryMode(false);
-    setNewCategoryName("");
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Are you sure you want to delete this item? This cannot be undone.")) {
-      return;
-    }
-
-    try {
-      await deleteInventoryItem(id);
-      
-      // Update local state
-      setInventory(prev => prev.filter(i => i.id !== id));
-      
-      toast.success("Item deleted successfully.");
-    } catch (error: any) {
-      console.error("Error deleting item:", error);
-      toast.error("Failed to delete item");
-    }
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    
-    try {
-      const formData = new FormData(e.target as HTMLFormElement);
-      
-      // Handle New Category Creation
-      let finalCategory = formData.get("category") as string;
-      if (newCategoryMode && newCategoryName.trim() !== "") {
-        finalCategory = newCategoryName;
-        if (!categories.includes(finalCategory)) {
-          setCategories([...categories, finalCategory]);
-        }
-      }
-
-      // Item data for the backend
-      const itemData: any = {
-        name: String(formData.get("name") || ""),
-        department: "PHARMACY",
-        current_stock: Number(formData.get("stock") || 0),
-        minimum_stock: Number(formData.get("minLevel") || 10),
-        unit_of_measure: String(formData.get("unit") || "PCS"),
-        selling_price: Number(formData.get("price") || 0),
-        expiry_date: formData.get("expiry") ? String(formData.get("expiry")) : undefined,
-        batch_number: String(formData.get("batch") || ""),
-        category: finalCategory,
-        is_active: true
-      };
-
-      if (editingItem && editingItem.id) {
-        // Update existing item
-        const updatedItem = await updateInventoryItem(editingItem.id, itemData);
-        
-        // Update local state
-        setInventory(prev => prev.map(i => i.id === editingItem.id ? updatedItem : i));
-        
-        toast.success("Stock updated successfully");
-      } else {
-        // Create new item
-        const newItem = await createInventoryItem(itemData);
-        
-        // Update local state
-        setInventory(prev => [...prev, newItem]);
-        
-        toast.success("New drug added to inventory");
-      }
-      
-      setIsModalOpen(false);
-      setEditingItem(null);
-      setNewCategoryMode(false);
-      setNewCategoryName("");
-    } catch (error: any) {
-      console.error("Error saving item:", error);
-      const errorMsg = error.response?.data?.detail || error.response?.data?.message || "Failed to save item";
-      toast.error(errorMsg);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   // CSV Export Handler
   const handleExport = () => {
     if (filteredInventory.length === 0) {
@@ -266,7 +147,6 @@ export default function PharmacyInventory() {
 
     const csvRows = filteredInventory.map((item: any) => {
       const statusInfo = getStockStatusInfo(item);
-      
       return [
         `"${item.item_id || ''}"`,
         `"${item.name || ''}"`,
@@ -290,43 +170,24 @@ export default function PharmacyInventory() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `pharmacy_inventory_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `pharmacy_inventory_view_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    toast.success("Pharmacy inventory exported as CSV!");
+    toast.success("Inventory exported");
   };
 
-  // Loading skeleton for table
+  // Loading skeleton
   const renderLoadingSkeleton = () => {
     return Array.from({ length: 5 }).map((_, index) => (
       <tr key={index} className="animate-pulse">
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-3 bg-gray-100 rounded w-1/2 mt-2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="h-6 bg-gray-200 rounded-full w-20 mx-auto"></div>
-        </td>
-        <td className="px-6 py-4">
-          <div className="flex justify-end gap-2">
-            <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
-            <div className="h-8 w-8 bg-gray-200 rounded-lg"></div>
-          </div>
-        </td>
+        <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-3/4"></div></td>
+        <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-1/2"></div></td>
+        <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-1/4"></div></td>
+        <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-1/4"></div></td>
+        <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-1/3"></div></td>
+        <td className="px-6 py-4"><div className="h-6 bg-gray-200 rounded-full w-20 mx-auto"></div></td>
       </tr>
     ));
   };
@@ -342,30 +203,24 @@ export default function PharmacyInventory() {
             Pharmacy Inventory
           </h1>
           <p className="text-sm md:text-base text-gray-500 mt-1">
-            Manage drug stocks, prices, and expiry alerts.
+            View current stock levels and expiry dates.
           </p>
         </div>
         <div className="flex gap-2">
           <button 
             onClick={handleRefresh}
-            disabled={loading.inventory}
+            disabled={loading}
             className="bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 text-sm active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <RefreshCw size={18} className={loading.inventory ? "animate-spin" : ""} />
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
             Refresh
-          </button>
-          <button 
-            onClick={handleAddNew}
-            className="bg-[#073159] text-white px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:bg-[#062a4d] transition-transform active:scale-95 text-sm"
-          >
-            <Plus size={18} /> Add New Stock
           </button>
           <button 
             onClick={handleExport}
             disabled={filteredInventory.length === 0}
             className="bg-white border border-gray-200 text-[#073159] px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-gray-50 text-sm active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Download size={18} /> Export CSV
+            <Download size={18} /> Export List
           </button>
         </div>
       </div>
@@ -390,31 +245,31 @@ export default function PharmacyInventory() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard 
           title="Total Products" 
-          value={loading.inventory ? <Loader2 className="animate-spin h-6 w-6" /> : inventory.length.toString()}
+          value={loading ? <Loader2 className="animate-spin h-6 w-6" /> : inventory.length.toString()}
           icon={<Pill size={20} />} 
           color="bg-blue-50 text-blue-600"
-          loading={loading.inventory}
+          loading={loading}
         />
         <StatCard 
           title="Low Stock Alerts" 
-          value={loading.inventory ? <Loader2 className="animate-spin h-6 w-6" /> : calculatedStats.lowStock.toString()}
+          value={loading ? <Loader2 className="animate-spin h-6 w-6" /> : calculatedStats.lowStock.toString()}
           icon={<TrendingDown size={20} />} 
           color="bg-red-50 text-red-600"
-          loading={loading.inventory}
+          loading={loading}
         />
         <StatCard 
           title="Expiring Soon" 
-          value={loading.inventory ? <Loader2 className="animate-spin h-6 w-6" /> : calculatedStats.expiringSoon.toString()}
+          value={loading ? <Loader2 className="animate-spin h-6 w-6" /> : calculatedStats.expiringSoon.toString()}
           icon={<Calendar size={20} />} 
           color="bg-orange-50 text-orange-600"
-          loading={loading.inventory}
+          loading={loading}
         />
         <StatCard 
           title="Total Value" 
-          value={loading.inventory ? <Loader2 className="animate-spin h-6 w-6" /> : formatCurrency(calculatedStats.totalValue)}
+          value={loading ? <Loader2 className="animate-spin h-6 w-6" /> : formatCurrency(calculatedStats.totalValue)}
           icon={<DollarSign size={20} />} 
           color="bg-green-50 text-green-600"
-          loading={loading.inventory}
+          loading={loading}
         />
       </div>
 
@@ -431,7 +286,7 @@ export default function PharmacyInventory() {
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 bg-white focus:border-[#073159] outline-none transition-all text-sm disabled:opacity-50"
               value={localSearch}
               onChange={handleSearchChange}
-              disabled={loading.inventory}
+              disabled={loading}
             />
           </div>
 
@@ -439,9 +294,9 @@ export default function PharmacyInventory() {
             <Filter size={18} className="text-gray-400 hidden md:block flex-shrink-0" />
             {['All', 'Low', 'Expiring'].map((f) => (
               <button 
-                key={f}
-                onClick={() => setFilter(f)}
-                disabled={loading.inventory}
+                key={f} 
+                onClick={() => setFilter(f)} 
+                disabled={loading}
                 className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors flex-shrink-0 disabled:opacity-50 ${
                   filter === f ? "bg-[#073159] text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                 }`}
@@ -463,11 +318,10 @@ export default function PharmacyInventory() {
                 <th className="px-6 py-4">Unit Price</th>
                 <th className="px-6 py-4">Expiry</th>
                 <th className="px-6 py-4 text-center">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {loading.inventory ? (
+              {loading ? (
                 renderLoadingSkeleton()
               ) : filteredInventory.length > 0 ? (
                 filteredInventory.map((item: any) => {
@@ -477,7 +331,7 @@ export default function PharmacyInventory() {
                   return (
                     <tr 
                       key={item.id} 
-                      className={`transition-all duration-500 group ${
+                      className={`transition-all duration-500 ${
                         isHighlighted 
                         ? "bg-yellow-100 border-l-4 border-yellow-500 shadow-md scale-[1.01]" 
                         : "hover:bg-blue-50/30"
@@ -522,44 +376,20 @@ export default function PharmacyInventory() {
                       <td className="px-6 py-4 text-center">
                         <StatusBadge statusInfo={statusInfo} />
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleEdit(item)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit Stock"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(item.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12">
+                  <td colSpan={6} className="px-6 py-12">
                     <div className="text-center text-gray-400">
                       <Database size={48} className="mx-auto mb-4 opacity-30" />
                       <p className="text-lg font-medium mb-2">No pharmacy items found</p>
-                      <p className="text-sm mb-4">
+                      <p className="text-sm">
                         {localSearch 
                           ? `No items match "${localSearch}"` 
-                          : "No pharmacy items available. Add your first drug!"}
+                          : "Inventory is empty."}
                       </p>
-                      <button 
-                        onClick={handleAddNew}
-                        className="bg-[#073159] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#062a4d] transition-colors inline-flex items-center gap-2"
-                      >
-                        <Plus size={16} /> Add First Drug
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -568,190 +398,6 @@ export default function PharmacyInventory() {
           </table>
         </div>
       </div>
-
-      {/* Add/Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-[#073159] text-white">
-              <h3 className="font-bold flex items-center gap-2">
-                {editingItem?.id ? <Edit size={18} /> : <Plus size={18} />}
-                {editingItem?.id ? "Update Stock" : "Add Drug"}
-              </h3>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                disabled={saving}
-                className="p-1 hover:bg-white/20 rounded-full disabled:opacity-50"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto">
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase">Drug Name *</label>
-                <input 
-                  name="name" 
-                  type="text" 
-                  defaultValue={editingItem?.name}
-                  className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none focus:border-[#073159] transition-all"
-                  required 
-                  disabled={saving}
-                />
-              </div>
-
-              {/* Dynamic Category Section */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Category</label>
-                    <button 
-                      type="button"
-                      onClick={() => setNewCategoryMode(!newCategoryMode)}
-                      disabled={saving}
-                      className="text-[10px] text-[#073159] font-bold hover:underline flex items-center gap-1 disabled:opacity-50"
-                    >
-                      {newCategoryMode ? "Select Existing" : <><ListPlus size={10}/> Create New</>}
-                    </button>
-                  </div>
-                  
-                  {newCategoryMode ? (
-                    <input 
-                      type="text"
-                      placeholder="Enter new category..."
-                      className="w-full p-2.5 border rounded-xl bg-white focus:border-[#073159] outline-none animate-in fade-in disabled:opacity-50"
-                      value={newCategoryName}
-                      onChange={(e) => setNewCategoryName(e.target.value)}
-                      autoFocus
-                      disabled={saving}
-                    />
-                  ) : (
-                    <select 
-                      name="category"
-                      className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none disabled:opacity-50"
-                      defaultValue={editingItem?.category || categories[0]}
-                      disabled={saving}
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Batch Number</label>
-                  <input 
-                    name="batch" 
-                    type="text" 
-                    defaultValue={editingItem?.batch_number}
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none disabled:opacity-50"
-                    placeholder="e.g. BTC-001"
-                    disabled={saving}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Current Stock</label>
-                  <input 
-                    name="stock" 
-                    type="number" 
-                    defaultValue={editingItem?.current_stock || 0}
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none font-bold text-gray-800 disabled:opacity-50"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase text-red-500">Low Alert Level</label>
-                  <input 
-                    name="minLevel" 
-                    type="number" 
-                    min="0"
-                    defaultValue={editingItem?.minimum_stock || 20}
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none disabled:opacity-50"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-                
-                <div className="col-span-2 sm:col-span-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Price (₵)</label>
-                  <input 
-                    name="price" 
-                    type="number" 
-                    step="0.01"
-                    min="0"
-                    defaultValue={editingItem?.selling_price || 0}
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none disabled:opacity-50"
-                    required
-                    disabled={saving}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Unit Type</label>
-                  <select 
-                    name="unit" 
-                    defaultValue={editingItem?.unit_of_measure || "PCS"}
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none disabled:opacity-50"
-                    disabled={saving}
-                  >
-                    <option value="PCS">Pieces</option>
-                    <option value="BOX">Boxes</option>
-                    <option value="BTL">Bottles</option>
-                    <option value="KIT">Kits</option>
-                    <option value="TAB">Tablets</option>
-                    <option value="CAP">Capsules</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase">Expiry Date</label>
-                  <input 
-                    name="expiry" 
-                    type="date" 
-                    defaultValue={editingItem?.expiry_date}
-                    className="w-full p-2.5 border rounded-xl bg-gray-50 focus:bg-white outline-none disabled:opacity-50"
-                    disabled={saving}
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={saving}
-                  className="flex-1 py-3 border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={saving}
-                  className="flex-1 py-3 bg-[#073159] text-white rounded-xl font-bold hover:bg-[#062a4d] flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save size={18} /> Save Record
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -759,7 +405,7 @@ export default function PharmacyInventory() {
 // Reusable Helper Components
 function StatCard({ title, value, icon, color, loading }: any) {
   return (
-    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md cursor-pointer hover:-translate-y-1">
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md">
       <div>
         <p className="text-xs text-gray-500 font-bold uppercase mb-1">{title}</p>
         <h3 className={`text-2xl font-bold text-[#073159] ${loading ? 'flex items-center' : ''}`}>
@@ -779,7 +425,7 @@ function StatusBadge({ statusInfo }: { statusInfo: any }) {
   else if (text === 'Low Stock') icon = <TrendingDown size={10} />;
   else if (text === 'Expiring Soon') icon = <AlertTriangle size={10} />;
   else if (text === 'Expired') icon = '⏰';
-  else icon = '✅';
+  else icon = <CheckCircle size={10} />;
   
   return (
     <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase inline-flex items-center gap-1 ${color}`}>

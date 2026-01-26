@@ -16,18 +16,22 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminPatientsList from './pages/admin/PatientsList';
 import AdminStaff from './pages/admin/StaffManagement';
 import AdminFinance from './pages/admin/Finance';
-import AdminInventory from './pages/admin/AdminInventory';
+import AdminInventory from './pages/admin/AdminInventoryHub';
 import RegisterStaff from './pages/admin/RegisterStaff';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminNotifications from './pages/admin/AdminNotifications';
+import PatientVisits from './pages/admin/PatientVisit';
+import AdminPharmacyInventory from './pages/admin/AdminPharmacyInventory';
+import AdminLabInventory from './pages/admin/AdminLabInventory';
+import AdminLabRecords from './pages/admin/AdminLabRecords';
 
 // --- Front Desk (Staff) Pages ---
-import StaffDashboard from './pages/frontdesk/StaffDashboard';
-import StaffCheckIn from './pages/frontdesk/CheckIn';
-import StaffPatientDetail from './pages/frontdesk/PatientDetail';
-import StaffPatientsList from './pages/frontdesk/PatientsList';
-import RegisterPatient from './pages/frontdesk/RegisterPatient';
-import StaffBillings from './pages/frontdesk/Billings';
+import StaffDashboard from './pages/Phlebotomist/StaffDashboard';
+import StaffCheckIn from './pages/Phlebotomist/CheckIn';
+import StaffPatientDetail from './pages/Phlebotomist/PatientDetail';
+import StaffPatientsList from './pages/Phlebotomist/PatientsList';
+import RegisterPatient from './pages/Phlebotomist/RegisterPatient';
+import StaffBillings from './pages/Phlebotomist/Billings';
 
 // --- Clinician Pages ---
 import ClinicianDashboard from './pages/clinician/Dashboard';
@@ -50,12 +54,11 @@ import LabResultView from './pages/lab/LabResultView';
 
 // --- Pharmacy Pages ---
 import PharmacyDashboard from './pages/pharmacy/PharmacyDashboard';
-import PharmacyAlerts from './pages/pharmacy/PharmacyAlerts';
 import PharmacyInventory from './pages/pharmacy/PharmacyInventory';
 import PharmacyHistory from './pages/pharmacy/PharmacyHistory';
-import PharmacySettings from './pages/pharmacy/PharmacySettings';
 import PrescriptionReview from './pages/pharmacy/PrescriptionReview';
 import PharmacyPOS from './pages/pharmacy/PharmacyPOS';
+import PharmacyReturns from './pages/pharmacy/PharmacyReturns';
 
 // -- Ultrasound Pages --
 import UltrasoundDashboard from './pages/ultrasound/UltrasoundDashboard';
@@ -83,6 +86,11 @@ function App() {
           <Route path="register" element={<RegisterStaff />} />
           <Route path="settings" element={<AdminSettings />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="patient-visits" element={<PatientVisits />} />
+          <Route path="pharmacy-inventory" element={<AdminPharmacyInventory />} />
+          <Route path="lab-inventory" element={<AdminLabInventory />} />
+          <Route path="lab-records" element={<AdminLabRecords />} />
+
         </Route>
 
         {/* === Front Desk Module === */}
@@ -126,12 +134,11 @@ function App() {
         <Route path="/pharmacy" element={<PharmacyLayout />}>
           <Route index element={<Navigate to="pharmacydashboard" replace />} />
           <Route path="pharmacydashboard" element={<PharmacyDashboard />} />
-          <Route path="pharmacyalerts" element={<PharmacyAlerts />} />
           <Route path="pharmacyinventory" element={<PharmacyInventory />} />
           <Route path="pharmacyhistory" element={<PharmacyHistory />} />
-          <Route path="pharmacysettings" element={<PharmacySettings />} />
           <Route path="prescription-review" element={<PrescriptionReview />} />
           <Route path="pharmacypos" element={<PharmacyPOS />} />
+          <Route path="pharmacyreturns" element={<PharmacyReturns />} />
        </Route>
 
        {/* === Ultrasound Module === */}

@@ -4,32 +4,41 @@ import {
   FlaskConical, 
   Menu, 
   X, 
-  ArrowLeft 
+  ArrowLeft,
 } from "lucide-react";
 import { fetchUserProfile } from "../services/api";
 
 interface LabNavbarProps {
   onMenuClick?: () => void;
-  onSearch?: (query: string) => void; // Added prop for search functionality
+  onSearch?: (query: string) => void;
 }
 
 export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadingUser, setLoadingUser] = useState(true); // Added loading state
 
   // Fetch Logged-in User
   useEffect(() => {
-    fetchUserProfile()
-      .then((data) => setUser(data))
-      .catch((err) => console.error("Failed to load user profile", err));
+    const loadUser = async () => {
+      try {
+        const data = await fetchUserProfile();
+        setUser(data);
+      } catch (err) {
+        console.error("Failed to load user profile", err);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    loadUser();
   }, []);
 
   // Handle Search Input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
-    if (onSearch) onSearch(query); // Pass data up if a handler exists
+    if (onSearch) onSearch(query);
   };
 
   // --- Mobile Search Overlay ---
@@ -54,6 +63,7 @@ export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
           <button 
             onClick={() => {
               setSearchQuery("");
+              if (onSearch) onSearch("");
               setIsMobileSearchOpen(false);
             }}
             className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
@@ -105,25 +115,44 @@ export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
           <Search size={22} />
         </button>
 
-        {/* Profile Section (Notification removed) */}
+        {/* User Profile Display */}
         <div className="flex items-center gap-3 cursor-pointer group border-l border-gray-100 pl-2 md:pl-6">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159]">
-              {user ? user.username : "Lab Technician"}
-            </p>
-            <p className="text-xs text-gray-500">
-              {user?.role || "Laboratory Panel"}
-            </p>
+            {loadingUser ? (
+                // Loading Skeleton for Name
+                <div className="flex flex-col items-end gap-1">
+                    <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-2 w-16 bg-gray-100 rounded animate-pulse"></div>
+                </div>
+            ) : (
+                <>
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                      {user?.first_name 
+                        ? `${user.first_name} ${user.last_name || ''}` 
+                        : user?.username || "Lab Technician"
+                      }
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {user?.role || "Laboratory Panel"}
+                    </p>
+                </>
+            )}
           </div>
           
           <div className="relative">
-            <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shadow-sm border border-purple-200 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                {user?.username ? user.username.charAt(0).toUpperCase() : <FlaskConical size={18} />}
+            <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center shadow-sm border border-purple-200 group-hover:bg-purple-600 group-hover:text-white transition-all overflow-hidden">
+                {user?.profile_image ? (
+                    <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    <span className="font-bold text-sm">
+                        {user?.username ? user.username.charAt(0).toUpperCase() : <FlaskConical size={18} />}
+                    </span>
+                )}
             </div>
-            {/* Online Dot */}
+            {/* Online Status Dot */}
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
-
+          
         </div>
       </div>
     </header>

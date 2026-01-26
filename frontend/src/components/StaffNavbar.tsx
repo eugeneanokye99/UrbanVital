@@ -11,18 +11,35 @@ import { fetchUserProfile } from "../services/api";
 
 interface StaffNavbarProps {
   onMenuClick?: () => void;
+  onSearch?: (query: string) => void; // Added onSearch prop
 }
 
-export default function StaffNavbar({ onMenuClick }: StaffNavbarProps) {
+export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps) {
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true); // Added loading state
 
   useEffect(() => {
-    fetchUserProfile()
-      .then((data) => setUser(data))
-      .catch(() => console.error("Failed to fetch user"));
+    const loadUser = async () => {
+      try {
+        const data = await fetchUserProfile();
+        setUser(data);
+      } catch (error) {
+        console.error("Failed to fetch user", error);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    loadUser();
   }, []);
+
+  // Handle Search Input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (onSearch) onSearch(query);
+  };
 
   // --- Mobile Search Overlay ---
   if (isMobileSearchOpen) {
@@ -40,12 +57,15 @@ export default function StaffNavbar({ onMenuClick }: StaffNavbarProps) {
             type="text"
             placeholder="Search patient MRN, name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
           />
           {searchQuery && (
             <button 
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                if (onSearch) onSearch("");
+              }}
               className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
             >
               <X size={18} />
@@ -79,7 +99,7 @@ export default function StaffNavbar({ onMenuClick }: StaffNavbarProps) {
             type="text"
             placeholder="Search patient MRN, name..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition-all duration-200 sm:text-sm"
           />
         </div>
@@ -96,21 +116,39 @@ export default function StaffNavbar({ onMenuClick }: StaffNavbarProps) {
           <Search size={24} />
         </button>
 
-
-
         {/* User Profile */}
-        <div className="flex items-center gap-3 cursor-pointer group pl-2">
+        <div className="flex items-center gap-3 cursor-pointer group pl-2 border-l border-gray-100 md:pl-6">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
-              {user ? user.username : "Agnes Asante"}
-            </p>
-            <p className="text-xs text-gray-500">Front Desk / Staff</p>
+            {loadingUser ? (
+                // Loading Skeleton for Name
+                <div className="flex flex-col items-end gap-1">
+                    <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-2 w-16 bg-gray-100 rounded animate-pulse"></div>
+                </div>
+            ) : (
+                <>
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                      {/* Check multiple name fields commonly used in APIs */}
+                      {user?.first_name 
+                        ? `${user.first_name} ${user.last_name || ''}` 
+                        : user?.username || "Staff Member"
+                      }
+                    </p>
+                    <p className="text-xs text-gray-500">
+                        {user?.role || "Front Desk / Staff"}
+                    </p>
+                </>
+            )}
           </div>
 
           <div className="relative">
             {/* Avatar Circle */}
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 text-[#073159] border border-blue-100 flex items-center justify-center font-bold text-xs md:text-sm shadow-sm group-hover:bg-[#073159] group-hover:text-white transition-all">
-              {user?.username ? user.username.charAt(0) : <User size={18} />}
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 text-[#073159] border border-blue-100 flex items-center justify-center font-bold text-xs md:text-sm shadow-sm group-hover:bg-[#073159] group-hover:text-white transition-all overflow-hidden">
+              {user?.profile_image ? (
+                  <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                  user?.username ? user.username.charAt(0).toUpperCase() : <User size={18} />
+              )}
             </div>
             
             {/* Online Status Dot */}

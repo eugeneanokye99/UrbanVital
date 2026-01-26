@@ -1,30 +1,40 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import Navigation
+import { useNavigate } from "react-router-dom"; 
 import { 
   Search, 
   Menu, 
   Bell, 
-  ChevronDown,
   X,
-  ArrowLeft
+  ArrowLeft,
+  User 
 } from "lucide-react";
 import { fetchUserProfile } from "../services/api";
 
 interface AdminNavbarProps {
   onMenuClick?: () => void;
-  onSearch?: (query: string) => void; // Prop to pass search up
+  onSearch?: (query: string) => void;
 }
 
 export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps) {
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate(); 
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true); // Added loading state
 
+  // Fetch Logged-in User
   useEffect(() => {
-    fetchUserProfile()
-      .then((data) => setUser(data))
-      .catch(() => console.error("Failed to fetch user"));
+    const loadUser = async () => {
+      try {
+        const data = await fetchUserProfile();
+        setUser(data);
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    loadUser();
   }, []);
 
   // Handle Search Input
@@ -112,7 +122,7 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
         {/* Notification Bell */}
         <div className="flex items-center border-r border-gray-100 pr-2 md:pr-6">
           <button 
-            onClick={() => navigate("/admin/notifications")} // Navigate to Notifications
+            onClick={() => navigate("/admin/notifications")} 
             className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all relative"
           >
             <Bell size={20} />
@@ -124,22 +134,42 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
         {/* User Profile */}
         <div className="flex items-center gap-3 cursor-pointer group pl-2">
           <div className="text-right hidden md:block">
-            <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
-              {user ? user.username : "Administrator"}
-            </p>
-            <p className="text-xs text-gray-500">Admin</p>
+            {loadingUser ? (
+                // Loading Skeleton for Name
+                <div className="flex flex-col items-end gap-1">
+                    <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-2 w-16 bg-gray-100 rounded animate-pulse"></div>
+                </div>
+            ) : (
+                <>
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                      {user?.first_name 
+                        ? `${user.first_name} ${user.last_name || ''}` 
+                        : user?.username || "Administrator"
+                      }
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {user?.role || "System Admin"}
+                    </p>
+                </>
+            )}
           </div>
 
           <div className="relative">
             {/* Avatar Circle */}
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center font-bold text-xs md:text-sm shadow-md ring-2 ring-white group-hover:ring-blue-100 transition-all">
-              {user?.username ? user.username.charAt(0) : "A"}
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center font-bold text-xs md:text-sm shadow-md ring-2 ring-white group-hover:ring-blue-100 transition-all overflow-hidden">
+                {user?.profile_image ? (
+                    <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                    <span className="font-bold text-sm">
+                        {user?.username ? user.username.charAt(0).toUpperCase() : <User size={18} />}
+                    </span>
+                )}
             </div>
             {/* Online Status Dot */}
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 md:h-3 md:w-3 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
 
-          <ChevronDown size={16} className="text-gray-400 group-hover:text-[#073159] transition-colors hidden sm:block" />
         </div>
 
       </div>

@@ -12,15 +12,10 @@ import {
   Users,
   DollarSign,
   Package,
-  Clock,
-  Stethoscope,
-  Activity,
   CreditCard,
   AlertTriangle
 } from "lucide-react";
-import { 
-  fetchAdminStats
-} from "../../services/api";
+import { fetchAdminStats } from "../../services/api";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -32,12 +27,6 @@ export default function AdminDashboard() {
     patients: 0,
     patientsChange: "+0%",
     drugs: 0,
-  });
-
-  const [liveStats, setLiveStats] = useState({
-    waitingRoom: 0,
-    doctorsActive: 0,
-    triageQueue: 0
   });
 
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
@@ -63,10 +52,8 @@ export default function AdminDashboard() {
         setError(null);
         setIsLoading(true);
         
-        // Fetch comprehensive admin stats
         const adminStats = await fetchAdminStats();
         
-        // Set analytics from real data
         setAnalytics({
           revenue: adminStats.revenue.today || 0,
           revenueChange: adminStats.revenue.change_percentage || "+0%",
@@ -75,14 +62,6 @@ export default function AdminDashboard() {
           drugs: adminStats.inventory.total_items || 0,
         });
 
-        // Set live stats from real data
-        setLiveStats({
-          waitingRoom: adminStats.visits.active || 0,
-          doctorsActive: 0, // Can add staff active tracking later
-          triageQueue: adminStats.visits.today || 0
-        });
-
-        // Set recent transactions from real data
         const transactions = adminStats.recent_transactions.map((tx: any) => ({
           id: tx.id,
           patient: tx.patient,
@@ -93,13 +72,9 @@ export default function AdminDashboard() {
         }));
         setRecentTransactions(transactions);
 
-        // Set recent activity/alerts from real data
         setRecentActivity(adminStats.alerts || []);
-
-        // Set on duty staff from real data
         setOnDutyStaff(adminStats.staff || []);
 
-        // Set weekly data from charts
         const chartData = adminStats.charts.weekly_trend.map((day: any) => ({
           day: day.day,
           value: day.revenue
@@ -191,57 +166,10 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* --- Clinic Pulse (Live Status) --- */}
+      {/* --- Main Dashboard Content --- */}
       {!isLoading && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <div className="bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden min-h-[160px]">
-              <div className="relative z-10">
-                  <p className="text-blue-100 text-sm font-medium mb-1">Patients Waiting</p>
-                  <h3 className="text-3xl font-bold">{liveStats.waitingRoom}</h3>
-                  <div className="mt-4 flex items-center gap-2 text-xs bg-white/20 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
-                    <Clock size={12} /> Avg wait: 14 mins
-                  </div>
-              </div>
-              <Users className="absolute -bottom-4 -right-4 w-32 h-32 text-white/10" />
-            </div>
-
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px]">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-gray-500 text-sm font-medium">Active Doctors</p>
-                    <h3 className="text-2xl font-bold text-[#073159] mt-1">
-                      {liveStats.doctorsActive} <span className="text-sm text-gray-400 font-normal">/ 5</span>
-                    </h3>
-                  </div>
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <Stethoscope className="text-green-600 w-5 h-5" />
-                  </div>
-                </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
-                  <div className="bg-green-500 h-full rounded-full" style={{ width: `${(liveStats.doctorsActive / 5) * 100}%` }}></div>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[160px] sm:col-span-2 lg:col-span-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-gray-500 text-sm font-medium">Triage Queue</p>
-                    <h3 className="text-2xl font-bold text-[#073159] mt-1">{liveStats.triageQueue}</h3>
-                  </div>
-                  <div className="p-2 bg-orange-50 rounded-lg">
-                    <Activity className="text-orange-600 w-5 h-5" />
-                  </div>
-                </div>
-                {liveStats.triageQueue > 0 ? (
-                  <p className="text-xs text-orange-600 mt-2 font-medium bg-orange-50 w-fit px-2 py-1 rounded">Requires attention</p>
-                ) : (
-                  <p className="text-xs text-green-600 mt-2 font-medium bg-green-50 w-fit px-2 py-1 rounded">All clear</p>
-                )}
-            </div>
-          </div>
-
-          {/* --- Key Financial Metrics --- */}
+          {/* --- Key Metrics (Clickable) --- */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             <MetricCard 
               title="Total Revenue" 
@@ -250,6 +178,7 @@ export default function AdminDashboard() {
               positive={true}
               icon={<DollarSign className="w-6 h-6 text-green-600" />}
               color="bg-green-50"
+              onClick={() => navigate('/admin/finance')} // Navigates to Finance
             />
             <MetricCard 
               title="Total Visits" 
@@ -258,6 +187,7 @@ export default function AdminDashboard() {
               positive={true}
               icon={<Users className="w-6 h-6 text-blue-600" />}
               color="bg-blue-50"
+              onClick={() => navigate('/admin/patient-visits')} // Navigates to Patients List
             />
             <MetricCard 
               title="Inventory Count" 
@@ -266,6 +196,7 @@ export default function AdminDashboard() {
               icon={<Package className="w-6 h-6 text-purple-600" />}
               color="bg-purple-50"
               className="sm:col-span-2 lg:col-span-1"
+              onClick={() => navigate('/admin/inventory')} // Navigates to Inventory
             />
           </div>
 
@@ -337,7 +268,12 @@ export default function AdminDashboard() {
                     <CreditCard className="w-5 h-5 text-[#073159]" />
                     Recent Transactions
                   </h3>
-                  <button className="text-xs md:text-sm font-medium text-blue-600 hover:underline py-2 px-3 hover:bg-blue-50 rounded-lg">View All</button>
+                  <button 
+                    onClick={() => navigate('/admin/finance')}
+                    className="text-xs md:text-sm font-medium text-blue-600 hover:underline py-2 px-3 hover:bg-blue-50 rounded-lg"
+                  >
+                    View All
+                  </button>
                 </div>
                 {recentTransactions.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -466,11 +402,15 @@ interface MetricCardProps {
   color: string;
   subtext?: string;
   className?: string;
+  onClick?: () => void; // Added click handler prop
 }
 
-function MetricCard({ icon, title, value, change, positive, color, subtext, className }: MetricCardProps) {
+function MetricCard({ icon, title, value, change, positive, color, subtext, className, onClick }: MetricCardProps) {
   return (
-    <div className={`bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md cursor-pointer active:scale-98 ${className}`}>
+    <div 
+      onClick={onClick}
+      className={`bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md active:scale-98 ${className} ${onClick ? 'cursor-pointer' : ''}`}
+    >
       <div>
         <p className="text-xs md:text-sm font-medium text-gray-500 mb-2">{title}</p>
         <h3 className="text-2xl md:text-3xl font-bold text-[#073159]">{value}</h3>

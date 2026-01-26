@@ -56,7 +56,7 @@ export default function RegisterStaff() {
           Add New Staff
         </h1>
         <p className="text-sm md:text-base text-gray-500 mt-2 ml-1">
-          Create accounts for Clinicians, Lab Technicians, Pharmacists, and Cashiers.
+          Create accounts for Clinicians, Lab Technicians, Pharmacists, and Phlebotomists.
         </p>
       </div>
 
@@ -152,7 +152,7 @@ export default function RegisterStaff() {
                   <option value="Clinician">Clinician</option>
                   <option value="Lab">Lab Technician</option>
                   <option value="Pharmacy">Pharmacist</option>
-                  <option value="Cashier">Cashier</option>
+                  <option value="Phlebotomist">Phlebotomist</option>
                   <option value="Ultrasound">Ultrasound Specialist</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">

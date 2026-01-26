@@ -2,14 +2,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Users, 
-  UserPlus, 
   Package, 
   CreditCard, 
   Settings, 
   LogOut, 
   ShieldCheck, 
-  UserCog,
-  X // 1. Import Close Icon
+  UserCog,FileText,
+  X
 } from "lucide-react";
 import { logoutUser } from "../services/api";
 import logo from "../assets/urbanvital-logo.png";
@@ -33,11 +32,12 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const menuItems = [
     { path: "/admin/dashboard", label: "Analytics", icon: <LayoutDashboard size={20} /> },
     { path: "/admin/patients", label: "Patients", icon: <Users size={20} /> },
-    { path: "/admin/staff", label: "Staff Management", icon: <UserCog size={20} /> },
     { path: "/admin/inventory", label: "Inventory", icon: <Package size={20} /> },
     { path: "/admin/finance", label: "Finance & Revenue", icon: <CreditCard size={20} /> },
-    { path: "/admin/register", label: "Register Staff", icon: <UserPlus size={20} /> },
+    { path: "/admin/lab-records", label: "Lab Records", icon: <FileText size={20} /> },
+    { path: "/admin/staff", label: "Staff Management", icon: <UserCog size={20} /> },
     { path: "/admin/settings", label: "Settings", icon: <Settings size={20} /> },
+    
   ];
 
   return (
