@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { fetchDashboardSummary } from "../../services/api";
 
-export default function StaffDashboard() {
+export default function PhlebotomistDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);

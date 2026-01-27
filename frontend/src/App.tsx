@@ -128,7 +128,7 @@ function App() {
         </Route>
 
         {/* === Phlebotomist Module === */}
-        <Route path="/phlebotomist" element={<ProtectedRoute roles={["Cashier"]}><StaffLayout /></ProtectedRoute>}>
+        <Route path="/phlebotomist" element={<ProtectedRoute roles={["Phlebotomist"]}><StaffLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="phlebotomistdashboard" replace />} />
           <Route path="phlebotomistdashboard" element={<PhlebotomistDashboard />} />
           <Route path="checkin" element={<StaffCheckIn />} />
