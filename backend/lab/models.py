@@ -29,21 +29,19 @@ class LabTest(models.Model):
         ('Other', 'Other'),
     ]
     
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50, unique=True)
-    category = models.CharField(max_length=50, choices=TEST_CATEGORIES)
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
-    sample_type = models.CharField(max_length=100, choices=SAMPLE_TYPE_CHOICES)
-    turnaround_time = models.CharField(max_length=100, help_text="Expected TAT (e.g., '2-4 hours')")
-    normal_range = models.TextField(blank=True, help_text="Reference range for results")
+    normal_range = models.CharField(max_length=100, blank=True)
+    parameters = models.JSONField(default=list, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['category', 'name']
+        ordering = ['name']
         indexes = [
-            models.Index(fields=['category', 'is_active']),
             models.Index(fields=['code']),
         ]
     

@@ -8,30 +8,62 @@ from django.db.models import Q, Sum, Count, F  # Make sure F is imported
 from datetime import timedelta, date
 
 class InventoryListCreateView(generics.ListCreateAPIView):
-    queryset = Inventory.objects.all()
     serializer_class = InventorySerializer
     permission_classes = [IsAuthenticated]
-    
+
+    def get_queryset(self):
+        qs = Inventory.objects.all()
+        user = self.request.user
+        # Only admins see locked items
+        if not (user.is_superuser or user.groups.filter(name__iexact='admin').exists()):
+            qs = qs.filter(is_locked=False)
+        return qs
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        obj = serializer.save(created_by=self.request.user)
+        # Audit log
+        from notifications.audit import log_action
+        log_action(self.request.user, "create", f"Created inventory item: {obj.name}", {"item_id": obj.item_id})
 
 class InventoryDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Inventory.objects.all()
-    serializer_class = InventorySerializer
-    permission_classes = [IsAuthenticated]
+        def perform_update(self, serializer):
+            obj = serializer.save()
+            from notifications.audit import log_action
+            log_action(self.request.user, "update", f"Updated inventory item: {obj.name}", {"item_id": obj.item_id})
+
+        def perform_destroy(self, instance):
+            from notifications.audit import log_action
+            log_action(self.request.user, "delete", f"Deleted inventory item: {instance.name}", {"item_id": instance.item_id})
+            instance.delete()
+            
+        serializer_class = InventorySerializer
+        permission_classes = [IsAuthenticated]
+
+        def get_queryset(self):
+            qs = Inventory.objects.all()
+            user = self.request.user
+            if not (user.is_superuser or user.groups.filter(name__iexact='admin').exists()):
+                qs = qs.filter(is_locked=False)
+            return qs
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def pharmacy_items(request):
-    items = Inventory.objects.filter(department='PHARMACY')
-    serializer = InventorySerializer(items, many=True)
+    qs = Inventory.objects.filter(department='PHARMACY')
+    user = request.user
+    if not (user.is_superuser or user.groups.filter(name__iexact='admin').exists()):
+        qs = qs.filter(is_locked=False)
+    serializer = InventorySerializer(qs, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def lab_items(request):
-    items = Inventory.objects.filter(department='LAB')
-    serializer = InventorySerializer(items, many=True)
+    qs = Inventory.objects.filter(department='LAB')
+    user = request.user
+    if not (user.is_superuser or user.groups.filter(name__iexact='admin').exists()):
+        qs = qs.filter(is_locked=False)
+    serializer = InventorySerializer(qs, many=True)
     return Response(serializer.data)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

@@ -6,7 +6,7 @@ class StaffProfile(models.Model):
         ('Clinician', 'Clinician'),
         ('Lab', 'Lab'),
         ('Pharmacy', 'Pharmacy'),
-        ('Cashier', 'Cashier'),
+        ('Phlebotomist', 'Phlebotomist'),
         ('Ultrasound', 'Ultrasound'),
     ]
 

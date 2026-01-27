@@ -8,7 +8,8 @@ import {
   ArrowLeft,
   User 
 } from "lucide-react";
-import { fetchUserProfile } from "../services/api";
+import { useUser } from "../context/UserContext";
+import { fetchNotifications } from '../services/notifications';
 
 interface AdminNavbarProps {
   onMenuClick?: () => void;
@@ -17,25 +18,27 @@ interface AdminNavbarProps {
 
 export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps) {
   const navigate = useNavigate(); 
-  const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true); // Added loading state
-
-  // Fetch Logged-in User
+  const [unreadCount, setUnreadCount] = useState(0);
+  const { user, loading } = useUser();
+  // Poll notifications for unread count (only if admin)
   useEffect(() => {
-    const loadUser = async () => {
+    if (loading) return;
+    if (user?.role !== 'admin') return;
+    let interval: any;
+    const loadUnread = async () => {
       try {
-        const data = await fetchUserProfile();
-        setUser(data);
-      } catch (err) {
-        console.error("Failed to fetch user", err);
-      } finally {
-        setLoadingUser(false);
-      }
+        const notifs = await fetchNotifications();
+        setUnreadCount(notifs.filter((n: any) => !n.is_read).length);
+      } catch {}
     };
-    loadUser();
-  }, []);
+    loadUnread();
+    interval = setInterval(loadUnread, 15000); // poll every 15s
+    return () => clearInterval(interval);
+  }, [user, loading]);
+
+  // (User is now provided by context)
 
   // Handle Search Input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,14 +130,16 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
           >
             <Bell size={20} />
             {/* Notification Dot */}
-            <span className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
+            {unreadCount > 0 && (
+              <span className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
+            )}
           </button>
         </div>
 
         {/* User Profile */}
         <div className="flex items-center gap-3 cursor-pointer group pl-2">
           <div className="text-right hidden md:block">
-            {loadingUser ? (
+            {loading ? (
                 // Loading Skeleton for Name
                 <div className="flex flex-col items-end gap-1">
                     <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>

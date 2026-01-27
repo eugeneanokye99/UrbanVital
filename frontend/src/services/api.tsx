@@ -1,6 +1,24 @@
+// DELETE: Delete lab test
+export const deleteLabTest = async (id: number) => {
+  const response = await API.delete(`/lab/tests/${id}/`);
+  // Invalidate relevant caches if any (add if needed)
+  return response.data;
+};
 // src/api.tsx
 import axios from "axios";
 import toast from "react-hot-toast";
+// --- JWT decode helper ---
+interface JwtPayload {
+  exp?: number;
+  [key: string]: any;
+}
+function parseJwt(token: string): JwtPayload | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1])) as JwtPayload;
+  } catch (e) {
+    return null;
+  }
+}
 
 // --- Base Setup ---
 const API = axios.create({
@@ -66,9 +84,33 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Add request interceptor to include auth token
 API.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("access");
+  async (config) => {
+    let token = localStorage.getItem("access");
+    const refreshToken = localStorage.getItem("refresh");
     if (token) {
+      const payload = parseJwt(token);
+      const now = Math.floor(Date.now() / 1000);
+      // If token expires in <60s, refresh it proactively
+      if (payload && payload.exp && payload.exp - now < 60 && refreshToken) {
+        try {
+          const response = await axios.post(
+            `${API.defaults.baseURL}/auth/token/refresh/`,
+            { refresh: refreshToken }
+          );
+          token = response.data.access;
+          if (token) {
+            localStorage.setItem("access", token);
+          }
+        } catch (err) {
+          // If refresh fails, clear tokens and redirect
+          localStorage.removeItem("access");
+          localStorage.removeItem("refresh");
+          if (window.location.pathname !== "/") {
+            window.location.href = "/";
+          }
+          return Promise.reject(err);
+        }
+      }
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -293,15 +335,19 @@ export const manualRefreshToken = async () => {
 };
 
 // Logout (clear local storage)
-export const logoutUser = () => {
+
+export const logoutUser = async () => {
+  try {
+    await API.post("/auth/logout/");
+  } catch (e) {
+    // Ignore errors
+  }
   // Clear all localStorage items
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
   localStorage.removeItem("user");
   localStorage.removeItem("login_time");
-
   toast.success("Logged out");
-
   // Optional: Redirect to login page
   // window.location.href = "/login";
 };
@@ -672,9 +718,14 @@ export const updateStaff = async (id: number, staffData: {
   email?: string;
   phone?: string;
   role?: string;
-  // Add other updatable fields as needed
 }) => {
-  const response = await API.put(`/staff/${id}/`, staffData);
+  // Always send new_username/new_email for backend compatibility
+  const backendData: any = {};
+  if (staffData.username) backendData.new_username = staffData.username;
+  if (staffData.email) backendData.new_email = staffData.email;
+  if (staffData.phone !== undefined) backendData.phone = staffData.phone;
+  if (staffData.role !== undefined) backendData.role = staffData.role;
+  const response = await API.put(`/staff/${id}/`, backendData);
   return response.data;
 };
 

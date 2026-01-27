@@ -23,6 +23,11 @@ class ServiceItemListView(generics.ListCreateAPIView):
     search_fields = ['code', 'name', 'description']
     filterset_fields = ['category', 'is_active']
 
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        from notifications.audit import log_action
+        log_action(self.request.user, "create", f"Created service item: {obj.name}", {"service_item_id": obj.id})
+
 class InvoiceListView(generics.ListCreateAPIView):
     """GET: List invoices, POST: Create new invoice"""
     serializer_class = InvoiceListSerializer
@@ -58,14 +63,25 @@ class InvoiceListView(generics.ListCreateAPIView):
         return queryset.order_by('-invoice_date')
     
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        obj = serializer.save(created_by=self.request.user)
+        from notifications.audit import log_action
+        log_action(self.request.user, "create", f"Created invoice: {obj.invoice_number}", {"invoice_id": obj.id})
 
 class InvoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """GET/PUT/PATCH/DELETE: Single invoice operations"""
-    queryset = Invoice.objects.all()
-    serializer_class = InvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = "id"
+        def perform_update(self, serializer):
+            obj = serializer.save()
+            from notifications.audit import log_action
+            log_action(self.request.user, "update", f"Updated invoice: {obj.invoice_number}", {"invoice_id": obj.id})
+
+        def perform_destroy(self, instance):
+            from notifications.audit import log_action
+            log_action(self.request.user, "delete", f"Deleted invoice: {instance.invoice_number}", {"invoice_id": instance.id})
+            instance.delete()
+        """GET/PUT/PATCH/DELETE: Single invoice operations"""
+        queryset = Invoice.objects.all()
+        serializer_class = InvoiceSerializer
+        permission_classes = [permissions.IsAuthenticated]
+        lookup_field = "id"
 
 class PendingInvoicesView(generics.ListAPIView):
     """GET: Invoices pending payment"""

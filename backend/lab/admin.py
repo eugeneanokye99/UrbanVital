@@ -4,10 +4,10 @@ from .models import LabTest, LabOrder, LabOrderTest, LabResult
 
 @admin.register(LabTest)
 class LabTestAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'category', 'sample_type', 'is_active', 'created_at']
-    list_filter = ['category', 'is_active']
-    search_fields = ['name', 'code', 'category']
-    ordering = ['category', 'name']
+    list_display = ['code', 'name', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['name', 'code']
+    ordering = ['name']
 
 
 @admin.register(LabOrder)
@@ -22,7 +22,7 @@ class LabOrderAdmin(admin.ModelAdmin):
 @admin.register(LabOrderTest)
 class LabOrderTestAdmin(admin.ModelAdmin):
     list_display = ['id', 'order', 'test', 'created_at']
-    list_filter = ['test__category', 'created_at']
+    list_filter = ['created_at']
     search_fields = ['order__patient__name', 'test__name']
     ordering = ['-created_at']
 

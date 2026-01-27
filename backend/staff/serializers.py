@@ -16,6 +16,8 @@ class StaffProfileSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(required=False, allow_blank=True)
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     
+    is_active = serializers.BooleanField(source='user.is_active', read_only=True)
+
     class Meta:
         model = StaffProfile
         fields = [
@@ -23,6 +25,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             'user_id',   # Include the actual user ID
             'username',  # Read from user.username
             'email',     # Read from user.email
+            'is_active', # Status from user model
             'new_username',  # Write only (for updates)
             'new_email',     # Write only (for updates)
             'password',  # Write only

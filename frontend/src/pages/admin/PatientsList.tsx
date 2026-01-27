@@ -36,11 +36,16 @@ export default function AdminPatientsList() {
       const data = await fetchPatients(params);
       
       setPatients(data.results || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching patients:", error);
       setError("Failed to load patients. Please try again.");
       setPatients([]);
-      toast.error("Failed to load patients");
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to load patients";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -57,9 +62,14 @@ export default function AdminPatientsList() {
       
       // Update local state
       setPatients(prev => prev.filter(p => p.id !== patientId));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting patient:", error);
-      toast.error("Failed to delete patient");
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete patient";
+      toast.error(message);
     }
   };
 

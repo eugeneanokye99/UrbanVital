@@ -58,7 +58,12 @@ export default function AdminPharmacyInventory() {
       setInventory(data || []);
     } catch (err: any) {
       console.error(err);
-      toast.error("Network Error");
+      const message =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Network Error";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -101,7 +106,18 @@ export default function AdminPharmacyInventory() {
     setSaving(true);
     try {
       const formData = new FormData(e.target as HTMLFormElement);
-      
+      const expiryValue = formData.get("expiry") ? String(formData.get("expiry")) : undefined;
+      // Block past expiry date on frontend
+      if (expiryValue) {
+        const expiryDate = new Date(expiryValue);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if (expiryDate < today) {
+          toast.error("Expiry date cannot be in the past.");
+          setSaving(false);
+          return;
+        }
+      }
       const currentStock = parseFloat(formData.get("stock") as string) || 0;
       const minStock = parseFloat(formData.get("minLevel") as string) || 0;
       const costPrice = parseFloat(formData.get("costPrice") as string) || 0;
@@ -109,15 +125,15 @@ export default function AdminPharmacyInventory() {
 
       const itemData: any = {
         name: String(formData.get("name")),
-        department: "PHARMACY", 
-        manufacturer: String(formData.get("manufacturer") || ""), 
+        department: "PHARMACY",
+        manufacturer: String(formData.get("manufacturer") || ""),
         current_stock: currentStock,
         minimum_stock: minStock,
         unit_of_measure: String(formData.get("unit")),
         unit_cost: costPrice,
         selling_price: sellingPrice,
         manufacturing_date: formData.get("mfgDate") ? String(formData.get("mfgDate")) : undefined,
-        expiry_date: formData.get("expiry") ? String(formData.get("expiry")) : undefined,
+        expiry_date: expiryValue,
         is_active: true,
         is_locked: editingItem ? editingItem.is_locked : false // Preserve lock state on edit
       };
@@ -138,7 +154,12 @@ export default function AdminPharmacyInventory() {
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Failed to save item");
+      const message =
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to save item";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -156,10 +177,15 @@ export default function AdminPharmacyInventory() {
     try {
         await updateInventoryItem(item.id, { ...item, is_locked: newLockStatus });
         toast.success(`${item.name} has been ${action}`);
-    } catch (error) {
+    } catch (error: any) {
         // Revert on failure
         setInventory(originalInventory);
-        toast.error(`Failed to ${action.toLowerCase()} item`);
+        const message =
+          error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          error?.message ||
+          `Failed to ${action.toLowerCase()} item`;
+        toast.error(message);
     }
   };
 
@@ -169,7 +195,14 @@ export default function AdminPharmacyInventory() {
           await deleteInventoryItem(id);
           setInventory(prev => prev.filter(i => i.id !== id));
           toast.success("Deleted successfully");
-      } catch (err) { toast.error("Failed to delete"); }
+      } catch (err: any) {
+        const message =
+          err?.response?.data?.detail ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to delete";
+        toast.error(message);
+      }
   };
 
   const handleExport = () => {
@@ -323,20 +356,20 @@ export default function AdminPharmacyInventory() {
                       {/* Name */}
                       <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">Drug Name *</label>
-                        <input name="name" defaultValue={editingItem?.name} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required />
+                        <input name="name" defaultValue={editingItem ? editingItem.name ?? "" : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required />
                       </div>
                       {/* Manufacturer */}
                       <div>
                         <label className="text-xs font-bold text-gray-500 uppercase">Manufacturer</label>
-                        <input name="manufacturer" defaultValue={editingItem?.manufacturer} placeholder="e.g. Pfizer, Tobinco" className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
+                        <input name="manufacturer" defaultValue={editingItem ? editingItem.manufacturer ?? "" : ""} placeholder="e.g. Pfizer, Tobinco" className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                          <div><label className="text-xs font-bold text-gray-500 uppercase">Stock *</label><input name="stock" type="number" defaultValue={editingItem?.current_stock} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required /></div>
-                          <div><label className="text-xs font-bold text-gray-500 uppercase">Min Alert *</label><input name="minLevel" type="number" defaultValue={editingItem?.minimum_stock} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required /></div>
+                          <div><label className="text-xs font-bold text-gray-500 uppercase">Stock *</label><input name="stock" type="number" defaultValue={editingItem ? editingItem.current_stock ?? "" : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required /></div>
+                          <div><label className="text-xs font-bold text-gray-500 uppercase">Min Alert *</label><input name="minLevel" type="number" defaultValue={editingItem ? editingItem.minimum_stock ?? "" : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required /></div>
                       </div>
                       <div>
                           <label className="text-xs font-bold text-gray-500 uppercase">Unit *</label>
-                          <select name="unit" defaultValue={editingItem?.unit_of_measure || "TAB"} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]">
+                          <select name="unit" defaultValue={editingItem ? editingItem.unit_of_measure ?? "TAB" : "TAB"} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]">
                               <option value="TAB">Tablet</option><option value="CAP">Capsule</option><option value="BTL">Bottle</option><option value="SYR">Syrup</option><option value="AMP">Ampoule</option><option value="CRM">Cream</option>
                           </select>
                       </div>
@@ -344,22 +377,22 @@ export default function AdminPharmacyInventory() {
                       <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Mfg Date</label>
-                            <input name="mfgDate" type="date" defaultValue={editingItem?.manufacturing_date} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
+                            <input name="mfgDate" type="date" defaultValue={editingItem ? (editingItem.manufacturing_date ? editingItem.manufacturing_date.substring(0,10) : "") : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Expiry Date</label>
-                            <input name="expiry" type="date" defaultValue={editingItem?.expiry_date} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
+                            <input name="expiry" type="date" defaultValue={editingItem ? (editingItem.expiry_date ? editingItem.expiry_date.substring(0,10) : "") : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
                           </div>
                       </div>
                       {/* Prices */}
                       <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Cost Price (₵)</label>
-                            <input name="costPrice" type="number" step="0.01" defaultValue={editingItem?.unit_cost} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
+                            <input name="costPrice" type="number" step="0.01" defaultValue={editingItem ? (editingItem.unit_cost !== undefined && editingItem.unit_cost !== null ? editingItem.unit_cost : "") : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" />
                           </div>
                           <div>
                             <label className="text-xs font-bold text-gray-500 uppercase">Selling Price (₵) *</label>
-                            <input name="sellingPrice" type="number" step="0.01" defaultValue={editingItem?.selling_price} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required />
+                            <input name="sellingPrice" type="number" step="0.01" defaultValue={editingItem ? (editingItem.selling_price !== undefined && editingItem.selling_price !== null ? editingItem.selling_price : "") : ""} className="w-full p-2 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required />
                           </div>
                       </div>
                       <button type="submit" disabled={saving} className="w-full py-3 bg-[#073159] text-white rounded-xl font-bold hover:bg-[#062a4d] flex justify-center items-center gap-2 mt-4">{saving && <Loader2 className="animate-spin" size={18}/>} Save Drug</button>
@@ -376,5 +409,8 @@ function StatCard({ title, value, icon, color }: any) {
     return <div className="bg-white p-5 rounded-2xl border border-gray-100 flex justify-between items-start shadow-sm"><div><p className="text-xs font-bold text-gray-500 uppercase mb-1">{title}</p><h3 className="text-2xl font-bold text-[#073159]">{value}</h3></div><div className={`p-3 rounded-xl ${color}`}>{icon}</div></div>;
 }
 function StatusBadge({ status }: any) {
-    return <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.color}`}>{status.text}</span>;
+    // Show 'Expired' if status.text is 'EXPIRED'
+    let displayText = status.text;
+    if (status.text === 'EXPIRED') displayText = 'Expired';
+    return <span className={`px-3 py-1 rounded-full text-xs font-bold ${status.color}`}>{displayText}</span>;
 }

@@ -5,13 +5,17 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { 
-  fetchLabItems, 
-  createInventoryItem, 
-  updateInventoryItem, 
-  deleteInventoryItem,
-  getStockStatusInfo,
-  formatDate
-} from "../../services/api"; 
+    fetchLabItems,
+    createInventoryItem,
+    updateInventoryItem,
+    deleteInventoryItem,
+    getStockStatusInfo,
+    formatDate,
+    fetchLabTests,
+    createLabTest,
+    updateLabTest,
+    deleteLabTest
+} from "../../services/api";
 
 // --- Types ---
 interface LabParameter {
@@ -29,29 +33,7 @@ interface TestType {
   parameters: LabParameter[];
 }
 
-// --- Mock Data for Test Types ---
-const mockTestTypes: TestType[] = [
-  { 
-    id: 1, 
-    name: "Full Blood Count (FBC)", 
-    code: "L-001", 
-    price: 45.00,
-    parameters: [
-      { id: "p1", name: "Hemoglobin", unit: "g/dL", refRange: "11.5 - 16.5" },
-      { id: "p2", name: "WBC Count", unit: "x10^9/L", refRange: "4.0 - 11.0" },
-      { id: "p3", name: "Platelets", unit: "x10^9/L", refRange: "150 - 400" }
-    ]
-  },
-  { 
-    id: 2, 
-    name: "Malaria Parasite (MP)", 
-    code: "L-002", 
-    price: 20.00,
-    parameters: [
-      { id: "p4", name: "Parasite Density", unit: "+/++", refRange: "Negative" }
-    ]
-  },
-];
+
 
 export default function AdminLabInventory() {
   const navigate = useNavigate();
@@ -64,13 +46,37 @@ export default function AdminLabInventory() {
   const [inventory, setInventory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Test Types State
-  const [testTypes, setTestTypes] = useState<TestType[]>(mockTestTypes);
-  const [expandedTestId, setExpandedTestId] = useState<number | null>(null);
+
+    // Test Types State (from backend)
+    const [testTypes, setTestTypes] = useState<TestType[]>([]);
+    const [expandedTestId, setExpandedTestId] = useState<number | null>(null);
+    const [loadingTests, setLoadingTests] = useState(true);
+
+    // Fetch test types from backend
+    const loadTestTypes = async () => {
+        setLoadingTests(true);
+        try {
+            const data = await fetchLabTests();
+            setTestTypes((data?.results || data || []).map((t: any) => ({
+                id: t.id,
+                name: t.name,
+                code: t.code,
+                price: t.price || 0,
+                parameters: Array.isArray(t.parameters) ? t.parameters : [],
+            })));
+        } catch (err: any) {
+            toast.error("Failed to load test types");
+        } finally {
+            setLoadingTests(false);
+        }
+    };
+
+    useEffect(() => { loadTestTypes(); }, []);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null); // Shared for both Inventory & Tests
+    const [editingItem, setEditingItem] = useState<any>(null); // Shared for both Inventory & Tests
+    const [testForm, setTestForm] = useState<any>({ name: '', code: '', price: '', id: undefined });
   const [saving, setSaving] = useState(false);
 
   // Form State for Test Parameters
@@ -84,7 +90,14 @@ export default function AdminLabInventory() {
       setLoading(true);
       const data = await fetchLabItems();
       setInventory(data || []);
-    } catch (err) { toast.error("Failed to load lab data"); } 
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.detail ||
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to load lab data";
+            toast.error(message);
+        }
     finally { setLoading(false); }
   };
 
@@ -105,7 +118,18 @@ export default function AdminLabInventory() {
   const handleOpenModal = (item?: any) => {
       setEditingItem(item || null);
       if (activeTab === "tests") {
-          setTempParams(item ? item.parameters : []);
+          if (item) {
+              setTestForm({
+                  id: item.id,
+                  name: item.name,
+                  code: item.code,
+                  price: item.price,
+              });
+              setTempParams(Array.isArray(item.parameters) ? item.parameters : []);
+          } else {
+              setTestForm({ name: '', code: '', price: '', id: undefined });
+              setTempParams([]);
+          }
       }
       setIsModalOpen(true);
   };
@@ -122,76 +146,113 @@ export default function AdminLabInventory() {
   };
 
   // Save Inventory Item
-  const handleSaveInventory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const formData = new FormData(e.target as HTMLFormElement);
-      const itemData: any = {
-        name: String(formData.get("name")),
-        department: "LAB", 
-        current_stock: Number(formData.get("stock")),
-        minimum_stock: Number(formData.get("minLevel")),
-        unit_of_measure: String(formData.get("unit")),
-        expiry_date: formData.get("expiry") ? String(formData.get("expiry")) : undefined,
-        is_active: true
-      };
+    const handleSaveInventory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            const formData = new FormData(e.target as HTMLFormElement);
+            const expiry = formData.get("expiry") ? String(formData.get("expiry")) : undefined;
+            // Expiry date validation: must be today or future
+            if (expiry) {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const expiryDate = new Date(expiry);
+                if (expiryDate < today) {
+                    toast.error("Expiry date cannot be in the past.");
+                    setSaving(false);
+                    return;
+                }
+            }
+            const itemData: any = {
+                name: String(formData.get("name")),
+                department: "LAB", 
+                current_stock: Number(formData.get("stock")),
+                minimum_stock: Number(formData.get("minLevel")),
+                unit_of_measure: String(formData.get("unit")),
+                expiry_date: expiry,
+                is_active: true
+            };
 
-      if (editingItem) {
-        const updated = await updateInventoryItem(editingItem.id, itemData);
-        setInventory(prev => prev.map(i => i.id === editingItem.id ? updated : i));
-        toast.success("Lab item updated");
-      } else {
-        const created = await createInventoryItem(itemData);
-        setInventory(prev => [...prev, created]);
-        toast.success("New reagent/kit added");
-      }
-      setIsModalOpen(false);
-    } catch (err: any) { toast.error("Failed to save item"); }
-    finally { setSaving(false); }
-  };
+            if (editingItem) {
+                const updated = await updateInventoryItem(editingItem.id, itemData);
+                setInventory(prev => prev.map(i => i.id === editingItem.id ? updated : i));
+                toast.success("Lab item updated");
+            } else {
+                const created = await createInventoryItem(itemData);
+                setInventory(prev => [...prev, created]);
+                toast.success("New reagent/kit added");
+            }
+            setIsModalOpen(false);
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.detail ||
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to save item";
+            toast.error(message);
+        } finally { setSaving(false); }
+    };
 
-  // Save Test Type
-  const handleSaveTest = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setSaving(true);
-      
-      const formData = new FormData(e.target as HTMLFormElement);
-      const testData: TestType = {
-          id: editingItem ? editingItem.id : Date.now(),
-          name: String(formData.get("testName")),
-          code: String(formData.get("testCode")),
-          price: Number(formData.get("testPrice")),
-          parameters: tempParams.filter(p => p.name.trim() !== "") 
-      };
 
-      // Simulate API Call
-      setTimeout(() => {
-          if (editingItem) {
-              setTestTypes(prev => prev.map(t => t.id === editingItem.id ? testData : t));
-              toast.success("Test type updated");
-          } else {
-              setTestTypes(prev => [...prev, testData]);
-              toast.success("New test type added");
-          }
-          setSaving(false);
-          setIsModalOpen(false);
-      }, 500);
-  };
+    // Save Test Type (real API)
+    const handleSaveTest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        const testData: any = {
+            name: testForm.name,
+            code: testForm.code,
+            price: Number(testForm.price),
+            parameters: tempParams.filter(p => p.name.trim() !== ""),
+            is_active: true
+        };
+        try {
+            if (testForm.id) {
+                const updated = await updateLabTest(testForm.id, testData);
+                setTestTypes(prev => prev.map(t => t.id === testForm.id ? updated : t));
+                toast.success("Test type updated");
+            } else {
+                const created = await createLabTest(testData);
+                setTestTypes(prev => [...prev, created]);
+                toast.success("New test type added");
+            }
+            setIsModalOpen(false);
+        } catch (err: any) {
+            toast.error("Failed to save test type");
+        } finally {
+            setSaving(false);
+        }
+    };
   
-  const handleDelete = async (id: number, type: "inventory" | "test") => {
-      if(!window.confirm("Delete this item?")) return;
-      if (type === "inventory") {
-          try {
-              await deleteInventoryItem(id);
-              setInventory(prev => prev.filter(i => i.id !== id));
-              toast.success("Deleted");
-          } catch (err) { toast.error("Failed to delete"); }
-      } else {
-          setTestTypes(prev => prev.filter(t => t.id !== id));
-          toast.success("Test type deleted");
-      }
-  };
+    const handleDelete = async (id: number, type: "inventory" | "test") => {
+        if (!window.confirm("Delete this item?")) return;
+        if (type === "inventory") {
+            try {
+                await deleteInventoryItem(id);
+                setInventory(prev => prev.filter(i => i.id !== id));
+                toast.success("Deleted");
+            } catch (err: any) {
+                const message =
+                    err?.response?.data?.detail ||
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Failed to delete";
+                toast.error(message);
+            }
+        } else {
+            try {
+                await deleteLabTest(id);
+                setTestTypes(prev => prev.filter(t => t.id !== id));
+                toast.success("Test type deleted");
+            } catch (err: any) {
+                const message =
+                    err?.response?.data?.detail ||
+                    err?.response?.data?.message ||
+                    err?.message ||
+                    "Failed to delete test type";
+                toast.error(message);
+            }
+        }
+    };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -294,65 +355,67 @@ export default function AdminLabInventory() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-sm">
-                            {filteredTests.map((test) => (
-                                <>
-                                    {/* Main Row */}
-                                    <tr key={test.id} className={`hover:bg-blue-50/30 transition-colors ${expandedTestId === test.id ? "bg-blue-50/50" : ""}`}>
-                                        <td className="px-6 py-4 cursor-pointer" onClick={() => setExpandedTestId(expandedTestId === test.id ? null : test.id)}>
-                                            {expandedTestId === test.id ? <ChevronDown size={18} className="text-[#073159]" /> : <ChevronRight size={18} className="text-gray-400" />}
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-gray-500 text-xs font-bold">{test.code}</td>
-                                        <td className="px-6 py-4 font-bold text-[#073159]">{test.name}</td>
-                                        <td className="px-6 py-4 text-gray-600">
-                                            <span className="bg-gray-100 px-2 py-1 rounded text-xs font-bold">{test.parameters.length} params</span>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium">{test.price.toFixed(2)}</td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <button onClick={() => handleOpenModal(test)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"><Edit size={16}/></button>
-                                                <button onClick={() => handleDelete(test.id, "test")} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={16}/></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                    {/* Expanded Detail Row */}
-                                    {expandedTestId === test.id && (
-                                        <tr className="bg-gray-50/50">
-                                            <td colSpan={6} className="p-0">
-                                                <div className="p-6 pl-16 border-b border-gray-100">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
-                                                        <List size={14} /> Configuration for {test.name}
-                                                    </h4>
-                                                    <table className="w-full max-w-3xl text-sm border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                                                        <thead className="bg-gray-100 text-xs font-bold text-gray-600">
-                                                            <tr>
-                                                                <th className="px-4 py-2 border-r border-gray-200">Parameter Name</th>
-                                                                <th className="px-4 py-2 border-r border-gray-200">Unit</th>
-                                                                <th className="px-4 py-2">Reference Range</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="divide-y divide-gray-100">
-                                                            {test.parameters.length > 0 ? (
-                                                                test.parameters.map(param => (
-                                                                    <tr key={param.id}>
-                                                                        <td className="px-4 py-2 font-medium text-gray-800 border-r border-gray-100">{param.name}</td>
-                                                                        <td className="px-4 py-2 text-gray-600 border-r border-gray-100">{param.unit || "-"}</td>
-                                                                        <td className="px-4 py-2 text-gray-600 font-mono text-xs">{param.refRange || "-"}</td>
-                                                                    </tr>
-                                                                ))
-                                                            ) : (
-                                                                <tr>
-                                                                    <td colSpan={3} className="px-4 py-3 text-center text-gray-400 italic">No parameters configured.</td>
+                                                        {loadingTests ? (
+                                                            <tr><td colSpan={6} className="text-center py-12 text-gray-400">Loading test types...</td></tr>
+                                                        ) : filteredTests.map((test) => (
+                                                            <>
+                                                                {/* Main Row */}
+                                                                <tr key={test.id} className={`hover:bg-blue-50/30 transition-colors ${expandedTestId === test.id ? "bg-blue-50/50" : ""}`}>
+                                                                    <td className="px-6 py-4 cursor-pointer" onClick={() => setExpandedTestId(expandedTestId === test.id ? null : test.id)}>
+                                                                        {expandedTestId === test.id ? <ChevronDown size={18} className="text-[#073159]" /> : <ChevronRight size={18} className="text-gray-400" />}
+                                                                    </td>
+                                                                    <td className="px-6 py-4 font-mono text-gray-500 text-xs font-bold">{test.code}</td>
+                                                                    <td className="px-6 py-4 font-bold text-[#073159]">{test.name}</td>
+                                                                    <td className="px-6 py-4 text-gray-600">
+                                                                        <span className="bg-gray-100 px-2 py-1 rounded text-xs font-bold">{test.parameters.length} params</span>
+                                                                    </td>
+                                                                    <td className="px-6 py-4 font-medium">{test.price ?? '0.00'}</td>
+                                                                    <td className="px-6 py-4 text-right">
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <button onClick={() => handleOpenModal(test)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"><Edit size={16}/></button>
+                                                                            <button onClick={() => handleDelete(test.id, "test")} className="p-2 text-red-600 hover:bg-red-100 rounded-lg"><Trash2 size={16}/></button>
+                                                                        </div>
+                                                                    </td>
                                                                 </tr>
-                                                            )}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </>
-                            ))}
+
+                                                                {/* Expanded Detail Row */}
+                                                                {expandedTestId === test.id && (
+                                                                    <tr className="bg-gray-50/50">
+                                                                        <td colSpan={6} className="p-0">
+                                                                            <div className="p-6 pl-16 border-b border-gray-100">
+                                                                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
+                                                                                    <List size={14} /> Configuration for {test.name}
+                                                                                </h4>
+                                                                                <table className="w-full max-w-3xl text-sm border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                                                                    <thead className="bg-gray-100 text-xs font-bold text-gray-600">
+                                                                                        <tr>
+                                                                                            <th className="px-4 py-2 border-r border-gray-200">Parameter Name</th>
+                                                                                            <th className="px-4 py-2 border-r border-gray-200">Unit</th>
+                                                                                            <th className="px-4 py-2">Reference Range</th>
+                                                                                        </tr>
+                                                                                    </thead>
+                                                                                    <tbody className="divide-y divide-gray-100">
+                                                                                        {test.parameters.length > 0 ? (
+                                                                                            test.parameters.map((param: any) => (
+                                                                                                <tr key={param.id}>
+                                                                                                    <td className="px-4 py-2 font-medium text-gray-800 border-r border-gray-100">{param.name}</td>
+                                                                                                    <td className="px-4 py-2 text-gray-600 border-r border-gray-100">{param.unit || "-"}</td>
+                                                                                                    <td className="px-4 py-2 text-gray-600 font-mono text-xs">{param.refRange || "-"}</td>
+                                                                                                </tr>
+                                                                                            ))
+                                                                                        ) : (
+                                                                                            <tr>
+                                                                                                <td colSpan={3} className="px-4 py-3 text-center text-gray-400 italic">No parameters configured.</td>
+                                                                                            </tr>
+                                                                                        )}
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </>
+                                                        ))}
                         </tbody>
                     </table>
                 </div>
@@ -380,16 +443,16 @@ export default function AdminLabInventory() {
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   <div className="md:col-span-2">
                                       <label className="text-xs font-bold text-gray-500 uppercase">Test Name</label>
-                                      <input name="testName" defaultValue={editingItem?.name} className="w-full p-2.5 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" placeholder="e.g. Widal Test" required />
+                                      <input name="testName" value={testForm.name} onChange={e => setTestForm((prev: any) => ({ ...prev, name: e.target.value }))} className="w-full p-2.5 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" placeholder="e.g. Widal Test" required />
                                   </div>
                                   <div>
                                       <label className="text-xs font-bold text-gray-500 uppercase">Test Code</label>
-                                      <input name="testCode" defaultValue={editingItem?.code} className="w-full p-2.5 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" placeholder="e.g. L-001" required />
+                                      <input name="testCode" value={testForm.code} onChange={e => setTestForm((prev: any) => ({ ...prev, code: e.target.value }))} className="w-full p-2.5 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" placeholder="e.g. L-001" required />
                                   </div>
                               </div>
                               <div>
                                   <label className="text-xs font-bold text-gray-500 uppercase">Price (GHS)</label>
-                                  <input name="testPrice" type="number" step="0.01" defaultValue={editingItem?.price} className="w-full p-2.5 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required />
+                                  <input name="testPrice" type="number" step="0.01" value={testForm.price} onChange={e => setTestForm((prev: any) => ({ ...prev, price: e.target.value }))} className="w-full p-2.5 border rounded-xl bg-gray-50 outline-none focus:border-[#073159]" required />
                               </div>
 
                               {/* Parameters Section */}

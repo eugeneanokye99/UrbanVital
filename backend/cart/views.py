@@ -39,7 +39,8 @@ class CartView(views.APIView):
             patient_id=request.data.get('patient_id'),
             patient_name=request.data.get('patient_name', '')
         )
-        
+        from notifications.audit import log_action
+        log_action(request.user, "create", f"Created cart: {cart.cart_id}", {"cart_id": cart.cart_id})
         serializer = CartSerializer(cart)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -116,6 +117,8 @@ class RemoveItemView(views.APIView):
     def delete(self, request, cart_id, item_id):
         cart = get_object_or_404(Cart, cart_id=cart_id, created_by=request.user)
         cart_item = get_object_or_404(CartItem, id=item_id, cart=cart)
+        from notifications.audit import log_action
+        log_action(request.user, "delete", f"Removed item {cart_item.inventory_item.name} from cart {cart.cart_id}", {"cart_id": cart.cart_id, "item_id": cart_item.inventory_item.id})
         cart_item.delete()
         return Response({'message': 'Item removed'})
 
@@ -126,34 +129,26 @@ class CheckoutView(views.APIView):
     
     def post(self, request, cart_id):
         cart = get_object_or_404(Cart, cart_id=cart_id, created_by=request.user)
-        
         serializer = CheckoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
         data = serializer.validated_data
-        
         # Update cart info
         if data.get('patient_id'):
             cart.patient_id = data['patient_id']
         if data.get('patient_name'):
             cart.patient_name = data['patient_name']
-        
         # Update inventory and mark as checked out
         with transaction.atomic():
             for item in cart.items.all():
                 item.update_inventory()
-            
             cart.is_checked_out = True
             cart.is_active = False
             cart.checked_out_at = timezone.now()
             cart.save()
-        
-        # Create invoice (optional - you can link to your existing invoice system)
-        # invoice = create_invoice_from_cart(cart, data['payment_method'])
-        
+        from notifications.audit import log_action
+        log_action(request.user, "update", f"Checked out cart: {cart.cart_id}", {"cart_id": cart.cart_id})
         serializer = CartSerializer(cart)
         return Response({
             'message': 'Checkout successful',
             'cart': serializer.data,
-            # 'invoice_id': invoice.id if invoice else None
         })

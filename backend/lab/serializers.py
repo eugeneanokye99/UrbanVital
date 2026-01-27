@@ -8,9 +8,8 @@ class LabTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabTest
         fields = [
-            'id', 'name', 'code', 'category', 'description',
-            'sample_type', 'turnaround_time', 'normal_range',
-            'is_active', 'created_at', 'updated_at'
+            'id', 'name', 'code', 'description',
+            'normal_range', 'parameters', 'price', 'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 
@@ -18,12 +17,10 @@ class LabTestSerializer(serializers.ModelSerializer):
 class LabOrderTestSerializer(serializers.ModelSerializer):
     test_name = serializers.CharField(source='test.name', read_only=True)
     test_code = serializers.CharField(source='test.code', read_only=True)
-    test_category = serializers.CharField(source='test.category', read_only=True)
-    sample_type = serializers.CharField(source='test.sample_type', read_only=True)
     
     class Meta:
         model = LabOrderTest
-        fields = ['id', 'test', 'test_name', 'test_code', 'test_category', 'sample_type', 'created_at']
+        fields = ['id', 'test', 'test_name', 'test_code', 'created_at']
         read_only_fields = ['id', 'created_at']
 
 

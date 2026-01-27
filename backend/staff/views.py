@@ -16,6 +16,11 @@ class RegisterStaffUserView(generics.CreateAPIView):
         ctx['request'] = self.request
         return ctx
 
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        from notifications.audit import log_action
+        log_action(self.request.user, "create", f"Registered staff: {obj.username}", {"staff_id": obj.id})
+
 
 class GetStaffByEmailView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -100,3 +105,63 @@ class GetStaffStatsView(generics.GenericAPIView):
             'role_counts': role_counts,
             # Add more stats as needed
         })
+
+
+class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API endpoint to retrieve, update or delete a staff member
+    """
+    queryset = StaffProfile.objects.all()
+    serializer_class = StaffProfileSerializer
+    permission_classes = [IsAdminUser]
+
+    def perform_destroy(self, instance):
+        from notifications.audit import log_action
+        log_action(self.request.user, "delete", f"Deleted staff: {instance.username}", {"staff_id": instance.id})
+        # Delete the associated User object as well
+        user = instance.user
+        instance.delete()
+        if user:
+            user.delete()
+
+
+class UpdateStaffStatusView(generics.UpdateAPIView):
+    """
+    API endpoint to update staff status (active/suspended)
+    """
+    queryset = StaffProfile.objects.all()
+    serializer_class = StaffProfileSerializer
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        status = request.data.get('status')
+        
+        if status == 'active':
+            instance.user.is_active = True
+        elif status == 'suspended':
+            instance.user.is_active = False
+        
+        instance.user.save()
+        return Response({'status': 'success', 'is_active': instance.user.is_active})
+
+
+class ResetStaffPasswordView(generics.UpdateAPIView):
+    """
+    API endpoint to reset staff password
+    """
+    queryset = StaffProfile.objects.all()
+    serializer_class = StaffProfileSerializer
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        new_password = request.data.get('new_password')
+        
+        if not new_password:
+            return Response({'error': 'Password is required'}, status=400)
+            
+        instance.user.set_password(new_password)
+        instance.user.save()
+        
+        return Response({'status': 'success', 'message': 'Password updated successfully'})

@@ -102,12 +102,27 @@ class PatientCreateView(generics.CreateAPIView):
     serializer_class = PatientSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        from notifications.audit import log_action
+        log_action(self.request.user, "create", f"Created patient: {obj.first_name} {obj.last_name}", {"patient_id": obj.id})
+
 class PatientDetailView(generics.RetrieveUpdateDestroyAPIView):
     """GET/PUT/PATCH/DELETE: Single patient operations"""
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "id"
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        from notifications.audit import log_action
+        log_action(self.request.user, "update", f"Updated patient: {obj.first_name} {obj.last_name}", {"patient_id": obj.id})
+
+    def perform_destroy(self, instance):
+        from notifications.audit import log_action
+        log_action(self.request.user, "delete", f"Deleted patient: {instance.first_name} {instance.last_name}", {"patient_id": instance.id})
+        instance.delete()
 
 class PatientStatsView(APIView):
     """GET: Patient statistics"""
