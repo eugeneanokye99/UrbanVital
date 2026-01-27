@@ -1,5 +1,6 @@
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
 
 // --- Auth & Layouts ---
 import Login from './pages/Login';
@@ -68,10 +69,11 @@ import UltrasoundHistory from './pages/ultrasound/UltrasoundHistory';
 
 function App() {
   return (
-    <Router>
-      <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
-      
-      <Routes>
+    <ThemeProvider>
+      <Router>
+        <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+        
+        <Routes>
         {/* === Public Routes === */}
         <Route path="/" element={<Login />} />
 
@@ -152,6 +154,7 @@ function App() {
 
       </Routes>
     </Router>
+    </ThemeProvider>
   );
 }
 

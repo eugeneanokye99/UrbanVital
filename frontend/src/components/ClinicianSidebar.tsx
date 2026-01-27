@@ -9,7 +9,7 @@ import {
   Activity, 
   FileText, 
   TestTube,
-  X // Import Close Icon
+  X 
 } from "lucide-react";
 import { logoutUser } from "../services/api"; 
 import logo from "../assets/urbanvital-logo.png";
@@ -51,9 +51,11 @@ export default function ClinicianSidebar({ isOpen = false, onClose }: SidebarPro
 
       {/* Sidebar Container */}
       <aside 
+        // Force background color via inline style to ensure theme applies immediately
+        style={{ backgroundColor: 'var(--primary)' }}
         className={`
           fixed md:static inset-y-0 left-0 z-50
-          w-64 bg-[#073159] h-full flex flex-col shadow-2xl 
+          w-64 h-full flex flex-col shadow-2xl 
           transition-transform duration-300 ease-in-out font-sans
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
@@ -77,12 +79,14 @@ export default function ClinicianSidebar({ isOpen = false, onClose }: SidebarPro
         {/* --- Role Badge --- */}
         <div className="px-6 py-4">
           <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3 border border-white/5 backdrop-blur-sm">
-             <div className="p-2 bg-purple-500/20 rounded-full text-purple-300">
+             {/* Fixed: Changed bg-purple-500/20 to bg-white/20 and text-purple-300 to text-white */}
+             <div className="p-2 bg-white/20 rounded-full text-white">
                 <Activity size={18} />
              </div>
              <div>
                 <p className="text-white text-xs font-bold uppercase tracking-wider">Clinician</p>
-                <p className="text-blue-200 text-[10px]">Medical Doctor</p>
+                {/* Fixed: Changed text-blue-200 to text-white/70 */}
+                <p className="text-white/70 text-[10px]">Medical Doctor</p>
              </div>
           </div>
         </div>
@@ -97,20 +101,23 @@ export default function ClinicianSidebar({ isOpen = false, onClose }: SidebarPro
                   <button
                     onClick={() => {
                         navigate(item.path);
-                        if(onClose) onClose(); // Close sidebar on mobile on click
+                        if(onClose) onClose();
                     }}
+                    // Fixed: Changed text-blue-100/70 to text-white/70
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative group ${
                       isActive
                         ? "text-white bg-white/10 shadow-inner"
-                        : "text-blue-100/70 hover:text-white hover:bg-white/5"
+                        : "text-white/70 hover:text-white hover:bg-white/5"
                     }`}
                   >
                     {/* Active Indicator */}
                     {isActive && (
-                      <div className="absolute left-2 w-1 h-6 rounded-full bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.8)]"></div>
+                      // Fixed: Changed bg-purple-400 to bg-white
+                      <div className="absolute left-2 w-1 h-6 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
                     )}
                     
-                    <span className={`ml-2 ${isActive ? "text-purple-400" : "group-hover:text-white"}`}>
+                    {/* Fixed: Changed text-purple-400 to text-white */}
+                    <span className={`ml-2 ${isActive ? "text-white" : "group-hover:text-white"}`}>
                       {item.icon}
                     </span>
                     
@@ -126,7 +133,8 @@ export default function ClinicianSidebar({ isOpen = false, onClose }: SidebarPro
         <div className="p-4 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-300 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
+            // Fixed: Changed text-red-300 to text-red-100/text-white
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-100 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
           >
             <LogOut size={20} />
             <span>Logout System</span>

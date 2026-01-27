@@ -20,7 +20,7 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true); // Added loading state
+  const [loadingUser, setLoadingUser] = useState(true);
 
   // Fetch Logged-in User
   useEffect(() => {
@@ -37,14 +37,13 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
     loadUser();
   }, []);
 
-  // Handle Search Input
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
     if (onSearch) onSearch(query);
   };
 
-  // --- Mobile Search View (Overlay) ---
+  // --- Mobile Search View ---
   if (isMobileSearchOpen) {
     return (
       <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-20 flex items-center px-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
@@ -61,7 +60,8 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
             placeholder="Search..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
+            // Fixed: Removed opacity modifier '/20' to ensure ring color shows up
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none bg-gray-50 text-base"
           />
           {searchQuery && (
             <button 
@@ -83,9 +83,8 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
   return (
     <header className="sticky top-0 z-20 bg-white border-b border-gray-100 h-20 flex items-center justify-between px-4 md:px-8 shadow-sm transition-all">
       
-      {/* --- Left Side: Mobile Menu & Search --- */}
+      {/* --- Left Side --- */}
       <div className="flex items-center gap-4 flex-1">
-        {/* Mobile Sidebar Toggle */}
         <button 
           onClick={onMenuClick}
           className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg md:hidden transition-colors"
@@ -93,7 +92,6 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
           <Menu size={24} />
         </button>
 
-        {/* Desktop Search Bar */}
         <div className="relative w-full max-w-md hidden md:block">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
@@ -103,15 +101,15 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
             placeholder="Search patients, doctors, or records..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition-all duration-200 sm:text-sm"
+            // Fixed: changed ring-primary/20 to ring-primary (solid) or just border-primary
+            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 sm:text-sm"
           />
         </div>
       </div>
 
-      {/* --- Right Side: Actions & Profile --- */}
+      {/* --- Right Side --- */}
       <div className="flex items-center gap-2 md:gap-6">
         
-        {/* Mobile Search Trigger */}
         <button 
           onClick={() => setIsMobileSearchOpen(true)}
           className="p-2 text-gray-500 hover:bg-gray-100 rounded-full md:hidden"
@@ -119,30 +117,27 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
           <Search size={24} />
         </button>
 
-        {/* Notification Bell */}
         <div className="flex items-center border-r border-gray-100 pr-2 md:pr-6">
           <button 
             onClick={() => navigate("/admin/notifications")} 
-            className="p-2 text-gray-400 hover:text-[#073159] hover:bg-blue-50 rounded-full transition-all relative"
+            // Fixed: Changed hover:bg-blue-50 to hover:bg-gray-100 to be theme-neutral
+            className="p-2 text-gray-400 hover:text-primary hover:bg-gray-100 rounded-full transition-all relative"
           >
             <Bell size={20} />
-            {/* Notification Dot */}
             <span className="absolute top-2 right-2.5 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
           </button>
         </div>
 
-        {/* User Profile */}
         <div className="flex items-center gap-3 cursor-pointer group pl-2">
           <div className="text-right hidden md:block">
             {loadingUser ? (
-                // Loading Skeleton for Name
                 <div className="flex flex-col items-end gap-1">
                     <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
                     <div className="h-2 w-16 bg-gray-100 rounded animate-pulse"></div>
                 </div>
             ) : (
                 <>
-                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-primary transition-colors">
                       {user?.first_name 
                         ? `${user.first_name} ${user.last_name || ''}` 
                         : user?.username || "Administrator"
@@ -156,8 +151,11 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
           </div>
 
           <div className="relative">
-            {/* Avatar Circle */}
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center font-bold text-xs md:text-sm shadow-md ring-2 ring-white group-hover:ring-blue-100 transition-all overflow-hidden">
+            {/* Fixed: 
+               1. Removed 'ring-blue-100' -> changed to 'ring-gray-200' 
+               2. Ensure bg-primary uses the variable correctly
+            */}
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs md:text-sm shadow-md ring-2 ring-white group-hover:ring-gray-200 transition-all overflow-hidden">
                 {user?.profile_image ? (
                     <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
@@ -166,7 +164,6 @@ export default function AdminNavbar({ onMenuClick, onSearch }: AdminNavbarProps)
                     </span>
                 )}
             </div>
-            {/* Online Status Dot */}
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 md:h-3 md:w-3 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
 

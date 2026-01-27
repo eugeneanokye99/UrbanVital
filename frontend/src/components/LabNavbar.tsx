@@ -56,7 +56,7 @@ export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
             autoFocus
             type="text"
             placeholder="Search Lab ID, MRN..."
-            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-gray-50 text-base"
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -97,7 +97,7 @@ export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
           <input
             type="text"
             placeholder="Search Lab ID, MRN, or Test Name..."
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] outline-none transition-all sm:text-sm"
+            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all sm:text-sm"
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -126,7 +126,7 @@ export default function LabNavbar({ onMenuClick, onSearch }: LabNavbarProps) {
                 </div>
             ) : (
                 <>
-                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-primary transition-colors">
                       {user?.first_name 
                         ? `${user.first_name} ${user.last_name || ''}` 
                         : user?.username || "Lab Technician"
