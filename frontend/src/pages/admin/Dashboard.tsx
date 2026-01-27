@@ -13,9 +13,11 @@ import {
   DollarSign,
   Package,
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  Clock
 } from "lucide-react";
 import { fetchAdminStats } from "../../services/api";
+import { fetchNotifications } from '../../services/notifications';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ export default function AdminDashboard() {
   });
 
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [, setRecentActivity] = useState<any[]>([]);
   const [onDutyStaff, setOnDutyStaff] = useState<any[]>([]);
   const [weeklyData, setWeeklyData] = useState([
     { day: "Mon", value: 0 },
@@ -44,53 +46,48 @@ export default function AdminDashboard() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Fetch all dashboard data
+  // Fetch analytics (dashboard) data first, then notifications in parallel
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setError(null);
-        setIsLoading(true);
-        
-        const adminStats = await fetchAdminStats();
-        
-        setAnalytics({
-          revenue: adminStats.revenue.today || 0,
-          revenueChange: adminStats.revenue.change_percentage || "+0%",
-          patients: adminStats.patients.total || 0,
-          patientsChange: adminStats.patients.change_percentage || "+0%",
-          drugs: adminStats.inventory.total_items || 0,
-        });
-
-        const transactions = adminStats.recent_transactions.map((tx: any) => ({
-          id: tx.id,
-          patient: tx.patient,
-          service: "Payment",
-          amount: tx.amount,
-          status: "Paid",
-          method: tx.method
-        }));
-        setRecentTransactions(transactions);
-
-        setRecentActivity(adminStats.alerts || []);
-        setOnDutyStaff(adminStats.staff || []);
-
-        const chartData = adminStats.charts.weekly_trend.map((day: any) => ({
-          day: day.day,
-          value: day.revenue
-        }));
-        setWeeklyData(chartData);
-
-        setIsLoading(false);
-
-      } catch (error: any) {
-        console.error("Error loading dashboard data:", error);
-        setError("Failed to load dashboard data. Please try again.");
-        setIsLoading(false);
-      }
-    };
-
-    loadDashboardData();
+    setError(null);
+    setIsLoading(true);
+    Promise.all([
+      fetchAdminStats(),
+      fetchNotifications()
+    ]).then(([adminStats, notifs]) => {
+      setAnalytics({
+        revenue: adminStats.revenue.today || 0,
+        revenueChange: adminStats.revenue.change_percentage || "+0%",
+        patients: adminStats.patients.total || 0,
+        patientsChange: adminStats.patients.change_percentage || "+0%",
+        drugs: adminStats.inventory.total_items || 0,
+      });
+      const transactions = adminStats.recent_transactions.map((tx: any) => ({
+        id: tx.id,
+        patient: tx.patient,
+        service: "Payment",
+        amount: tx.amount,
+        status: "Paid",
+        method: tx.method
+      }));
+      setRecentTransactions(transactions);
+      setRecentActivity(adminStats.alerts || []);
+      setOnDutyStaff(adminStats.staff || []);
+      const chartData = adminStats.charts.weekly_trend.map((day: any) => ({
+        day: day.day,
+        value: day.revenue
+      }));
+      setWeeklyData(chartData);
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter((n: any) => !n.is_read).length);
+      setIsLoading(false);
+    }).catch((error) => {
+      console.error("Error loading dashboard data:", error);
+      setError("Failed to load dashboard data. Please try again.");
+      setIsLoading(false);
+    });
   }, []);
 
   const maxWeekly = Math.max(...weeklyData.map((d) => d.value), 1);
@@ -317,7 +314,7 @@ export default function AdminDashboard() {
             {/* Right Column: Alerts & Side Widgets (Span 1) */}
             <div className="space-y-6 md:space-y-8">
               
-              {/* Alerts Widget */}
+              {/* Alerts Widget: Action Center Preview */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm md:text-base">
@@ -325,34 +322,34 @@ export default function AdminDashboard() {
                     Action Center
                   </h3>
                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                    recentActivity.length > 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                    unreadCount > 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
                   }`}>
-                    {recentActivity.length}
+                    {unreadCount}
                   </span>
                 </div>
-                
-                {recentActivity.length > 0 ? (
+                {/* Preview latest 3 notifications, always display with dashboard stats */}
+                {notifications.length > 0 ? (
                   <div className="space-y-4">
-                    {recentActivity.map((alert) => (
+                    {notifications.slice(0, 3).map((notif) => (
                       <div 
-                        key={alert.id} 
+                        key={notif.id} 
                         className={`p-4 rounded-xl border border-l-4 transition-all hover:translate-x-1 ${
-                          alert.type === 'critical' ? 'bg-red-50 border-red-200 border-l-red-500' : 
-                          'bg-orange-50 border-orange-200 border-l-orange-500'
+                          notif.is_read ? 'bg-gray-50 border-gray-100 border-l-gray-300' : 'bg-orange-50 border-orange-200 border-l-orange-500'
                         }`}
                       >
-                        <h4 className="font-bold text-gray-800 text-sm mb-1">{alert.title}</h4>
-                        <p className="text-xs text-gray-600 mb-3">{alert.message}</p>
-                        <button className="text-xs font-bold text-[#073159] flex items-center gap-1 hover:gap-2 transition-all py-2 px-1 -ml-1 rounded hover:bg-black/5 w-fit">
-                          {alert.action} <ArrowRight size={12} />
-                        </button>
+                        <h4 className="font-bold text-gray-800 text-sm mb-1">{notif.action}</h4>
+                        <p className="text-xs text-gray-600 mb-3">{notif.message}</p>
+                        <span className="text-[11px] text-gray-400 flex items-center gap-1"><Clock size={12} /> {new Date(notif.created_at).toLocaleString()}</span>
                       </div>
                     ))}
+                    <button onClick={() => navigate('/admin/notifications')} className="w-full mt-2 text-xs font-bold text-[#073159] flex items-center justify-center gap-1 hover:gap-2 transition-all py-2 px-1 rounded hover:bg-black/5">
+                      See all notifications <ArrowRight size={12} />
+                    </button>
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-400">
                     <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                    <p className="font-medium">No alerts</p>
+                    <p className="font-medium">No notifications</p>
                     <p className="text-sm">All systems are operational</p>
                   </div>
                 )}

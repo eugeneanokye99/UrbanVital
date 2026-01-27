@@ -5,6 +5,8 @@ from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Q, Count, Prefetch
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
+
+from notifications.audit import log_action
 from .models import LabTest, LabOrder, LabOrderTest, LabResult
 from .serializers import (
     LabTestSerializer,
@@ -20,10 +22,10 @@ class LabTestListView(generics.ListCreateAPIView):
     serializer_class = LabTestSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [filters.SearchFilter, DjangoFilterBackend, filters.OrderingFilter]
-    search_fields = ['name', 'code', 'category']
-    filterset_fields = ['category', 'is_active', 'sample_type']
-    ordering_fields = ['name', 'category', 'created_at']
-    ordering = ['category', 'name']
+    search_fields = ['name', 'code']
+    filterset_fields = ['is_active']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name']
     
     def get_queryset(self):
         queryset = LabTest.objects.all()
@@ -35,6 +37,14 @@ class LabTestListView(generics.ListCreateAPIView):
         
         return queryset
 
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        log_action(
+            self.request.user,
+            "create",
+            f"Lab test created: {instance.name} ({instance.code})",
+            extra={"test_id": instance.id}
+        )
 
 class LabTestDetailView(generics.RetrieveUpdateDestroyAPIView):
     """GET/PUT/PATCH/DELETE: Single lab test operations"""
@@ -43,6 +53,14 @@ class LabTestDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'id'
 
+    def perform_destroy(self, instance):
+        log_action(
+            self.request.user,
+            "delete",
+            f"Lab test deleted: {instance.name} ({instance.code})",
+            extra={"test_id": instance.id}
+        )
+        instance.delete()
 
 # ============ LAB ORDERS ============
 
@@ -172,6 +190,7 @@ def collect_sample_view(request, order_id):
     order.sample_collected_at = timezone.now()
     order.sample_collected_by = request.user
     order.save()
+    log_action(request.user, "update", f"Sample collected for LabOrder {order_id}")
     
     serializer = LabOrderSerializer(order, context={'request': request})
     return Response(serializer.data)
@@ -205,6 +224,7 @@ def start_processing_view(request, order_id):
         order.sample_collected_by = request.user
     
     order.save()
+    log_action(request.user, "update", f"Started processing LabOrder {order_id}")
     
     serializer = LabOrderSerializer(order, context={'request': request})
     return Response(serializer.data)
@@ -230,6 +250,7 @@ def cancel_order_view(request, order_id):
     
     order.status = 'Cancelled'
     order.save()
+    log_action(request.user, "update", f"Cancelled LabOrder {order_id}")
     
     serializer = LabOrderSerializer(order, context={'request': request})
     return Response(serializer.data)
@@ -335,6 +356,7 @@ def verify_result_view(request, result_id):
     result.verified_by = request.user
     result.verified_at = timezone.now()
     result.save()
+    log_action(request.user, "update", f"Verified LabResult {result_id}")
     
     serializer = LabResultSerializer(result, context={'request': request})
     return Response(serializer.data)

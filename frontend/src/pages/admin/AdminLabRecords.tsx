@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Search, 
   Calendar, 
@@ -11,77 +11,44 @@ import {
   Download
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-
-// --- Mock Data for Lab Records ---
-const MOCK_RECORDS = [
-  { 
-    id: "LAB-2024-001", 
-    patient: "Sarah Mensah", 
-    testName: "Full Blood Count (FBC)", 
-    date: "2024-01-26 09:30 AM", 
-    doctor: "Dr. Opoku", 
-    status: "Completed", 
-    technician: "Kwame Tech",
-    results: [
-      { param: "Hemoglobin", value: "12.5", unit: "g/dL", refRange: "11.5-16.5", flag: "Normal" },
-      { param: "WBC", value: "14.2", unit: "x10^9/L", refRange: "4.0-11.0", flag: "High" },
-      { param: "Platelets", value: "250", unit: "x10^9/L", refRange: "150-400", flag: "Normal" },
-    ]
-  },
-  { 
-    id: "LAB-2024-002", 
-    patient: "Emmanuel Osei", 
-    testName: "Malaria Parasite", 
-    date: "2024-01-26 10:15 AM", 
-    doctor: "Dr. Ama", 
-    status: "Completed", 
-    technician: "Kwame Tech",
-    results: [
-      { param: "Parasite Density", value: "++", unit: "", refRange: "Negative", flag: "Positive" }
-    ]
-  },
-  { 
-    id: "LAB-2024-003", 
-    patient: "John Doe", 
-    testName: "Widal Test", 
-    date: "2024-01-26 11:00 AM", 
-    doctor: "Dr. Kwame", 
-    status: "Pending", 
-    technician: "-",
-    results: []
-  },
-  { 
-    id: "LAB-2024-004", 
-    patient: "Grace Antwi", 
-    testName: "Lipid Profile", 
-    date: "2024-01-25 02:45 PM", 
-    doctor: "Dr. Opoku", 
-    status: "In Progress", 
-    technician: "Sarah Lab",
-    results: []
-  },
-];
+import { fetchLabOrders } from "../../services/api";
 
 export default function AdminLabRecords() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   // Modal State
   const [viewingRecord, setViewingRecord] = useState<any>(null);
 
+  useEffect(() => {
+    setLoading(true);
+    fetchLabOrders()
+      .then((data) => {
+        setRecords(data?.results || data || []);
+      })
+      .catch(() => {
+        setRecords([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   // --- Filter Logic ---
   const filteredRecords = useMemo(() => {
-    return MOCK_RECORDS.filter(record => {
+    return records.filter(record => {
+      // Adjust field names as per backend response
+      const patientName = record.patient_name || record.patient || "";
+      const testName = record.test_name || record.testName || "";
+      const recordId = record.id ? String(record.id) : "";
       const matchesSearch = 
-        record.patient.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        record.testName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.id.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === "All" ? true : record.status === statusFilter;
-
+        patientName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        testName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        recordId.toLowerCase().includes(searchQuery.toLowerCase());
+      const status = record.status || "";
+      const matchesStatus = statusFilter === "All" ? true : status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchQuery, statusFilter]);
+  }, [records, searchQuery, statusFilter]);
 
   // --- Handlers ---
   const handlePrintResult = () => {
@@ -151,26 +118,28 @@ export default function AdminLabRecords() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredRecords.length > 0 ? (
+              {loading ? (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-gray-400">Loading lab records...</td></tr>
+              ) : filteredRecords.length > 0 ? (
                 filteredRecords.map((record) => (
                   <tr key={record.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="px-6 py-4 font-mono text-[#073159] font-bold">{record.id}</td>
                     <td className="px-6 py-4">
-                      <div className="font-bold text-gray-800">{record.patient}</div>
-                      <div className="text-xs text-gray-500">Ref: {record.doctor}</div>
+                      <div className="font-bold text-gray-800">{record.patient_name || record.patient}</div>
+                      <div className="text-xs text-gray-500">Ref: {record.doctor_name || record.doctor}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-gray-900">{record.testName}</div>
-                      {record.technician !== "-" && (
+                      <div className="font-medium text-gray-900">{record.test_name || record.testName}</div>
+                      {record.technician && record.technician !== "-" && (
                         <div className="text-xs text-gray-400 mt-0.5">Tech: {record.technician}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       <div className="flex items-center gap-2">
-                        <Calendar size={14} /> {record.date.split(' ')[0]}
+                        <Calendar size={14} /> {(record.date || record.created_at || "").split(' ')[0]}
                       </div>
                       <div className="flex items-center gap-2 text-xs mt-1 text-gray-400">
-                        <Clock size={12} /> {record.date.split(' ').slice(1).join(' ')}
+                        <Clock size={12} /> {(record.date || record.created_at || "").split(' ').slice(1).join(' ')}
                       </div>
                     </td>
                     <td className="px-6 py-4">

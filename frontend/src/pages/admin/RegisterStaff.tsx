@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { 
   User, 
@@ -15,6 +16,7 @@ import ghFlag from "../../assets/ghana-flag.png";
 import { registerStaff } from "../../services/api";
 
 export default function RegisterStaff() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -37,8 +39,14 @@ export default function RegisterStaff() {
       await registerStaff(form);
       toast.success(`${form.role} registered successfully`);
       setForm({ username: "", email: "", phone: "", password: "", role: "" });
-    } catch (error) {
-      toast.error("Failed to register user");
+      navigate("/admin/staff-management");
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to register user";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

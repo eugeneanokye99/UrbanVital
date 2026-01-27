@@ -39,15 +39,25 @@ class Inventory(models.Model):
     ]
     unit_of_measure = models.CharField(max_length=20, choices=UNIT_CHOICES, default='PCS')
     
+    # Manufacturer
+    manufacturer = models.CharField(max_length=200, blank=True, null=True)
+
+    # Manufacturing date
+    manufacturing_date = models.DateField(null=True, blank=True)
+
     # Pricing (use for both, Lab items can have 0)
+    unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     selling_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    
+
     # Expiry
     expiry_date = models.DateField(null=True, blank=True)
-    
+
+    # Lock: Only visible to admin if locked
+    is_locked = models.BooleanField(default=False)
+
     # Status
     is_active = models.BooleanField(default=True)
-    
+
     # Audit
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -59,10 +69,18 @@ class Inventory(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.department})"
+
+    def clean(self):
+        # Block saving drugs with past expiry dates
+        if self.expiry_date and self.expiry_date < date.today():
+            from django.core.exceptions import ValidationError
+            raise ValidationError({"expiry_date": "Expiry date cannot be in the past."})
     
     @property
     def stock_status(self):
         """Calculate stock status"""
+        if self.expiry_date and self.expiry_date < date.today():
+            return 'EXPIRED'
         if self.current_stock == 0:
             return 'OUT_OF_STOCK'
         elif self.current_stock <= self.minimum_stock:

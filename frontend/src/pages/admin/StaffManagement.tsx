@@ -66,6 +66,7 @@ export default function AdminStaff() {
 
   // Fetch Data
   const loadStaffData = async () => {
+    const t0 = performance.now();
     try {
       setLoading(true);
       const staffData = await fetchAllStaff({
@@ -73,23 +74,32 @@ export default function AdminStaff() {
         role: roleFilter !== "All" ? roleFilter : undefined
       });
       const statsData = await fetchStaffStats();
-      
-      setStaffList(staffData.staff || []);
-      const total = statsData.total_staff || 0;
-      const active = statsData.active_staff ?? (staffData.active_count || 0);
-      
+      // Fix: count active/inactive by is_active
+      const staffListArr = staffData.staff || [];
+      setStaffList(staffListArr);
+      const total = staffListArr.length;
+      const active = staffListArr.filter((s:any) => s.is_active).length;
+      const inactive = staffListArr.filter((s:any) => !s.is_active).length;
       setStats({
         total_staff: total,
         active_count: active,
-        inactive_count: total - active,
+        inactive_count: inactive,
         role_counts: statsData.role_counts || {}
       });
-
     } catch (error: any) {
       console.error("Error loading staff data:", error);
-      toast.error("Failed to load staff data");
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to load staff data";
+      toast.error(message);
     } finally {
       setLoading(false);
+      const t1 = performance.now();
+      if (t1 - t0 > 800) {
+        console.warn(`Staff data load took ${t1 - t0} ms`);
+      }
     }
   };
 
@@ -111,7 +121,14 @@ export default function AdminStaff() {
       await deleteStaff(id);
       toast.success("Account deleted");
       loadStaffData(); 
-    } catch (error) { toast.error("Failed to delete account"); }
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete account";
+      toast.error(message);
+    }
     setActiveMenuId(null);
   };
 
@@ -125,7 +142,14 @@ export default function AdminStaff() {
       await updateStaffStatus(staff.id, newStatus ? "active" : "suspended");
       toast.success(`Account ${action}ed`);
       loadStaffData(); 
-    } catch (error) { toast.error(`Failed to ${action} account`); }
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        `Failed to ${action} account`;
+      toast.error(message);
+    }
     setActiveMenuId(null);
   };
 
@@ -139,7 +163,6 @@ export default function AdminStaff() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStaff) return;
-    
     setIsProcessing(true);
     try {
       const formData = new FormData(e.target as HTMLFormElement);
@@ -149,17 +172,18 @@ export default function AdminStaff() {
         phone: String(formData.get("phone")),
         role: String(formData.get("role"))
       };
-
-      // Call API
-      const updatedStaff = await updateStaff(selectedStaff.id, updateData);
-      
-      // Update Local State
-      setStaffList(prev => prev.map(s => s.id === selectedStaff.id ? { ...s, ...updatedStaff } : s));
-      
+      await updateStaff(selectedStaff.id, updateData);
       toast.success("Profile updated successfully");
       setEditModalOpen(false);
-    } catch (error) {
-      toast.error("Failed to update profile");
+      // Reload all staff data to reflect changes
+      loadStaffData();
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update profile";
+      toast.error(message);
     } finally {
       setIsProcessing(false);
     }
@@ -181,7 +205,14 @@ export default function AdminStaff() {
           await resetStaffPassword(selectedStaff.id, newPassword);
           toast.success("Password updated");
           setPasswordModalOpen(false);
-      } catch (error) { toast.error("Failed to update password"); } 
+      } catch (error: any) {
+        const message =
+          error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update password";
+        toast.error(message);
+      }
       finally { setIsProcessing(false); }
   };
 
@@ -193,7 +224,7 @@ export default function AdminStaff() {
       setShowPassword(true); 
   };
 
-  const availableRoles = ["All", "Admin", "Doctor", "Nurse", "Pharmacist", "Lab Technician", "Receptionist"];
+  const availableRoles = ["All", "Doctor", "Nurse", "Pharmacist", "Lab Technician", "Receptionist"];
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8 min-h-screen pb-20">

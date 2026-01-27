@@ -51,9 +51,14 @@ export default function AdminFinance() {
       }));
       
       setTransactions(transformedTransactions);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Fetch error:", error);
-      toast.error("Unable to load financial data");
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Unable to load financial data";
+      toast.error(message);
       setTransactions([]);
     } finally {
       setIsLoading(false);
