@@ -336,17 +336,23 @@ export const manualRefreshToken = async () => {
 
 // Logout (clear local storage)
 
+
 export const logoutUser = async () => {
-  try {
-    await API.post("/auth/logout/");
-  } catch (e) {
-    // Ignore errors
-  }
-  // Clear all localStorage items
+  // Always clear tokens first to prevent repeated unauthorized requests
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
   localStorage.removeItem("user");
   localStorage.removeItem("login_time");
+
+  // Only call backend logout if we had a valid access token
+  const hadToken = !!localStorage.getItem("access");
+  if (hadToken) {
+    try {
+      await API.post("/auth/logout/");
+    } catch (e) {
+      // Ignore errors
+    }
+  }
   toast.success("Logged out");
   // Optional: Redirect to login page
   // window.location.href = "/login";
