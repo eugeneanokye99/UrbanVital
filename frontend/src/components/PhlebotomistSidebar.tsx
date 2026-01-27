@@ -1,13 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  UserPlus, 
-  CreditCard, 
-  LogOut, 
-  UserCheck,
-  Stethoscope,
-  X // Import Close Icon
+import { LayoutDashboard, Users, UserPlus, CreditCard, LogOut,  UserCheck, Stethoscope,Activity, X
 } from "lucide-react";
 import { logoutUser } from "../services/api";
 import logo from "../assets/urbanvital-logo.png";
@@ -18,7 +10,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export default function StaffSidebar({ isOpen = false, onClose }: SidebarProps) {
+export default function PhlebotomistSidebar({ isOpen = false, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,11 +20,12 @@ export default function StaffSidebar({ isOpen = false, onClose }: SidebarProps) 
   };
 
   const menuItems = [
-    { path: "/frontdesk/staffdashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-    { path: "/frontdesk/checkin", label: "Check In", icon: <UserCheck size={20} /> }, 
-    { path: "/frontdesk/patients", label: "Patients List", icon: <Users size={20} /> },
-    { path: "/frontdesk/registerpatient", label: "Register Patient", icon: <UserPlus size={20} /> },
-    { path: "/frontdesk/billings", label: "Billing", icon: <CreditCard size={20} /> },
+    { path: "/phlebotomist/phlebotomistdashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
+    { path: "/phlebotomist/recordvitals", label: "Record Vitals", icon: <Activity size={20} /> }, // Added Vitals Queue
+    { path: "/phlebotomist/checkin", label: "Check In", icon: <UserCheck size={20} /> }, 
+    { path: "/phlebotomist/patients", label: "Patients List", icon: <Users size={20} /> },
+    { path: "/phlebotomist/registerpatient", label: "Register Patient", icon: <UserPlus size={20} /> },
+    { path: "/phlebotomist/billings", label: "Billing", icon: <CreditCard size={20} /> },
   ];
 
   return (

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import StaffSidebar from "../components/StaffSidebar";
-import StaffNavbar from "../components/StaffNavbar";
+import StaffSidebar from "../components/PhlebotomistSidebar";
+import StaffNavbar from "../components/PhlebotomistNavbar";
 
 export default function StaffLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

@@ -1,20 +1,13 @@
 import { useState, useEffect } from "react";
-import { 
-  Search, 
-  Menu,  
-  ChevronDown,
-  User,
-  ArrowLeft,
-  X 
-} from "lucide-react";
+import {  Search,  Menu,   User, ArrowLeft, X } from "lucide-react";
 import { fetchUserProfile } from "../services/api";
 
-interface StaffNavbarProps {
+interface PhlebotomistNavbarProps {
   onMenuClick?: () => void;
   onSearch?: (query: string) => void; // Added onSearch prop
 }
 
-export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps) {
+export default function PhlebotomistNavbar({ onMenuClick, onSearch }: PhlebotomistNavbarProps) {
   const [user, setUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -135,7 +128,7 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
                       }
                     </p>
                     <p className="text-xs text-gray-500">
-                        {user?.role || "Front Desk / Staff"}
+                        {user?.role || "Phlebotomist"}
                     </p>
                 </>
             )}
@@ -154,8 +147,6 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
             {/* Online Status Dot */}
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 md:h-3 md:w-3 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
-
-          <ChevronDown size={16} className="text-gray-400 group-hover:text-primary transition-colors hidden sm:block" />
         </div>
 
       </div>

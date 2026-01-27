@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; 
-import { 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Eye, 
-  FileText,
-  Users,
-  Plus,
-  Loader2
-} from "lucide-react";
+import {   Search, Filter, FileText, Users, Plus, Loader2  } from "lucide-react";
 import { fetchPatients } from "../../services/api"; 
 
 export default function StaffPatientsList() {
@@ -51,7 +42,7 @@ const getPatients = async () => {
 
   // Navigation Handler
   const handleViewPatient = (patient: any) => {
-    navigate("/frontdesk/patientdetail", { state: { patient } });
+    navigate("/phlebotomist/patientdetail", { state: { patient } });
   };
 
   const getFlagStyle = (flag: string) => {
@@ -136,7 +127,7 @@ const getPatients = async () => {
             <span className="font-bold text-[#073159]">{patients.length}</span> Found
           </div>
           <button 
-            onClick={() => navigate("/frontdesk/registerpatient")}
+            onClick={() => navigate("/phlebotomist/registerpatient")}
             className="flex items-center gap-2 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors shadow-sm font-medium text-sm"
           >
             <Plus size={18} /> Register Patient
@@ -217,7 +208,6 @@ const getPatients = async () => {
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Patient Name</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</th>
                   <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Flags</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -253,25 +243,7 @@ const getPatients = async () => {
                         {renderFlags(patient)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation(); 
-                              handleViewPatient(patient);
-                            }}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="View Details"
-                          >
-                            <Eye size={18} />
-                          </button>
-                          <button 
-                            onClick={(e) => e.stopPropagation()} 
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
-                            title="More Options"
-                          >
-                            <MoreVertical size={18} />
-                          </button>
-                        </div>
+
                       </td>
                     </tr>
                   ))
@@ -284,7 +256,7 @@ const getPatients = async () => {
                         <p className="text-sm">Try adjusting your search or filter.</p>
                         {patients.length === 0 && (
                           <button
-                            onClick={() => navigate("/frontdesk/registerpatient")}
+                            onClick={() => navigate("/phlebotomist/registerpatient")}
                             className="mt-4 px-4 py-2 bg-[#073159] text-white rounded-lg hover:bg-[#062a4d] transition-colors text-sm font-medium"
                           >
                             Register First Patient

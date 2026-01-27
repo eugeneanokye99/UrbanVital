@@ -31,6 +31,9 @@ import AdminLabRecords from './pages/admin/AdminLabRecords';
 
 // --- Phlebotomist Pages ---
 import PhlebotomistDashboard from './pages/Phlebotomist/PhlebotomistDashboard';
+import RecordVitals from './pages/Phlebotomist/RecordVitals';
+import VitalsSummary from './pages/Phlebotomist/VitalsSummary';
+import VitalsHistory from './pages/Phlebotomist/VitalsHistory';
 import StaffCheckIn from './pages/Phlebotomist/CheckIn';
 import StaffPatientDetail from './pages/Phlebotomist/PatientDetail';
 import StaffPatientsList from './pages/Phlebotomist/PatientsList';
@@ -131,6 +134,9 @@ function App() {
         <Route path="/phlebotomist" element={<ProtectedRoute roles={["Phlebotomist"]}><StaffLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="phlebotomistdashboard" replace />} />
           <Route path="phlebotomistdashboard" element={<PhlebotomistDashboard />} />
+          <Route path="recordvitals" element={<RecordVitals />} />
+          <Route path="vitalssummary" element={<VitalsSummary />} />
+          <Route path="vitalshistory" element={<VitalsHistory />} />
           <Route path="checkin" element={<StaffCheckIn />} />
           <Route path="patientdetail" element={<StaffPatientDetail />} />
           <Route path="patients" element={<StaffPatientsList />} />

@@ -201,7 +201,7 @@ export default function StaffCheckIn() {
                       No patients found for "{search}"
                     </p>
                     <button
-                      onClick={() => window.location.href = "/frontdesk/registerpatient"}
+                      onClick={() => window.location.href = "/phlebotomist/registerpatient"}
                       className="mt-2 text-[#073159] text-sm font-bold hover:underline"
                     >
                       Register New Patient
@@ -213,7 +213,7 @@ export default function StaffCheckIn() {
                       Start typing to search for patients
                     </p>
                     <button
-                      onClick={() => window.location.href = "/frontdesk/patients"}
+                      onClick={() => window.location.href = "/phlebotomist/patients"}
                       className="mt-2 text-[#073159] text-sm font-bold hover:underline"
                     >
                       View All Patients

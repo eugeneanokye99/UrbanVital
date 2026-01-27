@@ -10,7 +10,8 @@ import {
   CreditCard,
   Shield,
   HeartPulse,
-  Mail
+  Mail,
+  Loader2 // Added Loader2 import
 } from "lucide-react";
 import ghFlag from "../../assets/ghana-flag.png";
 import { registerPatient } from "../../services/api";
@@ -46,60 +47,69 @@ export default function RegisterPatient() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-// In your RegisterPatient component
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const patientData = {
-      first_name: form.firstName,
-      last_name: form.lastName,
-      date_of_birth: form.dob,
-      gender: form.gender,
-      marital_status: form.maritalStatus,
-      occupation: form.occupation,
-      id_type: form.idType,
-      id_number: form.idNumber,
-      phone: form.phone,
-      email: form.email || "",
-      address: form.address,
-      city: form.city || "",
-      emergency_name: form.emergencyName,
-      emergency_phone: form.emergencyPhone,
-      emergency_relation: form.emergencyRelation,
-      payment_mode: form.paymentMode,
-      insurance_provider: form.paymentMode === "Insurance" ? form.insuranceProvider : "",
-      insurance_number: form.paymentMode === "Insurance" ? form.insuranceNumber : "",
-      medical_flags: form.medicalFlags || "",
-    };
+    try {
+      // Updated payload to include ALL fields
+      const patientData = {
+        first_name: form.firstName,
+        last_name: form.lastName,
+        date_of_birth: form.dob,
+        gender: form.gender,
+        marital_status: form.maritalStatus,
+        occupation: form.occupation, // Added occupation
+        id_type: form.idType,
+        id_number: form.idNumber,
+        phone: form.phone,
+        email: form.email || "", 
+        address: form.address,
+        city: form.city || "", // Added city
+        
+        // Emergency Contact Info
+        emergency_contact_name: form.emergencyName, 
+        emergency_contact_phone: form.emergencyPhone,
+        emergency_contact_relation: form.emergencyRelation,
+        
+        // Billing Info
+        payment_mode: form.paymentMode,
+        insurance_provider: form.paymentMode === "Insurance" ? form.insuranceProvider : "",
+        insurance_number: form.paymentMode === "Insurance" ? form.insuranceNumber : "",
+        
+        // Medical Notes
+        medical_history: form.medicalFlags || "", // Mapped medicalFlags to medical_history
+      };
 
     // Use the separated create endpoint
+
     const newPatient = await registerPatient(patientData);
+
     toast.success(`${patientData.first_name} ${patientData.last_name} registered successfully!`);
+
     console.log("Created patient:", newPatient);
-    
-    // Navigate to patient list or detail page
-    navigate("/frontdesk/patients");
-  } catch (error: any) {
-    console.error("Registration error:", error);
-    
-    // Show specific error messages
-    if (error.response?.data) {
-      Object.entries(error.response.data).forEach(([field, messages]) => {
-        if (Array.isArray(messages)) {
-          messages.forEach((message: string) => {
-            toast.error(`${field}: ${message}`);
-          });
-        }
-      });
-    } else {
-      toast.error("Failed to register patient. Please check your data.");
+      
+      // Navigate to detail page with the NEW patient data to confirm save
+      navigate(`/phlebotomist/patients`); 
+
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      if (error.response?.data) {
+        Object.entries(error.response.data).forEach(([field, messages]) => {
+          if (Array.isArray(messages)) {
+            messages.forEach((message: string) => {
+              toast.error(`${field}: ${message}`);
+            });
+          }
+        });
+      } else {
+        toast.error("Failed to register patient. Please check your data.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="max-w-5xl mx-auto h-full flex flex-col">
@@ -375,7 +385,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                               <select name="insuranceProvider" value={form.insuranceProvider} onChange={handleChange} className="w-full p-3 rounded-xl border border-gray-200 outline-none bg-white text-sm">
                                   <option value="">Select Provider</option>
                                   <option value="NHIS">NHIS</option>
-
+                                  <option value="Acacia">Acacia</option>
                               </select>
                           </div>
                           <div className="space-y-1">
@@ -407,8 +417,15 @@ const handleSubmit = async (e: React.FormEvent) => {
             disabled={loading}
             className="w-full sm:w-auto bg-[#073159] hover:bg-[#062a4d] text-white font-bold py-3.5 px-10 rounded-xl shadow-lg shadow-blue-900/20 transform transition-all hover:-translate-y-1 hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg"
           >
-            {loading ? "Registering..." : "Complete Registration"}
-            {!loading && <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />}
+            {loading ? (
+                <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Registering...
+                </>
+            ) : (
+                <>
+                    Complete Registration <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                </>
+            )}
           </button>
         </div>
 
