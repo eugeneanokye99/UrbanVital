@@ -30,7 +30,7 @@ import AdminLabInventory from './pages/admin/AdminLabInventory';
 import AdminLabRecords from './pages/admin/AdminLabRecords';
 
 // --- Phlebotomist Pages ---
-import PhlebotmistDashboard from './pages/Phlebotomist/PhlebotomistDashboard';
+import PhlebotomistDashboard from './pages/Phlebotomist/PhlebotomistDashboard';
 import StaffCheckIn from './pages/Phlebotomist/CheckIn';
 import StaffPatientDetail from './pages/Phlebotomist/PatientDetail';
 import StaffPatientsList from './pages/Phlebotomist/PatientsList';
@@ -127,10 +127,10 @@ function App() {
 
         </Route>
 
-        {/* === Front Desk Module === */}
-        <Route path="/frontdesk" element={<ProtectedRoute roles={["Cashier"]}><StaffLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="staffdashboard" replace />} />
-          <Route path="staffdashboard" element={<StaffDashboard />} />
+        {/* === Phlebotomist Module === */}
+        <Route path="/phlebotomist" element={<ProtectedRoute roles={["Cashier"]}><StaffLayout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="phlebotomistdashboard" replace />} />
+          <Route path="phlebotomistdashboard" element={<PhlebotomistDashboard />} />
           <Route path="checkin" element={<StaffCheckIn />} />
           <Route path="patientdetail" element={<StaffPatientDetail />} />
           <Route path="patients" element={<StaffPatientsList />} />
@@ -187,7 +187,8 @@ function App() {
       </Routes>
     </Router>
     </ThemeProvider>
-  );
+    </UserProvider>
+  ); 
 }
 
 export default App;
