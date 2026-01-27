@@ -58,7 +58,7 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
             placeholder="Search patient MRN, name..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-gray-50 text-base"
           />
           {searchQuery && (
             <button 
@@ -100,7 +100,7 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
             placeholder="Search patient MRN, name..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] transition-all duration-200 sm:text-sm"
+            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 sm:text-sm"
           />
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
                 </div>
             ) : (
                 <>
-                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-primary transition-colors">
                       {/* Check multiple name fields commonly used in APIs */}
                       {user?.first_name 
                         ? `${user.first_name} ${user.last_name || ''}` 
@@ -143,7 +143,7 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
 
           <div className="relative">
             {/* Avatar Circle */}
-            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 text-[#073159] border border-blue-100 flex items-center justify-center font-bold text-xs md:text-sm shadow-sm group-hover:bg-[#073159] group-hover:text-white transition-all overflow-hidden">
+            <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-blue-50 text-primary border border-blue-100 flex items-center justify-center font-bold text-xs md:text-sm shadow-sm group-hover:bg-primary group-hover:text-white transition-all overflow-hidden">
               {user?.profile_image ? (
                   <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
               ) : (
@@ -155,7 +155,7 @@ export default function StaffNavbar({ onMenuClick, onSearch }: StaffNavbarProps)
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 md:h-3 md:w-3 bg-green-500 border-2 border-white rounded-full"></span>
           </div>
 
-          <ChevronDown size={16} className="text-gray-400 group-hover:text-[#073159] transition-colors hidden sm:block" />
+          <ChevronDown size={16} className="text-gray-400 group-hover:text-primary transition-colors hidden sm:block" />
         </div>
 
       </div>

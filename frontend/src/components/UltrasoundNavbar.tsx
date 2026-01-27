@@ -56,7 +56,7 @@ export default function UltrasoundNavbar({ onMenuClick, onSearch }: UltrasoundNa
             autoFocus
             type="text"
             placeholder="Search scans or patients..."
-            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-[#073159] focus:ring-2 focus:ring-[#073159]/20 outline-none bg-gray-50 text-base"
+            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none bg-gray-50 text-base"
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -97,7 +97,7 @@ export default function UltrasoundNavbar({ onMenuClick, onSearch }: UltrasoundNa
           <input
             type="text"
             placeholder="Search scans or patients..."
-            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-2 focus:ring-[#073159]/20 focus:border-[#073159] outline-none transition-all sm:text-sm"
+            className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all sm:text-sm"
             value={searchQuery}
             onChange={handleSearchChange}
           />
@@ -126,7 +126,7 @@ export default function UltrasoundNavbar({ onMenuClick, onSearch }: UltrasoundNa
                 </div>
             ) : (
                 <>
-                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#073159] transition-colors">
+                    <p className="text-sm font-bold text-gray-800 group-hover:text-primary transition-colors">
                       {user?.first_name 
                         ? `${user.first_name} ${user.last_name || ''}` 
                         : user?.username || "Ultrasound Tech"
@@ -140,7 +140,7 @@ export default function UltrasoundNavbar({ onMenuClick, onSearch }: UltrasoundNa
           </div>
           
           <div className="relative">
-            <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-[#073159] text-white flex items-center justify-center shadow-sm border border-gray-200 group-hover:bg-[#062a4d] transition-all overflow-hidden">
+            <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-primary text-white flex items-center justify-center shadow-sm border border-gray-200 group-hover:bg-[#062a4d] transition-all overflow-hidden">
                 {user?.profile_image ? (
                     <img src={user.profile_image} alt="Profile" className="w-full h-full object-cover" />
                 ) : (

@@ -47,9 +47,11 @@ export default function StaffSidebar({ isOpen = false, onClose }: SidebarProps) 
 
       {/* Sidebar Container */}
       <aside 
+        // Force background color via inline style to ensure theme applies immediately
+        style={{ backgroundColor: 'var(--primary)' }}
         className={`
           fixed md:static inset-y-0 left-0 z-50
-          w-64 bg-[#073159] h-full flex flex-col shadow-2xl 
+          w-64 h-full flex flex-col shadow-2xl 
           transition-transform duration-300 ease-in-out font-sans
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
@@ -73,12 +75,14 @@ export default function StaffSidebar({ isOpen = false, onClose }: SidebarProps) 
         {/* --- Staff Badge --- */}
         <div className="px-6 py-4">
           <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3 border border-white/5 backdrop-blur-sm">
-             <div className="p-2 bg-green-500/20 rounded-full text-green-300">
+             {/* Fixed: Changed bg-green-500/20 to bg-white/20 and text-green-300 to text-white */}
+             <div className="p-2 bg-white/20 rounded-full text-white">
                 <Stethoscope size={18} />
              </div>
              <div>
                 <p className="text-white text-xs font-bold uppercase tracking-wider">Staff Portal</p>
-                <p className="text-blue-200 text-[10px]">Medical Access</p>
+                {/* Fixed: Changed text-blue-200 to text-white/70 */}
+                <p className="text-white/70 text-[10px]">Medical Access</p>
              </div>
           </div>
         </div>
@@ -95,18 +99,21 @@ export default function StaffSidebar({ isOpen = false, onClose }: SidebarProps) 
                         navigate(item.path);
                         if(onClose) onClose(); // Close sidebar on mobile on click
                     }}
+                    // Fixed: Changed text-blue-100/70 to text-white/70
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative group ${
                       isActive
                         ? "text-white bg-white/10 shadow-inner"
-                        : "text-blue-100/70 hover:text-white hover:bg-white/5"
+                        : "text-white/70 hover:text-white hover:bg-white/5"
                     }`}
                   >
                     {/* Active Indicator */}
                     {isActive && (
-                      <div className="absolute left-2 w-1 h-6 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)]"></div>
+                      // Fixed: Changed bg-green-400 to bg-white
+                      <div className="absolute left-2 w-1 h-6 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
                     )}
                     
-                    <span className={`ml-2 ${isActive ? "text-green-400" : "group-hover:text-white"}`}>
+                    {/* Fixed: Changed text-green-400 to text-white */}
+                    <span className={`ml-2 ${isActive ? "text-white" : "group-hover:text-white"}`}>
                       {item.icon}
                     </span>
                     
@@ -122,12 +129,14 @@ export default function StaffSidebar({ isOpen = false, onClose }: SidebarProps) 
         <div className="p-4 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-300 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
+            // Fixed: Changed text-red-300 to text-red-100/text-white
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-100 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
           >
             <LogOut size={20} />
             <span>Logout System</span>
           </button>
-          <p className="text-center text-[10px] text-blue-300/40 mt-4">
+          {/* Fixed: Changed text-blue-300/40 to text-white/30 */}
+          <p className="text-center text-[10px] text-white/30 mt-4">
             UrbanVital • Staff Panel
           </p>
         </div>

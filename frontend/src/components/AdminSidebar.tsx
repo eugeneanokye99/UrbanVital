@@ -7,13 +7,13 @@ import {
   Settings, 
   LogOut, 
   ShieldCheck, 
-  UserCog,FileText,
+  UserCog,
+  FileText,
   X
 } from "lucide-react";
 import { logoutUser } from "../services/api";
 import logo from "../assets/urbanvital-logo.png";
 
-// 2. Define props for mobile control
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -23,7 +23,6 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   
-
   const handleLogout = () => {
     logoutUser();
     navigate("/");
@@ -37,12 +36,11 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     { path: "/admin/lab-records", label: "Lab Records", icon: <FileText size={20} /> },
     { path: "/admin/staff", label: "Staff Management", icon: <UserCog size={20} /> },
     { path: "/admin/settings", label: "Settings", icon: <Settings size={20} /> },
-    
   ];
 
   return (
     <>
-      {/* 3. Mobile Backdrop (Click to close) */}
+      {/* Mobile Backdrop */}
       <div 
         className={`fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300 ${
           isOpen ? "opacity-100 visible" : "opacity-0 invisible"
@@ -50,11 +48,13 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         onClick={onClose}
       ></div>
 
-      {/* 4. Sidebar Container */}
+      {/* Sidebar Container */}
       <aside 
+        // 1. Force the background color using inline style to ensure it works
+        style={{ backgroundColor: 'var(--primary)' }}
         className={`
           fixed md:static inset-y-0 left-0 z-50
-          w-64 bg-[#073159] h-full flex flex-col shadow-2xl 
+          w-64 h-full flex flex-col shadow-2xl 
           transition-transform duration-300 ease-in-out font-sans
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
@@ -66,7 +66,6 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
              <img src={logo} alt="UrbanVital" className="h-full w-auto object-contain" />
           </div>
           
-          {/* 5. Mobile Close Button */}
           <button 
             onClick={onClose} 
             className="md:hidden p-2 text-white/70 hover:text-white bg-white/10 rounded-lg transition-colors"
@@ -78,12 +77,12 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         {/* --- Admin Badge --- */}
         <div className="px-6 py-4">
           <div className="bg-white/10 rounded-lg p-3 flex items-center gap-3 border border-white/5 backdrop-blur-sm">
-             <div className="p-2 bg-blue-500/20 rounded-full text-blue-200">
+             <div className="p-2 bg-white/20 rounded-full text-white">
                 <ShieldCheck size={18} />
              </div>
              <div>
                 <p className="text-white text-xs font-bold uppercase tracking-wider">Admin Panel</p>
-                <p className="text-blue-200 text-[10px]">Superuser Access</p>
+                <p className="text-white/70 text-[10px]">Superuser Access</p>
              </div>
           </div>
         </div>
@@ -98,20 +97,19 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
                   <button
                     onClick={() => {
                         navigate(item.path);
-                        if(onClose) onClose(); // Close on mobile when link clicked
+                        if(onClose) onClose();
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative group ${
                       isActive
                         ? "text-white bg-white/10 shadow-inner"
-                        : "text-blue-100/70 hover:text-white hover:bg-white/5"
+                        : "text-white/70 hover:text-white hover:bg-white/5"
                     }`}
                   >
-                    {/* Active Indicator Dot */}
                     {isActive && (
-                      <div className="absolute left-2 w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></div>
+                      <div className="absolute left-2 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
                     )}
                     
-                    <span className={`ml-2 ${isActive ? "text-green-400" : "group-hover:text-white"}`}>
+                    <span className={`ml-2 ${isActive ? "text-white" : "group-hover:text-white"}`}>
                       {item.icon}
                     </span>
                     
@@ -127,12 +125,12 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
         <div className="p-4 border-t border-white/10">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-300 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-100 hover:text-white hover:bg-red-500/20 rounded-xl transition-all duration-200"
           >
             <LogOut size={20} />
             <span>Logout System</span>
           </button>
-          <p className="text-center text-[10px] text-blue-300/40 mt-4">
+          <p className="text-center text-[10px] text-white/30 mt-4">
             v1.0.4 • UrbanVital Health
           </p>
         </div>

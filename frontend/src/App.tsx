@@ -3,6 +3,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { useEffect, useRef } from 'react';
 import { UserProvider, useUser } from './context/UserContext';
 import { fetchNotifications } from './services/notifications';
+import { ThemeProvider } from './context/ThemeContext';
 
 // --- Auth & Layouts ---
 import Login from './pages/Login';
@@ -100,9 +101,10 @@ function App() {
 
   return (
     <UserProvider>
+      <ThemeProvider>
       <Router>
-        <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
-        <Routes>
+          <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+            <Routes>
           {/* === Public Routes === */}
           <Route path="/" element={<Login />} />
           {/* === Admin Module (Wrapped in Layout) === */}
@@ -174,7 +176,9 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </ThemeProvider>
     </UserProvider>
+    
   );
 }
 
