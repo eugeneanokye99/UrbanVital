@@ -30,10 +30,10 @@ export default function AdminSettings() {
   const themes = [
     { name: "Urban Blue", color: "#073159" },
     { name: "Vital Green", color: "#166534" },
-    { name: "Royal Purple", color: "#6b21a8" },
+    { name: "Orange", color: "#BF3100" },
     { name: "Ocean Teal", color: "#0f766e" },
-    { name: "Crimson", color: "#991b1b" },
-    { name: "Slate", color: "#334155" },
+    { name: "Evergreen", color: "#14281D" },
+    { name: "Steel Blue", color: "#2D7DD2" },
   ];
 
   const handleSave = () => {
