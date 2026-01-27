@@ -103,7 +103,7 @@ export default function StaffDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl md:text-3xl font-bold text-[#073159]">
-            Front Desk Overview
+           Phlebotomist Dashboard
           </h2>
           <div className="flex items-center gap-2 text-gray-500 mt-1 text-sm md:text-base">
             <Calendar className="w-4 h-4" />
@@ -119,7 +119,7 @@ export default function StaffDashboard() {
         </div>
 
         <button 
-          onClick={() => navigate("/frontdesk/registerpatient")}
+          onClick={() => navigate("/phlebotomist/registerpatient")}
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-[#073159] text-white rounded-xl hover:bg-[#062a4d] transition-colors shadow-md hover:shadow-lg text-sm font-bold active:scale-95 transform"
         >
           <UserPlus size={18} />
@@ -136,7 +136,7 @@ export default function StaffDashboard() {
           positive={true} 
           icon={<Users className="w-6 h-6 text-blue-600" />} 
           color="bg-blue-50"
-          onClick={() => navigate("/frontdesk/patients")}
+          onClick={() => navigate("/phlebotomist/patients")}
           subtext={`+${dashboardData?.summary?.today_patients || 0} today`}
         />
         <MetricCard 
@@ -146,7 +146,7 @@ export default function StaffDashboard() {
           positive={false} 
           icon={<Activity className="w-6 h-6 text-orange-600" />} 
           color="bg-orange-50"
-          onClick={() => navigate("/frontdesk/checkin")}
+          onClick={() => navigate("/phlebotomist/checkin")}
           subtext={`${dashboardData?.summary?.active_visits || 0} waiting`}
         />
         <MetricCard 
@@ -156,7 +156,7 @@ export default function StaffDashboard() {
           positive={true} 
           icon={<DollarSign className="w-6 h-6 text-green-600" />} 
           color="bg-green-50"
-          onClick={() => navigate("/frontdesk/billing")}
+          onClick={() => navigate("/phlebotomist/billing")}
           subtext={`₵${(dashboardData?.summary?.week_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} this week`}
         />
         <MetricCard 
@@ -166,7 +166,7 @@ export default function StaffDashboard() {
           positive={false} 
           icon={<FileText className="w-6 h-6 text-red-600" />} 
           color="bg-red-50"
-          onClick={() => navigate("/frontdesk/billing")}
+          onClick={() => navigate("/phlebotomist/billing")}
           subtext="Require payment"
         />
       </div>
@@ -182,7 +182,7 @@ export default function StaffDashboard() {
               Recent Check-ins
             </h3>
             <button 
-              onClick={() => navigate("/frontdesk/checkin")}
+              onClick={() => navigate("/phlebotomist/checkin")}
               className="text-xs md:text-sm text-blue-600 hover:underline font-medium"
             >
               View Full List
@@ -197,7 +197,7 @@ export default function StaffDashboard() {
                     <th className="px-6 py-4">Time</th>
                     <th className="px-6 py-4">Patient Name</th>
                     <th className="px-6 py-4">Service</th>
-                    <th className="px-6 py-4">Doctor</th>
+                    <th className="px-6 py-4">Phlebotomist</th>
                     <th className="px-6 py-4 text-right">Status</th>
                   </tr>
                 </thead>
@@ -214,7 +214,7 @@ export default function StaffDashboard() {
                         {visit.service_type || "General"}
                       </td>
                       <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
-                        {visit.doctor || "-"}
+                        {visit.phlebotomist || "-"}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getStatusColor(visit.status)}`}>
@@ -232,7 +232,7 @@ export default function StaffDashboard() {
                 </div>
                 <p className="text-gray-400 text-sm">No recent check-ins</p>
                 <button
-                  onClick={() => navigate("/frontdesk/checkin")}
+                  onClick={() => navigate("/phlebotomist/checkin")}
                   className="mt-2 text-[#073159] text-sm font-bold hover:underline"
                 >
                   Check in a patient

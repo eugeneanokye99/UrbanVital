@@ -26,8 +26,8 @@ import AdminPharmacyInventory from './pages/admin/AdminPharmacyInventory';
 import AdminLabInventory from './pages/admin/AdminLabInventory';
 import AdminLabRecords from './pages/admin/AdminLabRecords';
 
-// --- Front Desk (Staff) Pages ---
-import StaffDashboard from './pages/Phlebotomist/StaffDashboard';
+// --- Phlebotomist Pages ---
+import PhlebotmistDashboard from './pages/Phlebotomist/PhlebotomistDashboard';
 import StaffCheckIn from './pages/Phlebotomist/CheckIn';
 import StaffPatientDetail from './pages/Phlebotomist/PatientDetail';
 import StaffPatientsList from './pages/Phlebotomist/PatientsList';
@@ -35,7 +35,7 @@ import RegisterPatient from './pages/Phlebotomist/RegisterPatient';
 import StaffBillings from './pages/Phlebotomist/Billings';
 
 // --- Clinician Pages ---
-import ClinicianDashboard from './pages/clinician/Dashboard';
+import ClinicianDashboard from './pages/clinician/ClinicianDashboard';
 import ClinicianPatients from './pages/clinician/Patients';
 import ClinicianPatientDetails from './pages/clinician/PatientDetails';
 import ClinicianConsulting from './pages/clinician/Consulting';
@@ -96,9 +96,9 @@ function App() {
         </Route>
 
         {/* === Front Desk Module === */}
-        <Route path="/frontdesk" element={<ProtectedRoute roles={["Cashier"]}><StaffLayout /></ProtectedRoute>}>
-          <Route index element={<Navigate to="staffdashboard" replace />} />
-          <Route path="staffdashboard" element={<StaffDashboard />} />
+        <Route path="/phlebotomist" element={<ProtectedRoute roles={["Phlebotomist"]}><StaffLayout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="phlebotomistdashboard" replace />} />
+          <Route path="phlebotomistdashboard" element={<PhlebotmistDashboard />} />
           <Route path="checkin" element={<StaffCheckIn />} />
           <Route path="patientdetail" element={<StaffPatientDetail />} />
           <Route path="patients" element={<StaffPatientsList />} />

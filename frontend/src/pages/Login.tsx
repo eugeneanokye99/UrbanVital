@@ -45,8 +45,8 @@ export default function Login() {
           navigate("/pharmacy/pharmacydashboard");
         } else if (userRole == "Lab") {
           navigate("/lab/labdashboard");
-        } else if (userRole == "Cashier") {
-          navigate("/frontdesk/staffdashboard");
+        } else if (userRole == "Phlebotomist") {
+          navigate("/phlebotomist/phlebotomistdashboard");
         } else if (userRole == "Ultrasound") {
           navigate("/ultrasound/dashboard");
         }
