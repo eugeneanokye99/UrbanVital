@@ -28,6 +28,7 @@ import PatientVisits from './pages/admin/PatientVisit';
 import AdminPharmacyInventory from './pages/admin/AdminPharmacyInventory';
 import AdminLabInventory from './pages/admin/AdminLabInventory';
 import AdminLabRecords from './pages/admin/AdminLabRecords';
+import AdminPharmacyRecords from './pages/admin/AdminPharmacyRecords';
 
 // --- Phlebotomist Pages ---
 import PhlebotomistDashboard from './pages/Phlebotomist/PhlebotomistDashboard';
@@ -127,6 +128,7 @@ function App() {
           <Route path="pharmacy-inventory" element={<AdminPharmacyInventory />} />
           <Route path="lab-inventory" element={<AdminLabInventory />} />
           <Route path="lab-records" element={<AdminLabRecords />} />
+          <Route path="pharmacy-records" element={<AdminPharmacyRecords />} />
 
         </Route>
 
