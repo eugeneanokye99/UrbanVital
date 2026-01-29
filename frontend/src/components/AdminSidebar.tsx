@@ -8,7 +8,7 @@ import {
   LogOut, 
   ShieldCheck, 
   UserCog,
-  FileText,
+  FileText,Pill,
   X
 } from "lucide-react";
 import { logoutUser } from "../services/api";
@@ -33,6 +33,7 @@ export default function AdminSidebar({ isOpen = true, onClose }: SidebarProps) {
     { path: "/admin/patients", label: "Patients", icon: <Users size={20} /> },
     { path: "/admin/inventory", label: "Inventory", icon: <Package size={20} /> },
     { path: "/admin/finance", label: "Finance & Revenue", icon: <CreditCard size={20} /> },
+    { path: "/admin/pharmacy-records", label: "Pharmacy Sales", icon: <Pill size={20} /> },
     { path: "/admin/lab-records", label: "Lab Records", icon: <FileText size={20} /> },
     { path: "/admin/staff", label: "Staff Management", icon: <UserCog size={20} /> },
     { path: "/admin/settings", label: "Settings", icon: <Settings size={20} /> },

@@ -38,8 +38,6 @@ export default function RegisterPatient() {
     emergencyPhone: "",
     emergencyRelation: "",
     paymentMode: "Cash",
-    insuranceProvider: "",
-    insuranceNumber: "",
     medicalFlags: "",
   });
 
@@ -74,8 +72,6 @@ export default function RegisterPatient() {
         
         // Billing Info
         payment_mode: form.paymentMode,
-        insurance_provider: form.paymentMode === "Insurance" ? form.insuranceProvider : "",
-        insurance_number: form.paymentMode === "Insurance" ? form.insuranceNumber : "",
         
         // Medical Notes
         medical_history: form.medicalFlags || "", // Mapped medicalFlags to medical_history
@@ -124,7 +120,7 @@ export default function RegisterPatient() {
             New Patient Registration
           </h1>
           <p className="text-sm md:text-base text-gray-500 mt-2 ml-1">
-            Enter patient demographics, insurance, and emergency details.
+            Enter patient demographics and emergency details.
           </p>
         </div>
         
@@ -308,7 +304,7 @@ export default function RegisterPatient() {
           </div>
         </div>
 
-        {/* --- SECTION 3: EMERGENCY & INSURANCE (Split) --- */}
+        {/* --- SECTION 3: EMERGENCY  --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* Emergency Contact */}
@@ -357,7 +353,7 @@ export default function RegisterPatient() {
               </div>
           </div>
 
-          {/* Insurance / Payment */}
+          {/* Payment */}
           <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
               <h3 className="text-base md:text-lg font-bold text-gray-800 mb-6 flex items-center gap-2 border-b border-gray-100 pb-2">
                   <CreditCard size={20} className="text-green-600" /> Payment & Billing
@@ -371,29 +367,8 @@ export default function RegisterPatient() {
                               <input type="radio" name="paymentMode" value="Cash" checked={form.paymentMode === "Cash"} onChange={handleChange} className="hidden" />
                               Cash
                           </label>
-                          <label className={`flex-1 cursor-pointer border rounded-xl p-3 flex items-center justify-center gap-2 transition-all text-sm font-medium ${form.paymentMode === 'Insurance' ? 'bg-[#073159] text-white border-[#073159]' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
-                              <input type="radio" name="paymentMode" value="Insurance" checked={form.paymentMode === "Insurance"} onChange={handleChange} className="hidden" />
-                              Insurance
-                          </label>
                       </div>
                   </div>
-
-                  {form.paymentMode === "Insurance" && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                          <div className="space-y-1">
-                              <label className="text-xs font-bold text-gray-600 uppercase">Provider</label>
-                              <select name="insuranceProvider" value={form.insuranceProvider} onChange={handleChange} className="w-full p-3 rounded-xl border border-gray-200 outline-none bg-white text-sm">
-                                  <option value="">Select Provider</option>
-                                  <option value="NHIS">NHIS</option>
-                                  <option value="Acacia">Acacia</option>
-                              </select>
-                          </div>
-                          <div className="space-y-1">
-                              <label className="text-xs font-bold text-gray-600 uppercase">Member No.</label>
-                              <input type="text" name="insuranceNumber" value={form.insuranceNumber} onChange={handleChange} placeholder="Provider ID" className="w-full p-3 rounded-xl border border-gray-200 outline-none text-sm bg-gray-50 focus:bg-white transition-all" />
-                          </div>
-                      </div>
-                  )}
                   
                   <div className="space-y-1 pt-2">
                       <label className="text-xs font-bold text-gray-600 uppercase">Important Medical Flags</label>

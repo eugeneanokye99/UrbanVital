@@ -26,7 +26,6 @@ export default function PhlebotomistDashboard() {
     { id: 2, title: "Dr. Mensah", message: "Please prioritize Malaria RDTs for waiting room B.", type: "info" },
   ]);
 
-  // Fetch dashboard data
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -37,8 +36,6 @@ export default function PhlebotomistDashboard() {
       const data = await fetchDashboardSummary();
       setDashboardData(data);
       
-      // Filter for patients waiting for vitals
-      // In a real app, you'd filter by status === 'Checked In' or 'Waiting for Vitals'
       if (data?.recent_activity?.visits) {
         setVitalsQueue(data.recent_activity.visits.slice(0, 10)); 
       }
@@ -62,6 +59,23 @@ export default function PhlebotomistDashboard() {
     }
   };
 
+  // --- NEW: Handle Taking Vitals ---
+const handleTakeVitals = (visit: any) => {
+    // FIX: Navigate to the base route (no ID in URL) but pass data in state
+    navigate("/phlebotomist/recordvitals", { 
+        state: { 
+            patient: {
+                id: visit.patient_id || visit.id, 
+                name: visit.patient_name || "Unknown Patient",
+                mrn: visit.mrn || "NO-MRN",
+                gender: visit.gender || "N/A", 
+                age: visit.age || "--", 
+                // Add any other fields you need
+            } 
+        } 
+    });
+};
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto flex items-center justify-center h-96">
@@ -76,7 +90,7 @@ export default function PhlebotomistDashboard() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
       
-      {/* --- Header Section --- */}
+      {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl md:text-3xl font-bold text-[#073159]">
@@ -106,22 +120,18 @@ export default function PhlebotomistDashboard() {
         </div>
       </div>
 
-      {/* --- Quick Stats Cards (Clinical Focus) --- */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        
-        {/* Metric 1: Queue Size */}
         <MetricCard 
           title="Pending Vitals" 
           value={dashboardData?.summary?.active_visits?.toString() || "0"} 
           change="Waiting" 
-          positive={false} // Red/Orange if queue is long
+          positive={false} 
           icon={<Activity className="w-6 h-6 text-orange-600" />} 
           color="bg-orange-50"
-          onClick={() => navigate("/phlebotomist/checkin")} // Navigates to queue
+          onClick={() => navigate("/phlebotomist/checkin")} 
           subtext="Patients in waiting room"
         />
-
-        {/* Metric 2: Completed Work */}
         <MetricCard 
           title="Vitals Completed" 
           value={dashboardData?.summary?.today_visits?.toString() || "0"} 
@@ -131,8 +141,6 @@ export default function PhlebotomistDashboard() {
           color="bg-green-50"
           subtext="Processed successfully"
         />
-
-        {/* Metric 3: Registrations */}
         <MetricCard 
           title="New Registrations" 
           value={dashboardData?.summary?.today_patients?.toString() || "0"} 
@@ -143,8 +151,6 @@ export default function PhlebotomistDashboard() {
           onClick={() => navigate("/phlebotomist/patients")}
           subtext="Added to system"
         />
-
-        {/* Metric 4: Referrals/Handover */}
         <MetricCard 
           title="Sent to Doctor/Lab" 
           value={dashboardData?.summary?.referrals?.toString() || "0"} 
@@ -156,10 +162,10 @@ export default function PhlebotomistDashboard() {
         />
       </div>
 
-      {/* --- Main Content Grid --- */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
         
-        {/* Left Column: Vitals Queue (Priority) */}
+        {/* Left Column: Vitals Queue */}
         <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full">
           <div className="p-5 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
             <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm md:text-lg">
@@ -188,7 +194,11 @@ export default function PhlebotomistDashboard() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {vitalsQueue.map((visit) => (
-                    <tr key={visit.id} className="hover:bg-gray-50 transition-colors">
+                    <tr 
+                        key={visit.id} 
+                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => handleTakeVitals(visit)} // Clicking row also triggers action
+                    >
                       <td className="px-6 py-4 font-mono text-gray-500 whitespace-nowrap">
                         {formatTime(visit.check_in_time)}
                       </td>
@@ -206,7 +216,10 @@ export default function PhlebotomistDashboard() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button 
-                            onClick={() => navigate(`/phlebotomist/vitals/${visit.id}`)}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent double trigger
+                                handleTakeVitals(visit);
+                            }}
                             className="bg-[#073159] text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#062a4d] transition-colors"
                         >
                             Take Vitals
@@ -234,10 +247,9 @@ export default function PhlebotomistDashboard() {
           </div>
         </div>
 
-        {/* Right Column: Workflow & Notices */}
+        {/* Right Column: Workflow */}
         <div className="space-y-6 md:space-y-8">
           
-          {/* Quick Actions Panel */}
           <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
             <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 text-sm md:text-base">
                 <ClipboardList className="w-4 h-4 text-blue-500" />
@@ -257,7 +269,7 @@ export default function PhlebotomistDashboard() {
                     </div>
                 </button>
                 <button 
-                    onClick={() => navigate("/phlebotomist/checkin")}
+                    onClick={() => navigate("/phlebotomist/recordvitals")}
                     className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-gray-300 hover:border-[#073159] hover:bg-blue-50 transition-all text-left group"
                 >
                      <div className="h-8 w-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-colors">
@@ -271,7 +283,6 @@ export default function PhlebotomistDashboard() {
             </div>
           </div>
 
-          {/* Notices */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
             <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 text-sm md:text-base">
               <AlertTriangle className="w-4 h-4 text-orange-500" />
