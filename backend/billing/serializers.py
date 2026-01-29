@@ -101,7 +101,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'invoice_number', 'patient', 'patient_name', 'patient_mrn', 'walkin_id',
             'status', 'total_amount', 'amount_paid', 'balance', 'invoice_date',
-            'payment_method', 'items_count', 'items'
+            'payment_method', 'items_count', 'items', 'notes'
         ]
         extra_kwargs = {
             'patient': {'required': False, 'allow_null': True},  # Patient can be null

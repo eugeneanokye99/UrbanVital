@@ -14,8 +14,8 @@ import {
     ArrowRight,
     Calendar
 } from "lucide-react";
-
-
+import { fetchPrescriptionQueue, fetchPharmacyStats } from "../../services/api";
+import { toast } from "react-hot-toast";
 
 export default function PharmacyDashboard() {
     const navigate = useNavigate();
@@ -27,7 +27,8 @@ export default function PharmacyDashboard() {
 
     // Data States
     const [prescriptions, setPrescriptions] = useState<any[]>([]);
-    const [stats, setStats] = useState({ today: 0, week: 0 });
+    const [stats, setStats] = useState({ today: 0, week: 0, total: 0 });
+    const [topDrugs, setTopDrugs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Load Data
@@ -37,27 +38,25 @@ export default function PharmacyDashboard() {
 
     const loadDashboardData = async () => {
         setLoading(true);
+        try {
+            // Fetch prescriptions from consultations
+            const prescriptionsData = await fetchPrescriptionQueue();
+            setPrescriptions(prescriptionsData || []);
 
-        setTimeout(() => {
-            const today = new Date().toDateString();
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-            let todayRev = 0;
-            let weekRev = 0;
-
-            MOCK_DATA.forEach(rx => {
-                if (rx.status === "Paid") {
-                    const rxDate = new Date(rx.created_at);
-                    if (rxDate >= oneWeekAgo) weekRev += rx.total_amount;
-                    if (rxDate.toDateString() === today) todayRev += rx.total_amount;
-                }
+            // Fetch pharmacy stats from backend
+            const statsData = await fetchPharmacyStats();
+            setStats({
+                today: statsData.today_revenue || 0,
+                week: statsData.week_revenue || 0,
+                total: statsData.total_revenue || 0
             });
-
-            setStats({ today: todayRev, week: weekRev });
-            setPrescriptions(MOCK_DATA);
+            setTopDrugs(statsData.top_drugs || []);
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            toast.error('Failed to load dashboard data');
+        } finally {
             setLoading(false);
-        }, 800);
+        }
     };
 
     useEffect(() => {
@@ -100,57 +99,59 @@ export default function PharmacyDashboard() {
     return (
         <div className="max-w-7xl mx-auto space-y-6">
 
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-[#073159] flex items-center gap-2">
-                        <Pill className="w-6 h-6 sm:w-8 sm:h-8 text-[#073159]" />
-                        Pharmacy Dashboard
-                    </h1>
-                    <p className="text-sm sm:text-base text-gray-500">Overview of pending prescriptions & revenue.</p>
+            {/* --- TOP ROW: STATS & ANALYTICS --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+
+                {/* Pharmacy Revenue Card */}
+                <div className="bg-gradient-to-br from-[#073159] to-[#0a4378] rounded-2xl p-5 text-white shadow-lg shadow-blue-900/10 flex flex-col justify-between h-[130px] relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4 transition-transform group-hover:scale-110">
+                        <DollarSign size={80} />
+                    </div>
+                    <div>
+                        <p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+                            <TrendingUp size={14} /> Today's Revenue
+                        </p>
+                        <h2 className="text-3xl font-extrabold tracking-tight">{formatMoney(stats.today)}</h2>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs bg-white/10 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
+                        <Calendar size={12} />
+                        <span>Weekly: {formatMoney(stats.week)}</span>
+                    </div>
                 </div>
-            </div>
 
-            {/* --- DASHBOARD TOP SECTION (STATS) --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Revenue Cards */}
-                <div className="space-y-4">
-                    {/* Today */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between transition-all hover:shadow-md h-[130px]">
-                        <div>
-                            <p className="text-gray-500 text-xs font-bold uppercase mb-1 flex items-center gap-1"><Clock size={12} /> Today's Revenue</p>
-                            <h2 className="text-3xl font-extrabold text-[#073159]">
-                                {loading ? <Loader2 className="animate-spin h-8 w-8" /> : formatMoney(stats.today)}
-                            </h2>
-                            <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-                                <TrendingUp size={12} /> +12% vs yesterday
-                            </p>
-                        </div>
-                        <div className="p-3 bg-green-50 text-green-600 rounded-xl shadow-inner">
-                            <DollarSign size={28} />
-                        </div>
+                {/* Total Revenue Card */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-[130px] relative overflow-hidden">
+                    <div className="absolute right-0 top-0 opacity-5 transform translate-x-4 -translate-y-4">
+                        <TrendingUp size={80} className="text-green-600" />
                     </div>
-
-                    {/* Weekly */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between transition-all hover:shadow-md h-[130px]">
-                        <div>
-                            <p className="text-gray-500 text-xs font-bold uppercase mb-1 flex items-center gap-1"><Calendar size={12} /> This Week</p>
-                            <h2 className="text-3xl font-extrabold text-[#073159]">
-                                {loading ? <Loader2 className="animate-spin h-8 w-8" /> : formatMoney(stats.week)}
-                            </h2>
-                            <p className="text-xs text-blue-600 font-medium mt-1 flex items-center gap-1">
-                                On track
-                            </p>
-                        </div>
-                        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shadow-inner">
-                            <TrendingUp size={28} />
-                        </div>
+                    <div>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+                            <TrendingUp size={14} className="text-green-600" /> Total Revenue
+                        </p>
+                        <h2 className="text-3xl font-extrabold text-green-600">{formatMoney(stats.total)}</h2>
                     </div>
+                    <p className="text-xs text-gray-500 font-bold bg-green-50 w-fit px-2 py-1 rounded-lg">
+                        Lifetime Sales
+                    </p>
+                </div>
+
+                {/* Queue Status Card */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col justify-between h-[130px]">
+                    <div>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+                            <Clock size={14} /> Pending Queue
+                        </p>
+                        <h2 className="text-3xl font-extrabold text-[#073159]">
+                            {prescriptions.filter(p => p.status === 'Pending').length}
+                        </h2>
+                    </div>
+                    <p className="text-xs text-orange-500 font-bold bg-orange-50 w-fit px-2 py-1 rounded-lg">
+                        Waiting for dispensing
+                    </p>
                 </div>
 
                 {/* Top Selling Drugs List */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[276px]">
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[276px] md:h-[130px] lg:h-[130px] xl:h-[276px]">
                     <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                         <h3 className="font-bold text-[#073159] flex items-center gap-2">
                             <BarChart3 size={18} /> Top 5 Selling Products
@@ -225,8 +226,8 @@ export default function PharmacyDashboard() {
                                 <div
                                     key={rx.id}
                                     className={`bg-white rounded-2xl shadow-sm border overflow-hidden flex flex-col transition-all duration-500 ${isHighlighted
-                                            ? "border-yellow-400 ring-2 ring-yellow-200 bg-yellow-50 transform scale-[1.02]"
-                                            : "border-gray-100 hover:shadow-md hover:border-blue-200"
+                                        ? "border-yellow-400 ring-2 ring-yellow-200 bg-yellow-50 transform scale-[1.02]"
+                                        : "border-gray-100 hover:shadow-md hover:border-blue-200"
                                         }`}
                                 >
                                     {/* Card Header */}
@@ -299,7 +300,6 @@ export default function PharmacyDashboard() {
                     </div>
                 )}
             </div>
-
         </div>
     );
 }

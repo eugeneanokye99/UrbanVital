@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
-    History, Search, Download, Calendar, X, TrendingUp, BarChart3, PieChart, List
+    History, Search, Download, Calendar, X, TrendingUp, BarChart3, PieChart, List, RefreshCw, User, CreditCard, UserCheck, UserPlus
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -17,13 +17,15 @@ const groupByDate = (data: any[]) => {
 };
 
 export default function PharmacyHistory() {
-    const { globalSearch } = useOutletContext<{ globalSearch: string }>();
+    const outletContext = useOutletContext<{ globalSearch: string }>() || {};
+    const globalSearch = outletContext.globalSearch || "";
 
     const [localSearch, setLocalSearch] = useState(globalSearch);
     const [dateFilter, setDateFilter] = useState("");
     const [activeTab, setActiveTab] = useState<"list" | "analytics">("list");
     const [sales, setSales] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [viewingSale, setViewingSale] = useState<any>(null);
 
     useEffect(() => { setLocalSearch(globalSearch); }, [globalSearch]);
 
@@ -36,7 +38,25 @@ export default function PharmacyHistory() {
         setLoading(true);
         try {
             const data = await fetchPharmacySalesHistory();
-            setSales(data || []);
+
+            // Transform data to match Admin Records robustness
+            const transformedData = (data || []).map((sale: any) => ({
+                ...sale,
+                pharmacist: sale.pharmacist || "-",
+                // Ensure items_detail exists, or create from string fallback
+                items_detail: sale.items_detail || [],
+                // Create 'drugs' alias for compatibility/fallback logic
+                drugs: sale.items_detail && sale.items_detail.length > 0
+                    ? sale.items_detail
+                    : (sale.items ? sale.items.split(',').map((desc: string) => ({
+                        name: desc.trim(),
+                        qty: 1,
+                        price: 0,
+                        total: 0
+                    })) : [])
+            }));
+
+            setSales(transformedData);
         } catch (error) {
             console.error('Error loading sales history:', error);
             toast.error('Failed to load sales history');
@@ -121,6 +141,15 @@ export default function PharmacyHistory() {
                     <p className="text-sm text-gray-500">Track dispensed medication and revenue.</p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={loadSalesHistory}
+                        disabled={loading}
+                        className="px-4 py-2 rounded-xl font-bold text-sm bg-white text-gray-600 border hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2 transition-all"
+                        title="Refresh sales history"
+                    >
+                        <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                        Refresh
+                    </button>
                     <button onClick={() => setActiveTab("list")} className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${activeTab === "list" ? "bg-[#073159] text-white shadow-lg" : "bg-white text-gray-600 border"}`}>Transaction Log</button>
                     <button onClick={() => setActiveTab("analytics")} className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${activeTab === "analytics" ? "bg-[#073159] text-white shadow-lg" : "bg-white text-gray-600 border"}`}>Analytics</button>
                 </div>
@@ -205,8 +234,12 @@ export default function PharmacyHistory() {
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
                                             {items.map((sale: any) => (
-                                                <tr key={sale.id} className="hover:bg-blue-50/30 transition-colors">
-                                                    <td className="px-6 py-4 font-mono text-[#073159] font-bold text-xs">{sale.id}</td>
+                                                <tr
+                                                    key={sale.id}
+                                                    className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                                                    onClick={() => setViewingSale(sale)}
+                                                >
+                                                    <td className="px-6 py-4 font-mono text-[#073159] font-bold text-xs group-hover:text-blue-600">{sale.id}</td>
                                                     <td className="px-6 py-4 text-gray-500 text-xs">{sale.time}</td>
                                                     <td className="px-6 py-4 font-bold text-gray-800">{sale.patient}</td>
                                                     <td className="px-6 py-4 text-gray-600 truncate max-w-[200px] text-xs">{sale.items}</td>
@@ -331,6 +364,95 @@ export default function PharmacyHistory() {
                 </div>
             )}
 
+            {/* --- VIEW SALE MODAL --- */}
+            {viewingSale && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
+                            <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h3 className="text-xl font-bold text-[#073159]">Sale Details</h3>
+                                    <span className={`px-2 py-0.5 rounded text-xs font-bold border ${viewingSale.status === 'Pending' ? 'bg-orange-100 text-orange-700 border-orange-200' : 'bg-green-100 text-green-700 border-green-200'}`}>
+                                        {viewingSale.status || 'Dispensed'}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-500">Transaction ID: <span className="font-mono text-gray-700">{viewingSale.id}</span></p>
+                            </div>
+                            <button onClick={() => setViewingSale(null)} className="p-1 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6 overflow-y-auto">
+
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-2 gap-6 mb-8 p-4 bg-blue-50/30 rounded-xl border border-blue-100">
+                                <div>
+                                    <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Patient</span>
+                                    <p className="font-bold text-gray-800 flex items-center gap-2">
+                                        <User size={14} className="text-blue-500" /> {viewingSale.patient}
+                                    </p>
+                                    <div className="mt-1 inline-block">
+                                        {viewingSale.is_walkin ? (
+                                            <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><UserPlus size={10} /> Walk-In</span>
+                                        ) : (
+                                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><UserCheck size={10} /> Registered</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Pharmacist</span>
+                                    <p className="font-bold text-gray-800">{viewingSale.pharmacist}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Payment Method</span>
+                                    <p className="font-bold text-gray-800 flex items-center gap-2">
+                                        <CreditCard size={14} className="text-green-500" /> {viewingSale.method}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Date</span>
+                                    <p className="font-bold text-gray-800">{viewingSale.date} {viewingSale.time}</p>
+                                </div>
+                            </div>
+
+                            {/* Drugs List */}
+                            <h4 className="text-sm font-bold text-gray-500 uppercase mb-3 border-b pb-2 flex justify-between">
+                                <span>Item Description</span>
+                                <span>Subtotal</span>
+                            </h4>
+                            <div className="space-y-3 mb-6">
+                                {viewingSale.drugs && viewingSale.drugs.length > 0 ? (
+                                    viewingSale.drugs.map((drug: any, idx: number) => (
+                                        <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div>
+                                                <p className="font-bold text-gray-800">{drug.name}</p>
+                                                <p className="text-xs text-gray-500">Qty: {drug.qty} x ₵{drug.price ? drug.price.toFixed(2) : "0.00"}</p>
+                                            </div>
+                                            <span className="font-mono font-bold text-gray-700">
+                                                ₵{drug.total ? drug.total.toFixed(2) : ((drug.qty || 0) * (drug.price || 0)).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-400 italic">Item details not available</p>
+                                )}
+                            </div>
+
+                            {/* Totals */}
+                            <div className="flex justify-end border-t border-gray-100 pt-4">
+                                <div className="text-right">
+                                    <span className="text-sm text-gray-500 mr-4">Total Amount:</span>
+                                    <span className="text-2xl font-bold text-[#073159]">₵{viewingSale.amount.toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import logo from "../../assets/urbanvital-logo.png";
-import { fetchConsultationById, fetchPharmacyItems, updateConsultation } from "../../services/api";
+import { fetchPharmacyItems, updateConsultation } from "../../services/api";
 
 export default function PrescriptionReview() {
     const navigate = useNavigate();
@@ -171,8 +171,8 @@ export default function PrescriptionReview() {
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Payment:</span>
                                 <span className={`font-bold px-2 py-0.5 rounded text-xs ${prescription.paymentStatus === "Paid"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-red-100 text-red-700"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
                                     }`}>
                                     {prescription.paymentStatus}
                                 </span>

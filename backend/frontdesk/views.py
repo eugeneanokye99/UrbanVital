@@ -207,9 +207,17 @@ def admin_comprehensive_stats(request):
     
     recent_transactions = []
     for payment in recent_payments:
+        # Determine patient name (patient or walk-in)
+        if payment.invoice.patient:
+            patient_name = payment.invoice.patient.name
+        elif payment.invoice.walkin_id:
+            patient_name = f"Walk-in ({payment.invoice.walkin_id})"
+        else:
+            patient_name = "Walk-in Customer"
+            
         recent_transactions.append({
             'id': payment.id,
-            'patient': payment.invoice.patient.name,
+            'patient': patient_name,
             'amount': float(payment.amount),
             'method': payment.payment_method,
             'date': payment.payment_date,

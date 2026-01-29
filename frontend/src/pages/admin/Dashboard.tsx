@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  TrendingUp,
+  TrendingDown,
   Calendar,
   ArrowRight,
   UserPlus,
@@ -21,7 +21,7 @@ import { fetchNotifications } from '../../services/notifications';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  
+
   // State for all data
   const [analytics, setAnalytics] = useState({
     revenue: 0,
@@ -98,14 +98,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-      
+
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
           <AlertCircle className="text-red-500 mt-0.5 flex-shrink-0" size={20} />
           <div className="flex-1">
             <p className="text-red-700 font-medium">{error}</p>
-            <button 
+            <button
               onClick={handleRefresh}
               className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium flex items-center gap-1"
             >
@@ -144,8 +144,8 @@ export default function AdminDashboard() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-          <button 
-            onClick={() => navigate("/admin/register")} 
+          <button
+            onClick={() => navigate("/admin/register")}
             disabled={isLoading}
             className="flex-1 lg:flex-none flex justify-center items-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl hover:bg-blue-100 transition-colors font-bold text-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -168,8 +168,8 @@ export default function AdminDashboard() {
         <>
           {/* --- Key Metrics (Clickable) --- */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            <MetricCard 
-              title="Total Revenue" 
+            <MetricCard
+              title="Today's Revenue"
               value={`GH₵ ${analytics.revenue.toLocaleString()}`}
               change={analytics.revenueChange}
               positive={true}
@@ -177,8 +177,8 @@ export default function AdminDashboard() {
               color="bg-green-50"
               onClick={() => navigate('/admin/finance')} // Navigates to Finance
             />
-            <MetricCard 
-              title="Total Visits" 
+            <MetricCard
+              title="Total Visits"
               value={analytics.patients.toString()}
               change={analytics.patientsChange}
               positive={true}
@@ -186,8 +186,8 @@ export default function AdminDashboard() {
               color="bg-blue-50"
               onClick={() => navigate('/admin/patient-visits')} // Navigates to Patients List
             />
-            <MetricCard 
-              title="Inventory Count" 
+            <MetricCard
+              title="Inventory Count"
               value={analytics.drugs.toString()}
               subtext="Stock Items"
               icon={<Package className="w-6 h-6 text-purple-600" />}
@@ -199,10 +199,10 @@ export default function AdminDashboard() {
 
           {/* --- Main Content Grid --- */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
-            
+
             {/* Left Column: Charts (Span 2) */}
             <div className="xl:col-span-2 space-y-6 md:space-y-8">
-              
+
               {/* Revenue Chart */}
               <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
@@ -216,13 +216,13 @@ export default function AdminDashboard() {
                     <MoreHorizontal size={20} />
                   </button>
                 </div>
-                
+
                 <div className="w-full h-48 md:h-64 overflow-hidden relative">
                   <svg viewBox="0 0 600 220" className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="gradientRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#073159" stopOpacity="0.2"/>
-                        <stop offset="100%" stopColor="#073159" stopOpacity="0"/>
+                        <stop offset="0%" stopColor="#073159" stopOpacity="0.2" />
+                        <stop offset="100%" stopColor="#073159" stopOpacity="0" />
                       </linearGradient>
                     </defs>
 
@@ -230,24 +230,24 @@ export default function AdminDashboard() {
                     {[0, 1, 2, 3, 4].map((i) => (
                       <line key={i} x1="0" y1={40 + i * 40} x2="600" y2={40 + i * 40} stroke="#f3f4f6" strokeWidth="1" strokeDasharray="4 4" />
                     ))}
-                    
+
                     {/* Area Fill */}
                     <path
                       d={`M 0 200 ` + weeklyData.map((d, i) => {
-                          const x = (i / (weeklyData.length - 1)) * 600;
-                          const y = 200 - (d.value / (maxWeekly || 1)) * 140;
-                          return `L ${x} ${y}`;
-                        }).join(" ") + ` L 600 200 Z`}
+                        const x = (i / (weeklyData.length - 1)) * 600;
+                        const y = 200 - (d.value / (maxWeekly || 1)) * 140;
+                        return `L ${x} ${y}`;
+                      }).join(" ") + ` L 600 200 Z`}
                       fill="url(#gradientRevenue)"
                     />
 
                     {/* Line Path */}
                     <path
                       d={weeklyData.map((d, i) => {
-                          const x = (i / (weeklyData.length - 1)) * 600;
-                          const y = 200 - (d.value / (maxWeekly || 1)) * 140;
-                          return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-                        }).join(" ")}
+                        const x = (i / (weeklyData.length - 1)) * 600;
+                        const y = 200 - (d.value / (maxWeekly || 1)) * 140;
+                        return `${i === 0 ? "M" : "L"} ${x} ${y}`;
+                      }).join(" ")}
                       fill="none"
                       stroke="#073159"
                       strokeWidth="3"
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
                     <CreditCard className="w-5 h-5 text-[#073159]" />
                     Recent Transactions
                   </h3>
-                  <button 
+                  <button
                     onClick={() => navigate('/admin/finance')}
                     className="text-xs md:text-sm font-medium text-blue-600 hover:underline py-2 px-3 hover:bg-blue-50 rounded-lg"
                   >
@@ -290,9 +290,8 @@ export default function AdminDashboard() {
                             <td className="px-6 py-4 text-gray-600">{tx.service}</td>
                             <td className="px-6 py-4 font-bold text-gray-900">GH₵ {tx.amount}</td>
                             <td className="px-6 py-4">
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                tx.status === "Paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                              }`}>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${tx.status === "Paid" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                                }`}>
                                 {tx.status}
                               </span>
                             </td>
@@ -313,7 +312,7 @@ export default function AdminDashboard() {
 
             {/* Right Column: Alerts & Side Widgets (Span 1) */}
             <div className="space-y-6 md:space-y-8">
-              
+
               {/* Alerts Widget: Action Center Preview */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -321,9 +320,8 @@ export default function AdminDashboard() {
                     <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />
                     Action Center
                   </h3>
-                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                    unreadCount > 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-                  }`}>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${unreadCount > 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                    }`}>
                     {unreadCount}
                   </span>
                 </div>
@@ -331,11 +329,10 @@ export default function AdminDashboard() {
                 {notifications.length > 0 ? (
                   <div className="space-y-4">
                     {notifications.slice(0, 3).map((notif) => (
-                      <div 
-                        key={notif.id} 
-                        className={`p-4 rounded-xl border border-l-4 transition-all hover:translate-x-1 ${
-                          notif.is_read ? 'bg-gray-50 border-gray-100 border-l-gray-300' : 'bg-orange-50 border-orange-200 border-l-orange-500'
-                        }`}
+                      <div
+                        key={notif.id}
+                        className={`p-4 rounded-xl border border-l-4 transition-all hover:translate-x-1 ${notif.is_read ? 'bg-gray-50 border-gray-100 border-l-gray-300' : 'bg-orange-50 border-orange-200 border-l-orange-500'
+                          }`}
                       >
                         <h4 className="font-bold text-gray-800 text-sm mb-1">{notif.action}</h4>
                         <p className="text-xs text-gray-600 mb-3">{notif.message}</p>
@@ -404,26 +401,26 @@ interface MetricCardProps {
 
 function MetricCard({ icon, title, value, change, positive, color, subtext, className, onClick }: MetricCardProps) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between transition-all hover:shadow-md active:scale-98 ${className} ${onClick ? 'cursor-pointer' : ''}`}
     >
       <div>
         <p className="text-xs md:text-sm font-medium text-gray-500 mb-2">{title}</p>
         <h3 className="text-2xl md:text-3xl font-bold text-[#073159]">{value}</h3>
-        
+
         <div className="flex items-center mt-3 gap-2">
-           {change ? (
-             <>
-               <span className={`flex items-center gap-1 text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full ${positive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                 {positive ? <TrendingUp size={12}/> : <TrendingDown size={12} />}
-                 {change}
-               </span>
-               <span className="text-[10px] md:text-xs text-gray-400">vs last month</span>
-             </>
-           ) : (
-             <span className="text-xs text-gray-400">{subtext}</span>
-           )}
+          {change ? (
+            <>
+              <span className={`flex items-center gap-1 text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full ${positive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {positive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                {change}
+              </span>
+              <span className="text-[10px] md:text-xs text-gray-400">vs last month</span>
+            </>
+          ) : (
+            <span className="text-xs text-gray-400">{subtext}</span>
+          )}
         </div>
       </div>
       <div className={`p-3 rounded-xl ${color}`}>
