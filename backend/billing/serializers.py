@@ -45,7 +45,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             'status': {'required': False},  # Status is auto-calculated
-            'patient': {'required': False}  # Patient can be null for walk-in
+            'patient': {'required': False, 'allow_null': True},  # Patient can be null for walk-in
+            'walkin_id': {'required': False, 'allow_null': True}  # Walk-in ID is optional
         }
     
     def create(self, validated_data):
@@ -98,10 +99,11 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invoice
         fields = [
-            'id', 'invoice_number', 'patient', 'patient_name', 'patient_mrn',
+            'id', 'invoice_number', 'patient', 'patient_name', 'patient_mrn', 'walkin_id',
             'status', 'total_amount', 'amount_paid', 'balance', 'invoice_date',
             'payment_method', 'items_count', 'items'
         ]
         extra_kwargs = {
-            'patient': {'required': False}  # Patient can be null
+            'patient': {'required': False, 'allow_null': True},  # Patient can be null
+            'walkin_id': {'required': False, 'allow_null': True}  # Walk-in ID is optional
         }

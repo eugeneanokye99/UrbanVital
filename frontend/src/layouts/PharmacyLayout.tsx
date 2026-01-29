@@ -23,10 +23,6 @@ export default function PharmacyLayout() {
     emailReport: false
   });
 
-  const [sales, setSales] = useState([
-    { id: "RX-1001", date: "24 Oct 2025", time: "10:45 AM", patient: "Williams Boampong", items: "Paracetamol, Amoxicillin", amount: 45.00, method: "Cash", pharmacist: "John Doe" },
-  ]);
-
   const [inventory, setInventory] = useState(INITIAL_INVENTORY_DATA);
   const [generatedAlerts, setGeneratedAlerts] = useState<any[]>([]);
 
@@ -91,8 +87,6 @@ export default function PharmacyLayout() {
            <Outlet context={{ 
                globalSearch, 
                setGlobalSearch,
-               sales, 
-               setSales, 
                inventory, 
                setInventory,
                settings, 

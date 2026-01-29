@@ -1,9 +1,3 @@
-// DELETE: Delete lab test
-export const deleteLabTest = async (id: number) => {
-  const response = await API.delete(`/lab/tests/${id}/`);
-  // Invalidate relevant caches if any (add if needed)
-  return response.data;
-};
 // src/api.tsx
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -22,8 +16,8 @@ function parseJwt(token: string): JwtPayload | null {
 
 // --- Base Setup ---
 const API = axios.create({
-  // baseURL: "http://127.0.0.1:8000/api", // Django backend URL
-   baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
+  baseURL: "http://127.0.0.1:8000/api", // Django backend URL
+  //  baseURL: "https://urbanvital-backend.onrender.com/api", // Django backend URL
 });
 
 // Store original request queue for retry
@@ -536,6 +530,20 @@ export const fetchClinicianStats = async () => {
   const response = await API.get("/consultations/stats/");
   return response.data;
 };
+
+// Prescription Queue for Pharmacy
+export const fetchPrescriptionQueue = async (params?: {
+  status?: string;
+}) => {
+  const response = await API.get("/consultations/prescriptions/", { params });
+  return response.data;
+};
+
+// Update consultation (e.g., mark prescription as dispensed)
+export const updateConsultation = async (id: number, data: any) => {
+  const response = await API.patch(`/consultations/${id}/`, data);
+  return response.data;
+};
 // --- APPOINTMENTS API ---
 export const createAppointment = async (appointmentData: {
   patient: number;
@@ -669,6 +677,22 @@ export const processPayment = async (
 // Stats
 export const fetchBillingStats = async () => {
   const response = await API.get("/billing/stats/");
+  return response.data;
+};
+
+// Pharmacy Sales History
+export const fetchPharmacySalesHistory = async (params?: {
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+}) => {
+  const response = await API.get("/billing/pharmacy-sales/", { params });
+  return response.data;
+};
+
+// Pharmacy Statistics
+export const fetchPharmacyStats = async () => {
+  const response = await API.get("/billing/pharmacy-stats/");
   return response.data;
 };
 
@@ -889,6 +913,54 @@ export const updateInventoryAfterSale = async (cartItems: any[]) => {
     }))
   });
   return response.data;
+};
+
+
+// --- INVENTORY ADJUSTMENTS/RETURNS API ---
+
+// GET: Fetch all adjustments
+export const fetchInventoryAdjustments = async (params?: {
+  status?: string;
+  type?: string;
+  search?: string;
+}) => {
+  const response = await API.get("/inventory/adjustments/", { params });
+  return response.data;
+};
+
+// POST: Create adjustment/return
+export const createInventoryAdjustment = async (adjustmentData: {
+  inventory_item: number;
+  batch_number?: string;
+  quantity: number;
+  adjustment_type: string;
+  reason: string;
+}) => {
+  const response = await API.post("/inventory/adjustments/", adjustmentData);
+  return response.data;
+};
+
+// GET: Fetch single adjustment
+export const fetchInventoryAdjustment = async (id: number) => {
+  const response = await API.get(`/inventory/adjustments/${id}/`);
+  return response.data;
+};
+
+// PUT/PATCH: Update adjustment
+export const updateInventoryAdjustment = async (id: number, adjustmentData: any) => {
+  const response = await API.patch(`/inventory/adjustments/${id}/`, adjustmentData);
+  return response.data;
+};
+
+// POST: Approve adjustment
+export const approveInventoryAdjustment = async (id: number) => {
+  const response = await API.post(`/inventory/adjustments/${id}/approve/`);
+  return response.data;
+};
+
+// DELETE: Delete adjustment
+export const deleteInventoryAdjustment = async (id: number) => {
+  await API.delete(`/inventory/adjustments/${id}/`);
 };
 
 
@@ -1423,5 +1495,10 @@ export const verifyLabResult = async (resultId: number) => {
   return response.data;
 };
 
+// DELETE: Delete lab test
+export const deleteLabTest = async (id: number) => {
+  const response = await API.delete(`/lab/tests/${id}/`);
+  return response.data;
+};
 
 export default API;

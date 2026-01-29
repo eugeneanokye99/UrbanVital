@@ -1,13 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
-import { useOutletContext } from "react-router-dom"; 
-import { 
-  Search, 
-  ShoppingCart, 
-  Trash2, 
-  Plus, 
-  Minus, 
-  User, 
-  Printer, 
+import { useOutletContext } from "react-router-dom";
+import {
+  Search,
+  ShoppingCart,
+  Trash2,
+  Plus,
+  Minus,
+  User,
+  Printer,
   Check,
   Loader2,
   Package,
@@ -19,13 +19,13 @@ import logo from "../../assets/urbanvital-logo.png";
 import { fetchPatients, fetchPharmacyItems, createInvoice, processPayment, addInvoiceItem } from "../../services/api";
 
 export default function PharmacyPOS() {
-  const { setSales } = useOutletContext<any>(); 
-  
+  // No longer need setSales from context 
+
   // --- States ---
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<any[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("Cash");
-  
+
   // Patient / Walk-in States
   const [patientQuery, setPatientQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
@@ -36,19 +36,20 @@ export default function PharmacyPOS() {
   // Receipt States
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
-  
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // API Data States
   const [patients, setPatients] = useState<any[]>([]);
   const [inventory, setInventory] = useState<any[]>([]);
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
-  
+
   // --- Initialization ---
   useEffect(() => {
     fetchInventoryData();
     fetchPatientsData();
   }, []);
-  
+
   const fetchInventoryData = async () => {
     try {
       const data = await fetchPharmacyItems();
@@ -59,7 +60,7 @@ export default function PharmacyPOS() {
       setHasInitialLoad(true);
     }
   };
-  
+
   const fetchPatientsData = async (searchTerm = "") => {
     setLoadingPatients(true);
     try {
@@ -79,7 +80,7 @@ export default function PharmacyPOS() {
   // --- Logic ---
   const filteredDrugs = useMemo(() => {
     if (!searchQuery) return [];
-    return inventory.filter((drug: any) => 
+    return inventory.filter((drug: any) =>
       drug.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, inventory]);
@@ -95,52 +96,52 @@ export default function PharmacyPOS() {
 
   // --- Actions ---
   const handleToggleCustomerType = (type: 'registered' | 'walkin') => {
-      if (type === 'walkin') {
-          const id = `WI-${Date.now().toString().slice(-6)}`;
-          setIsWalkIn(true);
-          setWalkInId(id);
-          setSelectedPatient(null);
-          setPatientQuery("");
-          toast("Switched to Walk-in Mode", { icon: "👣" });
-      } else {
-          setIsWalkIn(false);
-          setWalkInId("");
-      }
+    if (type === 'walkin') {
+      const id = `WI-${Date.now().toString().slice(-6)}`;
+      setIsWalkIn(true);
+      setWalkInId(id);
+      setSelectedPatient(null);
+      setPatientQuery("");
+      toast("Switched to Walk-in Mode", { icon: "👣" });
+    } else {
+      setIsWalkIn(false);
+      setWalkInId("");
+    }
   };
 
   const addToCart = (drug: any) => {
     const price = drug.selling_price || drug.price;
     const stock = drug.current_stock || drug.stock || 0;
     const existingItem = cart.find(item => item.id === drug.id);
-    
+
     if (existingItem) {
-        if (existingItem.qty < stock) {
-            setCart(cart.map(item => item.id === drug.id ? { ...item, qty: item.qty + 1 } : item));
-            toast.success(`Added another ${drug.name}`);
-        } else {
-            toast.error(`Insufficient stock`);
-        }
+      if (existingItem.qty < stock) {
+        setCart(cart.map(item => item.id === drug.id ? { ...item, qty: item.qty + 1 } : item));
+        toast.success(`Added another ${drug.name}`);
+      } else {
+        toast.error(`Insufficient stock`);
+      }
     } else {
-        if (stock > 0) {
-            setCart([...cart, { ...drug, qty: 1, price: price, original_stock: stock }]);
-            toast.success("Added to cart");
-            setSearchQuery(""); 
-        } else {
-            toast.error("Out of Stock");
-        }
+      if (stock > 0) {
+        setCart([...cart, { ...drug, qty: 1, price: price, original_stock: stock }]);
+        toast.success("Added to cart");
+        setSearchQuery("");
+      } else {
+        toast.error("Out of Stock");
+      }
     }
   };
 
   const updateQty = (id: number, delta: number) => {
     setCart(prev => prev.map(item => {
-        if (item.id === id) {
-            const newQty = item.qty + delta;
-            const stockItem = inventory.find((i: any) => i.id === id);
-            const stock = stockItem?.current_stock || stockItem?.stock || 0;
-            if (newQty > stock) { toast.error("Max stock reached"); return item; }
-            return newQty > 0 ? { ...item, qty: newQty } : item;
-        }
-        return item;
+      if (item.id === id) {
+        const newQty = item.qty + delta;
+        const stockItem = inventory.find((i: any) => i.id === id);
+        const stock = stockItem?.current_stock || stockItem?.stock || 0;
+        if (newQty > stock) { toast.error("Max stock reached"); return item; }
+        return newQty > 0 ? { ...item, qty: newQty } : item;
+      }
+      return item;
     }));
   };
 
@@ -148,9 +149,9 @@ export default function PharmacyPOS() {
   const calculateTotal = () => cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
 
   const selectPatient = (patient: any) => {
-      setSelectedPatient(patient);
-      setPatientQuery(`${patient.first_name || ''} ${patient.last_name || ''}`.trim());
-      setShowPatientSuggestions(false);
+    setSelectedPatient(patient);
+    setPatientQuery(`${patient.first_name || ''} ${patient.last_name || ''}`.trim());
+    setShowPatientSuggestions(false);
   };
 
   const handleSearchPatients = (query: string) => {
@@ -165,70 +166,76 @@ export default function PharmacyPOS() {
   const handleCompleteSale = async () => {
     if (cart.length === 0) return toast.error("Cart is empty");
     if (!selectedPatient && !isWalkIn) return toast.error("Please select a patient or Walk-in");
-    
+
+    setIsProcessing(true);
     try {
+      // Map frontend payment method to backend values
+      const paymentMethodMap: { [key: string]: string } = {
+        "Cash": "Cash",
+        "Mobile Money": "Mobile Money",
+        "Card": "Card",
+        "Insurance": "Insurance"
+      };
+
+      const backendPaymentMethod = paymentMethodMap[paymentMethod] || "Cash";
+
       // 1. Create invoice
       const invoiceData = {
         patient: selectedPatient?.id || null,
         walkin_id: isWalkIn ? walkInId : null,
         status: 'Paid',
-        payment_method: paymentMethod,
+        payment_method: backendPaymentMethod,
         notes: isWalkIn ? `Walk-in (${walkInId})` : `Registered Patient`,
       };
-      
+
       const invoiceResponse = await createInvoice(invoiceData);
       const invoiceId = invoiceResponse.id;
-      
+
       // 2. Add items
       for (const item of cart) {
         await addInvoiceItem(invoiceId, {
-            description: item.name,
-            quantity: item.qty,
-            unit_price: item.price,
-            discount: 0,
+          description: item.name,
+          quantity: item.qty,
+          unit_price: item.price,
+          discount: 0,
         });
       }
-      
-      // 3. Process Payment
+
+      // 3. Process Payment (Backend automatically deducts inventory)
       const totalAmount = calculateTotal();
       await processPayment(invoiceId, {
-          amount: totalAmount,
-          payment_method: paymentMethod,
-          reference: `POS-${Date.now()}`,
-          notes: "Pharmacy Sale"
+        amount: totalAmount,
+        payment_method: backendPaymentMethod,
+        reference: `POS-${Date.now()}`,
+        notes: "Pharmacy Sale"
       });
-      
-      // 4. Update History & Show Receipt
+
+      // 4. Show Receipt
       const now = new Date();
       const customerName = isWalkIn ? "Walk-in Customer" : `${selectedPatient.first_name} ${selectedPatient.last_name}`;
-      
-      const saleRecord = {
+
+      setReceiptData({
         id: `RX-${Math.floor(1000 + Math.random() * 9000)}`,
         invoice_id: invoiceId,
         date: now.toLocaleDateString('en-GB'),
         time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         patient: customerName,
-        items: cart.map(i => i.name).join(", "),
-        amount: totalAmount,
-        method: paymentMethod,
-        pharmacist: "Pharm. Mensah"
-      };
-      
-      setSales((prev: any) => [saleRecord, ...prev]);
-      
-      setReceiptData({
-        ...saleRecord,
         patientPhone: selectedPatient ? selectedPatient.phone : (isWalkIn ? `Ref: ${walkInId}` : "N/A"),
         cartItems: [...cart],
+        amount: totalAmount,
+        method: paymentMethod,
+        pharmacist: "Pharm. Mensah",
         invoiceId: invoiceId
       });
-      
+
       setShowReceipt(true);
       toast.success("Sale Completed!");
-      
+
     } catch (error) {
       console.error(error);
       toast.error("Transaction Failed");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -236,10 +243,10 @@ export default function PharmacyPOS() {
     const printContent = document.getElementById("printable-receipt");
     const originalContents = document.body.innerHTML;
     if (printContent) {
-        document.body.innerHTML = printContent.innerHTML;
-        window.print();
-        document.body.innerHTML = originalContents;
-        window.location.reload(); 
+      document.body.innerHTML = printContent.innerHTML;
+      window.print();
+      document.body.innerHTML = originalContents;
+      window.location.reload();
     }
   };
 
@@ -251,79 +258,77 @@ export default function PharmacyPOS() {
     setPatientQuery("");
     setPaymentMethod("Cash");
     setSearchQuery("");
-    if(isWalkIn) {
-        // Regenerate ID for next walk-in immediately
-        const id = `WI-${Date.now().toString().slice(-6)}`;
-        setWalkInId(id);
+    if (isWalkIn) {
+      // Regenerate ID for next walk-in immediately
+      const id = `WI-${Date.now().toString().slice(-6)}`;
+      setWalkInId(id);
     }
   };
 
-  if (!hasInitialLoad) return <div className="p-10 text-center"><Loader2 className="animate-spin mx-auto"/> Loading System...</div>;
+  if (!hasInitialLoad) return <div className="p-10 text-center"><Loader2 className="animate-spin mx-auto" /> Loading System...</div>;
 
   return (
     <div className="max-w-7xl mx-auto h-[calc(100vh-140px)] flex flex-col lg:flex-row gap-6 relative">
-      
+
       {/* LEFT: Search & Results */}
       <div className="flex-1 flex flex-col gap-6">
-        
+
         {/* CUSTOMER SELECTION CARD */}
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex gap-4 mb-4">
-              {/* Registered Button */}
-              <button 
-                onClick={() => handleToggleCustomerType('registered')}
-                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${
-                    !isWalkIn 
-                    ? "border-[#073159] bg-blue-50 text-[#073159]" 
-                    : "border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200"
+            {/* Registered Button */}
+            <button
+              onClick={() => handleToggleCustomerType('registered')}
+              className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${!isWalkIn
+                ? "border-[#073159] bg-blue-50 text-[#073159]"
+                : "border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
-              >
-                  <User size={20} /> Registered Patient
-              </button>
+            >
+              <User size={20} /> Registered Patient
+            </button>
 
-              {/* Walk-in Button */}
-              <button 
-                onClick={() => handleToggleCustomerType('walkin')}
-                className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${
-                    isWalkIn 
-                    ? "border-teal-600 bg-teal-50 text-teal-700" 
-                    : "border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200"
+            {/* Walk-in Button */}
+            <button
+              onClick={() => handleToggleCustomerType('walkin')}
+              className={`flex-1 py-3 rounded-xl border-2 font-bold flex items-center justify-center gap-2 transition-all ${isWalkIn
+                ? "border-teal-600 bg-teal-50 text-teal-700"
+                : "border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200"
                 }`}
-              >
-                  <Footprints size={20} /> Walk-in Customer
-              </button>
+            >
+              <Footprints size={20} /> Walk-in Customer
+            </button>
           </div>
 
           <div className="relative">
             {isWalkIn ? (
-                // Walk-in Display
-                <div className="w-full p-4 border-2 border-teal-100 bg-teal-50/50 rounded-xl flex items-center justify-between animate-in fade-in">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-teal-600 text-white rounded-lg"><Footprints size={20} /></div>
-                        <div>
-                            <p className="font-bold text-teal-800 text-lg">Guest Customer</p>
-                            <p className="text-sm text-teal-600 font-mono">ID: {walkInId}</p>
-                        </div>
-                    </div>
-                    <span className="text-xs font-bold bg-white text-teal-600 px-3 py-1 rounded-full border border-teal-200">
-                        Active
-                    </span>
+              // Walk-in Display
+              <div className="w-full p-4 border-2 border-teal-100 bg-teal-50/50 rounded-xl flex items-center justify-between animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-teal-600 text-white rounded-lg"><Footprints size={20} /></div>
+                  <div>
+                    <p className="font-bold text-teal-800 text-lg">Guest Customer</p>
+                    <p className="text-sm text-teal-600 font-mono">ID: {walkInId}</p>
+                  </div>
                 </div>
+                <span className="text-xs font-bold bg-white text-teal-600 px-3 py-1 rounded-full border border-teal-200">
+                  Active
+                </span>
+              </div>
             ) : (
-                // Patient Search
-                <div className="flex items-center border border-gray-300 rounded-xl bg-white focus-within:border-[#073159] focus-within:ring-4 focus-within:ring-blue-50 transition-all">
-                    <div className="p-3 text-gray-400"><Search size={20} /></div>
-                    <input 
-                        type="text" 
-                        placeholder="Search patient by name or phone..." 
-                        className="w-full p-3 bg-transparent outline-none text-gray-700 placeholder:text-gray-400 font-medium"
-                        value={patientQuery}
-                        onChange={(e) => handleSearchPatients(e.target.value)}
-                    />
-                    {selectedPatient && (
-                        <button onClick={() => { setSelectedPatient(null); setPatientQuery(""); }} className="p-3 text-red-500 hover:bg-red-50 rounded-r-xl"><X size={20} /></button>
-                    )}
-                </div>
+              // Patient Search
+              <div className="flex items-center border border-gray-300 rounded-xl bg-white focus-within:border-[#073159] focus-within:ring-4 focus-within:ring-blue-50 transition-all">
+                <div className="p-3 text-gray-400"><Search size={20} /></div>
+                <input
+                  type="text"
+                  placeholder="Search patient by name or phone..."
+                  className="w-full p-3 bg-transparent outline-none text-gray-700 placeholder:text-gray-400 font-medium"
+                  value={patientQuery}
+                  onChange={(e) => handleSearchPatients(e.target.value)}
+                />
+                {selectedPatient && (
+                  <button onClick={() => { setSelectedPatient(null); setPatientQuery(""); }} className="p-3 text-red-500 hover:bg-red-50 rounded-r-xl"><X size={20} /></button>
+                )}
+              </div>
             )}
 
             {/* Suggestions Dropdown */}
@@ -353,9 +358,9 @@ export default function PharmacyPOS() {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex-1 flex flex-col overflow-hidden">
           <div className="relative mb-4">
             <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search inventory..." 
+            <input
+              type="text"
+              placeholder="Search inventory..."
               className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#073159] transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -363,32 +368,32 @@ export default function PharmacyPOS() {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-             {searchQuery || inventory.length > 0 ? (
-                 <div className="space-y-2">
-                    {(searchQuery ? filteredDrugs : inventory).map((drug: any) => {
-                        const price = drug.selling_price || drug.price || 0;
-                        const stock = drug.current_stock || drug.stock || 0;
-                        const isOutOfStock = stock === 0;
-                        return (
-                            <div key={drug.id} onClick={() => !isOutOfStock && addToCart(drug)} className={`flex justify-between items-center p-4 border rounded-xl cursor-pointer transition-all ${isOutOfStock ? 'opacity-60 bg-gray-50' : 'hover:bg-blue-50 hover:border-blue-200 border-gray-100 shadow-sm hover:shadow-md'}`}>
-                                <div>
-                                    <h3 className="font-bold text-gray-800">{drug.name}</h3>
-                                    <div className="flex gap-2 text-xs mt-1">
-                                        <span className="text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{drug.category || "Gen"}</span>
-                                        <span className={`${isOutOfStock ? 'text-red-600 font-bold' : 'text-green-600 font-medium'}`}>{stock} in stock</span>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-bold text-[#073159] text-lg">₵{price}</p>
-                                    {isOutOfStock && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">SOLD OUT</span>}
-                                </div>
-                            </div>
-                        )
-                    })}
-                 </div>
-             ) : (
-                 <div className="h-full flex flex-col items-center justify-center text-gray-400"><Package size={48} className="opacity-20 mb-2"/><p>No items found</p></div>
-             )}
+            {searchQuery || inventory.length > 0 ? (
+              <div className="space-y-2">
+                {(searchQuery ? filteredDrugs : inventory).map((drug: any) => {
+                  const price = drug.selling_price || drug.price || 0;
+                  const stock = drug.current_stock || drug.stock || 0;
+                  const isOutOfStock = stock === 0;
+                  return (
+                    <div key={drug.id} onClick={() => !isOutOfStock && addToCart(drug)} className={`flex justify-between items-center p-4 border rounded-xl cursor-pointer transition-all ${isOutOfStock ? 'opacity-60 bg-gray-50' : 'hover:bg-blue-50 hover:border-blue-200 border-gray-100 shadow-sm hover:shadow-md'}`}>
+                      <div>
+                        <h3 className="font-bold text-gray-800">{drug.name}</h3>
+                        <div className="flex gap-2 text-xs mt-1">
+                          <span className="text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{drug.category || "Gen"}</span>
+                          <span className={`${isOutOfStock ? 'text-red-600 font-bold' : 'text-green-600 font-medium'}`}>{stock} in stock</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-[#073159] text-lg">₵{price}</p>
+                        {isOutOfStock && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">SOLD OUT</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400"><Package size={48} className="opacity-20 mb-2" /><p>No items found</p></div>
+            )}
           </div>
         </div>
       </div>
@@ -405,59 +410,63 @@ export default function PharmacyPOS() {
           {/* Cart Items */}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-3">
             {cart.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4"><ShoppingCart size={32} className="opacity-40" /></div>
-                    <p className="font-medium">Your cart is empty</p>
-                    <p className="text-xs">Select items from the inventory to begin.</p>
-                </div>
+              <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4"><ShoppingCart size={32} className="opacity-40" /></div>
+                <p className="font-medium">Your cart is empty</p>
+                <p className="text-xs">Select items from the inventory to begin.</p>
+              </div>
             ) : (
-                cart.map(item => (
-                    <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center animate-in slide-in-from-right-4 duration-300">
-                        <div className="flex-1">
-                            <h4 className="font-bold text-sm text-gray-800 line-clamp-1">{item.name}</h4>
-                            <p className="text-xs text-gray-500">₵{item.price} / unit</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="flex bg-gray-100 rounded-lg border border-gray-200">
-                                <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:bg-gray-200 rounded-l-lg"><Minus size={12}/></button>
-                                <span className="w-8 text-center text-sm font-bold flex items-center justify-center bg-white">{item.qty}</span>
-                                <button onClick={() => updateQty(item.id, 1)} className="p-1.5 hover:bg-gray-200 rounded-r-lg"><Plus size={12}/></button>
-                            </div>
-                            <p className="font-bold text-sm text-[#073159] w-16 text-right">₵{(item.price * item.qty).toFixed(2)}</p>
-                            <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 p-1"><Trash2 size={16}/></button>
-                        </div>
+              cart.map(item => (
+                <div key={item.id} className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center animate-in slide-in-from-right-4 duration-300">
+                  <div className="flex-1">
+                    <h4 className="font-bold text-sm text-gray-800 line-clamp-1">{item.name}</h4>
+                    <p className="text-xs text-gray-500">₵{item.price} / unit</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex bg-gray-100 rounded-lg border border-gray-200">
+                      <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:bg-gray-200 rounded-l-lg"><Minus size={12} /></button>
+                      <span className="w-8 text-center text-sm font-bold flex items-center justify-center bg-white">{item.qty}</span>
+                      <button onClick={() => updateQty(item.id, 1)} className="p-1.5 hover:bg-gray-200 rounded-r-lg"><Plus size={12} /></button>
                     </div>
-                ))
+                    <p className="font-bold text-sm text-[#073159] w-16 text-right">₵{(item.price * item.qty).toFixed(2)}</p>
+                    <button onClick={() => removeFromCart(item.id)} className="text-gray-400 hover:text-red-500 p-1"><Trash2 size={16} /></button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
 
           {/* Payment Section */}
           <div className="p-6 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
             <div className="mb-6">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Payment Method</p>
-                <div className="grid grid-cols-4 gap-2">
-                    {["Cash", "MoMo", "Card", "Insurance"].map(m => (
-                        <button key={m} onClick={() => setPaymentMethod(m)} className={`py-2.5 rounded-lg text-xs font-bold border transition-all ${paymentMethod === m ? "bg-[#073159] border-[#073159] text-white shadow-md transform scale-105" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{m}</button>
-                    ))}
-                </div>
+              <p className="text-xs font-bold text-gray-400 uppercase mb-2">Payment Method</p>
+              <div className="grid grid-cols-4 gap-2">
+                {["Cash", "Mobile Money", "Card", "Insurance"].map(m => (
+                  <button key={m} onClick={() => setPaymentMethod(m)} className={`py-2.5 rounded-lg text-xs font-bold border transition-all ${paymentMethod === m ? "bg-[#073159] border-[#073159] text-white shadow-md transform scale-105" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{m === "Mobile Money" ? "MoMo" : m}</button>
+                ))}
+              </div>
             </div>
-            
+
             <div className="flex justify-between items-end mb-6 pt-4 border-t border-dashed border-gray-200">
-                <div>
-                    <p className="text-gray-500 text-sm font-medium">Total Payable</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                        {isWalkIn ? `Walk-in: ${walkInId}` : (selectedPatient ? `${selectedPatient.first_name} ${selectedPatient.last_name}` : "Select Customer")}
-                    </p>
-                </div>
-                <span className="text-4xl font-extrabold text-[#073159]">₵{calculateTotal()}</span>
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Total Payable</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {isWalkIn ? `Walk-in: ${walkInId}` : (selectedPatient ? `${selectedPatient.first_name} ${selectedPatient.last_name}` : "Select Customer")}
+                </p>
+              </div>
+              <span className="text-4xl font-extrabold text-[#073159]">₵{calculateTotal()}</span>
             </div>
-            
-            <button 
-                onClick={handleCompleteSale} 
-                disabled={cart.length === 0 || (!selectedPatient && !isWalkIn)}
-                className="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-green-200 hover:bg-green-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+
+            <button
+              onClick={handleCompleteSale}
+              disabled={cart.length === 0 || (!selectedPatient && !isWalkIn) || isProcessing}
+              className="w-full py-4 bg-green-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg shadow-green-200 hover:bg-green-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
             >
-                <Check size={24} strokeWidth={3} /> Complete Sale & Print
+              {isProcessing ? (
+                <><Loader2 size={24} className="animate-spin" /> Processing...</>
+              ) : (
+                <><Check size={24} strokeWidth={3} /> Complete Sale & Print</>
+              )}
             </button>
           </div>
         </div>
@@ -466,54 +475,54 @@ export default function PharmacyPOS() {
       {/* --- THERMAL RECEIPT MODAL --- */}
       {showReceipt && receiptData && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-             <div className="bg-white rounded-none shadow-2xl w-[380px] overflow-hidden flex flex-col max-h-[90vh]">
-                 {/* Print Area */}
-                 <div id="printable-receipt" className="p-8 bg-white text-black font-mono text-xs leading-relaxed overflow-y-auto">
-                     <div className="text-center mb-6">
-                         <img src={logo} alt="UrbanVital" className="h-12 mx-auto mb-2 grayscale opacity-90" />
-                         <h2 className="font-bold text-base uppercase tracking-widest text-black">UrbanVital Pharmacy</h2>
-                         <p>Kejetia, Kumasi - Ghana</p>
-                         <p>Tel: +233 59 792 7089</p>
-                         <p className="mt-2 border-t border-b border-black py-1">{receiptData.id}</p>
-                     </div>
+          <div className="bg-white rounded-none shadow-2xl w-[380px] overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Print Area */}
+            <div id="printable-receipt" className="p-8 bg-white text-black font-mono text-xs leading-relaxed overflow-y-auto">
+              <div className="text-center mb-6">
+                <img src={logo} alt="UrbanVital" className="h-12 mx-auto mb-2 grayscale opacity-90" />
+                <h2 className="font-bold text-base uppercase tracking-widest text-black">UrbanVital Pharmacy</h2>
+                <p>Kejetia, Kumasi - Ghana</p>
+                <p>Tel: +233 59 792 7089</p>
+                <p className="mt-2 border-t border-b border-black py-1">{receiptData.id}</p>
+              </div>
 
-                     <div className="mb-4 space-y-1">
-                         <div className="flex justify-between"><span>Date:</span><span>{receiptData.date} {receiptData.time}</span></div>
-                         <div className="flex justify-between"><span>Customer:</span><span className="font-bold">{receiptData.patient}</span></div>
-                         <div className="flex justify-between"><span>Method:</span><span>{receiptData.method.toUpperCase()}</span></div>
-                     </div>
+              <div className="mb-4 space-y-1">
+                <div className="flex justify-between"><span>Date:</span><span>{receiptData.date} {receiptData.time}</span></div>
+                <div className="flex justify-between"><span>Customer:</span><span className="font-bold">{receiptData.patient}</span></div>
+                <div className="flex justify-between"><span>Method:</span><span>{receiptData.method.toUpperCase()}</span></div>
+              </div>
 
-                     <table className="w-full mb-4 border-collapse">
-                         <thead><tr className="border-b border-black"><th className="py-1 text-left">Item</th><th className="py-1 text-center">Qty</th><th className="py-1 text-right">Amt</th></tr></thead>
-                         <tbody>
-                             {receiptData.cartItems.map((i: any, x:number) => (
-                                 <tr key={x}>
-                                     <td className="py-1">{i.name}</td>
-                                     <td className="py-1 text-center">{i.qty}</td>
-                                     <td className="py-1 text-right">{i.price * i.qty}</td>
-                                 </tr>
-                             ))}
-                         </tbody>
-                     </table>
+              <table className="w-full mb-4 border-collapse">
+                <thead><tr className="border-b border-black"><th className="py-1 text-left">Item</th><th className="py-1 text-center">Qty</th><th className="py-1 text-right">Amt</th></tr></thead>
+                <tbody>
+                  {receiptData.cartItems.map((i: any, x: number) => (
+                    <tr key={x}>
+                      <td className="py-1">{i.name}</td>
+                      <td className="py-1 text-center">{i.qty}</td>
+                      <td className="py-1 text-right">{i.price * i.qty}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-                     <div className="border-t-2 border-black pt-2 flex justify-between font-bold text-lg mb-6">
-                         <span>TOTAL</span>
-                         <span>₵{receiptData.amount}</span>
-                     </div>
+              <div className="border-t-2 border-black pt-2 flex justify-between font-bold text-lg mb-6">
+                <span>TOTAL</span>
+                <span>₵{receiptData.amount}</span>
+              </div>
 
-                     <div className="text-center text-[10px]">
-                         <p>Thank you for your purchase!</p>
-                         <p>Returns accepted within 24hrs with receipt.</p>
-                         <p>Served by: {receiptData.pharmacist}</p>
-                     </div>
-                 </div>
+              <div className="text-center text-[10px]">
+                <p>Thank you for your purchase!</p>
+                <p>Returns accepted within 24hrs with receipt.</p>
+                <p>Served by: {receiptData.pharmacist}</p>
+              </div>
+            </div>
 
-                 {/* Modal Actions */}
-                 <div className="p-4 bg-gray-100 flex gap-3 border-t border-gray-200 no-print">
-                     <button onClick={handleCloseReceipt} className="flex-1 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors">Close</button>
-                     <button onClick={handlePrint} className="flex-1 py-3 bg-[#073159] text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-[#062a4d] shadow-lg transition-colors"><Printer size={18}/> Print Receipt</button>
-                 </div>
-             </div>
+            {/* Modal Actions */}
+            <div className="p-4 bg-gray-100 flex gap-3 border-t border-gray-200 no-print">
+              <button onClick={handleCloseReceipt} className="flex-1 py-3 border-2 border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors">Close</button>
+              <button onClick={handlePrint} className="flex-1 py-3 bg-[#073159] text-white rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-[#062a4d] shadow-lg transition-colors"><Printer size={18} /> Print Receipt</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

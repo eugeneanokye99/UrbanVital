@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Q
 from .models import Consultation
 from .serializers import ConsultationSerializer, ConsultationDetailSerializer
 from visits.models import Visit
@@ -89,3 +90,47 @@ class ClinicianDashboardStatsView(APIView):
             'lab_results_ready': lab_results_ready,
             'schedule': VisitSerializer(todays_visits, many=True).data
         })
+
+class PrescriptionQueueView(APIView):
+    """GET: Fetch prescriptions for pharmacy queue"""
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        # Get consultations with prescriptions
+        consultations = Consultation.objects.filter(
+            Q(prescription__isnull=False) & ~Q(prescription='')
+        ).select_related('patient', 'doctor', 'visit').order_by('-created_at')
+        
+        # Filter by status if provided
+        status_filter = request.query_params.get('status', None)
+        if status_filter:
+            # Map frontend status to visit status
+            if status_filter == 'Pending':
+                consultations = consultations.filter(
+                    visit__status__in=['In Consultation', 'Ready for Discharge']
+                )
+            elif status_filter == 'Dispensed':
+                consultations = consultations.filter(
+                    visit__status='Completed'
+                )
+        
+        # Serialize data
+        data = []
+        for consultation in consultations:
+            # Determine status based on visit
+            prescription_status = 'Paid' if consultation.visit.status == 'Completed' else 'Pending'
+            
+            data.append({
+                'id': f"RX-{consultation.id}",
+                'consultation_id': consultation.id,
+                'patient_name': consultation.patient.name,
+                'patient_id_number': consultation.patient.mrn,
+                'doctor_name': consultation.doctor.get_full_name() or consultation.doctor.username,
+                'status': prescription_status,
+                'created_at': consultation.created_at.isoformat(),
+                'prescription': consultation.prescription,
+                'diagnosis': consultation.diagnosis,
+                'visit_id': consultation.visit.id if consultation.visit else None,
+            })
+        
+        return Response(data)

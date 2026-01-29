@@ -9,6 +9,8 @@ from .views import (
     ProcessPaymentView,
     BillingStatsView,
     financial_transactions_view,
+    pharmacy_sales_history_view,
+    pharmacy_stats_view,
 )
 
 urlpatterns = [
@@ -25,4 +27,8 @@ urlpatterns = [
     # Stats and Reports
     path("stats/", BillingStatsView.as_view(), name="billing-stats"),
     path("transactions/", financial_transactions_view, name="financial-transactions"),
+    
+    # Pharmacy specific
+    path("pharmacy-sales/", pharmacy_sales_history_view, name="pharmacy-sales"),
+    path("pharmacy-stats/", pharmacy_stats_view, name="pharmacy-stats"),
 ]

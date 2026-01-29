@@ -178,8 +178,54 @@ class ProcessPaymentView(APIView):
         # Refresh invoice from database to get updated amount_paid
         invoice.refresh_from_db()
         
-        # Create receipt if payment completes the invoice
-        if invoice.balance <= 0:  # Use balance instead of calculating
+        # Deduct inventory for pharmacy items when payment is completed
+        if invoice.balance <= 0:  # Payment completed
+            from inventory.models import Inventory
+            from notifications.audit import log_action
+            
+            for item in invoice.items.all():
+                # Check if this is a pharmacy item by description matching inventory
+                try:
+                    inventory_item = Inventory.objects.get(
+                        name=item.description,
+                        department='PHARMACY'
+                    )
+                    # Deduct quantity from inventory
+                    if inventory_item.current_stock >= item.quantity:
+                        inventory_item.current_stock -= int(item.quantity)
+                        inventory_item.save()
+                        
+                        # Log inventory deduction
+                        log_action(
+                            request.user, 
+                            "inventory_deduction", 
+                            f"Deducted {item.quantity} {item.description} from inventory (Sale: {invoice.invoice_number})",
+                            {
+                                "item_id": inventory_item.item_id,
+                                "quantity_deducted": int(item.quantity),
+                                "remaining_stock": inventory_item.current_stock,
+                                "invoice_number": invoice.invoice_number
+                            }
+                        )
+                except Inventory.DoesNotExist:
+                    # Item not found in inventory, skip deduction
+                    pass
+            
+            # Log sale completion
+            customer_info = invoice.patient.name if invoice.patient else invoice.notes
+            log_action(
+                request.user,
+                "pharmacy_sale",
+                f"Completed pharmacy sale {invoice.invoice_number} for {customer_info} - Amount: ₵{invoice.total_amount}",
+                {
+                    "invoice_id": invoice.id,
+                    "invoice_number": invoice.invoice_number,
+                    "amount": float(invoice.total_amount),
+                    "payment_method": payment_method,
+                    "customer": customer_info
+                }
+            )
+            
             receipt = Receipt.objects.create(
                 invoice=invoice,
                 amount=invoice.total_amount,
@@ -294,12 +340,20 @@ def financial_transactions_view(request):
         if department != 'All Departments' and category != department:
             continue
         
+        # Determine customer name (patient or walk-in)
+        if payment.invoice.patient:
+            customer_name = payment.invoice.patient.name
+        elif payment.invoice.walkin_id:
+            customer_name = f"Walk-in ({payment.invoice.walkin_id})"
+        else:
+            customer_name = "Walk-in Customer"
+        
         transactions.append({
             'id': payment.id,
             'date': payment.payment_date.isoformat(),
             'description': f'Payment for Invoice #{payment.invoice.invoice_number}',
             'category': category,
-            'patient': payment.invoice.patient.name,
+            'patient': customer_name,
             'amount': float(payment.amount),
             'method': payment.payment_method,
             'cashier': payment.received_by.get_full_name() if payment.received_by else 'Unknown',
@@ -349,4 +403,165 @@ def financial_transactions_view(request):
         },
         'department_breakdown': dept_breakdown,
         'chart_data': line_chart_data,
+    })
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def pharmacy_sales_history_view(request):
+    """
+    GET: Retrieve pharmacy sales history
+    Returns completed pharmacy transactions for history page
+    """
+    # Get filter parameters
+    date_from = request.query_params.get('date_from', None)
+    date_to = request.query_params.get('date_to', None)
+    search = request.query_params.get('search', '')
+    
+    # Fetch paid invoices - include both:
+    # 1. Invoices with pharmacy service items (from prescriptions)
+    # 2. Invoices created from pharmacy POS (identified by notes containing "Pharmacy" or items matching inventory)
+    from inventory.models import Inventory
+    
+    # Get all paid invoices
+    invoices = Invoice.objects.filter(status='Paid')
+    
+    # Filter to only pharmacy-related invoices
+    # Include invoices that either:
+    # - Have pharmacy service items, OR
+    # - Have notes indicating pharmacy sale, OR
+    # - Have items matching pharmacy inventory names
+    pharmacy_invoice_ids = set()
+    
+    for invoice in invoices:
+        # Check if has pharmacy service items
+        if invoice.items.filter(service_item__category='Pharmacy').exists():
+            pharmacy_invoice_ids.add(invoice.id)
+            continue
+        
+        # Check if notes indicate pharmacy sale
+        if invoice.notes and ('Pharmacy' in invoice.notes or 'Walk-in' in invoice.notes or 'Registered Patient' in invoice.notes):
+            # Verify items match pharmacy inventory
+            for item in invoice.items.all():
+                if Inventory.objects.filter(name=item.description, department='PHARMACY').exists():
+                    pharmacy_invoice_ids.add(invoice.id)
+                    break
+    
+    # Get final queryset
+    invoices = Invoice.objects.filter(
+        id__in=pharmacy_invoice_ids
+    ).distinct().select_related('patient', 'created_by').prefetch_related('items', 'payments')
+    
+    # Apply date filters
+    if date_from:
+        invoices = invoices.filter(payment_date__date__gte=date_from)
+    if date_to:
+        invoices = invoices.filter(payment_date__date__lte=date_to)
+    
+    # Apply search filter
+    if search:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=search) |
+            Q(patient__first_name__icontains=search) |
+            Q(patient__last_name__icontains=search)
+        )
+    
+    # Build sales list
+    sales = []
+    for invoice in invoices.order_by('-payment_date'):
+        # Get pharmacy items only
+        pharmacy_items = invoice.items.filter(service_item__category='Pharmacy')
+        items_list = ', '.join([item.description for item in pharmacy_items])
+        
+        # Get payment info
+        first_payment = invoice.payments.first()
+        
+        # Determine customer name (patient or walk-in)
+        if invoice.patient:
+            customer_name = invoice.patient.name
+        elif invoice.walkin_id:
+            customer_name = f"Walk-in ({invoice.walkin_id})"
+        else:
+            customer_name = "Walk-in Customer"
+        
+        sales.append({
+            'id': invoice.invoice_number,
+            'invoice_id': invoice.id,
+            'date': invoice.payment_date.strftime('%d/%m/%Y') if invoice.payment_date else invoice.invoice_date.strftime('%d/%m/%Y'),
+            'time': invoice.payment_date.strftime('%H:%M') if invoice.payment_date else invoice.invoice_date.strftime('%H:%M'),
+            'patient': customer_name,
+            'items': items_list,
+            'amount': float(invoice.total_amount),
+            'method': invoice.payment_method or 'Cash',
+            'pharmacist': invoice.created_by.get_full_name() if invoice.created_by else 'Unknown',
+            'is_walkin': not bool(invoice.patient),  # Flag to indicate walk-in customer
+        })
+    
+    return Response(sales)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def pharmacy_stats_view(request):
+    """
+    GET: Pharmacy dashboard statistics
+    Returns revenue, top products, and other metrics
+    """
+    from inventory.models import Inventory
+    today = timezone.now().date()
+    week_ago = today - timedelta(days=7)
+    
+    # Get all paid invoices
+    all_invoices = Invoice.objects.filter(status='Paid')
+    
+    # Filter to only pharmacy-related invoices (same logic as sales history)
+    pharmacy_invoice_ids = set()
+    
+    for invoice in all_invoices:
+        # Check if has pharmacy service items
+        if invoice.items.filter(service_item__category='Pharmacy').exists():
+            pharmacy_invoice_ids.add(invoice.id)
+            continue
+        
+        # Check if notes indicate pharmacy sale
+        if invoice.notes and ('Pharmacy' in invoice.notes or 'Walk-in' in invoice.notes or 'Registered Patient' in invoice.notes):
+            # Verify items match pharmacy inventory
+            for item in invoice.items.all():
+                if Inventory.objects.filter(name=item.description, department='PHARMACY').exists():
+                    pharmacy_invoice_ids.add(invoice.id)
+                    break
+    
+    # Get pharmacy invoices
+    pharmacy_invoices = Invoice.objects.filter(id__in=pharmacy_invoice_ids)
+    
+    # Today's revenue
+    today_revenue = pharmacy_invoices.filter(
+        payment_date__date=today
+    ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    # Week's revenue
+    week_revenue = pharmacy_invoices.filter(
+        payment_date__date__gte=week_ago
+    ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    # Top selling products (from all pharmacy invoice items)
+    from django.db.models import Count
+    top_products = InvoiceItem.objects.filter(
+        invoice__id__in=pharmacy_invoice_ids
+    ).values('description').annotate(
+        count=Count('id'),
+        total_qty=Sum('quantity')
+    ).order_by('-total_qty')[:5]
+    
+    top_drugs = []
+    max_count = top_products[0]['total_qty'] if top_products else 1
+    for product in top_products:
+        top_drugs.append({
+            'name': product['description'],
+            'count': int(product['total_qty']),
+            'percentage': int((product['total_qty'] / max_count) * 100) if max_count > 0 else 0
+        })
+    
+    return Response({
+        'today_revenue': float(today_revenue),
+        'week_revenue': float(week_revenue),
+        'top_drugs': top_drugs,
     })

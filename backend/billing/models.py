@@ -62,10 +62,13 @@ class Invoice(models.Model):
         ('Other', 'Other'),
     ]
     
-    # Foreign keys
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='invoices')
+    # Foreign keys - patient is now optional for walk-in customers
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='invoices', null=True, blank=True)
     visit = models.ForeignKey(Visit, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_invoices')
+    
+    # Walk-in customer support
+    walkin_id = models.CharField(max_length=50, null=True, blank=True, help_text="Walk-in customer ID")
     
     # Invoice details
     invoice_number = models.CharField(max_length=50, unique=True, editable=False)
@@ -111,7 +114,8 @@ class Invoice(models.Model):
         super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"{self.invoice_number} - {self.patient.name}"
+        customer = self.patient.name if self.patient else f"Walk-in ({self.walkin_id})"
+        return f"{self.invoice_number} - {customer}"
     
     class Meta:
         ordering = ['-invoice_date']

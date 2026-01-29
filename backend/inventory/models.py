@@ -95,3 +95,54 @@ class Inventory(models.Model):
     def total_value(self):
         """Calculate total inventory value"""
         return float(self.current_stock * self.selling_price)
+
+class InventoryAdjustment(models.Model):
+    """Track inventory returns, damages, and adjustments"""
+    
+    TYPE_CHOICES = [
+        ('Damaged', 'Damaged / Broken'),
+        ('Expired', 'Expired Stock'),
+        ('Customer Return', 'Customer Return (Restock)'),
+        ('Error', 'Dispensing Error'),
+        ('Loss', 'Loss / Theft'),
+        ('Adjustment', 'Stock Adjustment'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('Pending', 'Pending Approval'),
+        ('Approved', 'Approved'),
+        ('Disposed', 'Disposed'),
+        ('Rejected', 'Rejected'),
+    ]
+    
+    # Reference
+    adjustment_id = models.CharField(max_length=50, unique=True, editable=False)
+    
+    # Item details
+    inventory_item = models.ForeignKey(Inventory, on_delete=models.CASCADE, related_name='adjustments')
+    batch_number = models.CharField(max_length=100, blank=True, null=True)
+    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    
+    # Adjustment details
+    adjustment_type = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    reason = models.TextField()
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Pending')
+    
+    # Audit
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_adjustments')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_adjustments')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.adjustment_id:
+            # Generate unique ID
+            import random
+            self.adjustment_id = f"RET-{random.randint(1000, 9999)}"
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.adjustment_id} - {self.inventory_item.name}"
+    
+    class Meta:
+        ordering = ['-created_at']

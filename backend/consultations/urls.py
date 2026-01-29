@@ -4,7 +4,8 @@ from .views import (
     ConsultationDetailView, 
     ConsultationByVisitView,
     PatientConsultationHistoryView,
-    ClinicianDashboardStatsView
+    ClinicianDashboardStatsView,
+    PrescriptionQueueView
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path('visit/<int:visit_id>/', ConsultationByVisitView.as_view(), name='consultation-by-visit'),
     path('patient/<int:patient_id>/history/', PatientConsultationHistoryView.as_view(), name='patient-consultation-history'),
     path('stats/', ClinicianDashboardStatsView.as_view(), name='clinician-stats'),
+    path('prescriptions/', PrescriptionQueueView.as_view(), name='prescription-queue'),
 ]

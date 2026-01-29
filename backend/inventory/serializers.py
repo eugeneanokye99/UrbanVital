@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Inventory
+from .models import Inventory, InventoryAdjustment
 from datetime import timedelta, date
 
 class InventorySerializer(serializers.ModelSerializer):
@@ -23,3 +23,18 @@ class InventorySerializer(serializers.ModelSerializer):
         if value and value < date.today():
             raise serializers.ValidationError("Expiry date cannot be in the past.")
         return value
+
+class InventoryAdjustmentSerializer(serializers.ModelSerializer):
+    inventory_item_name = serializers.CharField(source='inventory_item.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
+    approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True)
+    
+    class Meta:
+        model = InventoryAdjustment
+        fields = [
+            'id', 'adjustment_id', 'inventory_item', 'inventory_item_name',
+            'batch_number', 'quantity', 'adjustment_type', 'reason', 'status',
+            'created_by', 'created_by_name', 'approved_by', 'approved_by_name',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'adjustment_id', 'created_by', 'created_at', 'updated_at']
